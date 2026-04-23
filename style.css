@@ -246,7 +246,7 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
   position:absolute;bottom:0;left:0;right:0;height:250px;z-index:3;
   background:linear-gradient(to bottom,transparent,var(--bg));pointer-events:none;
 }
-.hero-slide-content{position:relative;z-index:4;max-width:640px;}
+.hero-slide-content{position:relative;z-index:10;max-width:640px;}
 .hero-tag{
   display:inline-flex;align-items:center;gap:8px;
   border:1px solid;border-radius:100px;
@@ -1661,13 +1661,21 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
     border-radius:20px;
     background-size:cover !important;
     background-position:center center !important;
-    filter:brightness(0.72);
+    filter:brightness(0.75) blur(3px);
+    scale:1.04;
     opacity:1 !important;
   }
+  /* Override left-to-right desktop grad with bottom-up on mobile so text area is readable but image is visible */
+  .hero-slide-bg::after{
+    background:linear-gradient(to top, rgba(7,7,15,0.65) 0%, rgba(7,7,15,0.1) 30%, transparent 55%) !important;
+  }
+  .hero-slide-content{z-index:10;}
+  .hero-slide-fade{display:none;}
+  .hero-title,.hero-subtitle,.hero-desc,.hero-tag{text-shadow:0 2px 12px rgba(0,0,0,0.9),0 1px 4px rgba(0,0,0,1);}
+  .hero-cta{box-shadow:0 4px 20px rgba(0,0,0,0.6);}
   /* contain-right slides: also use image as full bg on mobile */
   .hero-slide-img-right{display:none;}
   .hero-slide-img-right-grad{display:none;}
-  .hero-slide-fade{height:70%;border-radius:20px;}
   /* Hero text sizing — compact */
   .hero-title{font-size:clamp(22px,5.5vw,34px);}
   .hero-subtitle{font-size:clamp(13px,3.5vw,18px);}

@@ -146,7 +146,7 @@ function goToEpisodeWatch(epNum){
 // ─── PLATFORM LOGOS (actual image assets) ─────────────
 const PLATFORM_LOGOS = {
   netflix: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg',
-  primevideo: 'https://upload.wikimedia.org/wikipedia/commons/f/f1/Prime_Video.png',
+  primevideo: 'https://m.media-amazon.com/images/G/01/digital/video/merch/subs/benefit-id/a-f/animetimesin/logos/3p-logo._CB787992367_.png',
   appletv: 'https://upload.wikimedia.org/wikipedia/commons/2/28/Apple_TV_Plus_Logo.svg',
   etvbalb: 'https://assets.etvbalbharat.com/languageimages/ETV_ENGLISH.png',
   etvwin: 'https://old.etvwin.com/images/etv-logo-new.png',
