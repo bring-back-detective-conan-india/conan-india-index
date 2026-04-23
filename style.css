@@ -57,7 +57,7 @@ img{display:block;max-width:100%;}
 
 /* ── PAGE TRANSITION ─────────────────────── */
 #app{min-height:100vh;overflow-x:hidden;}
-.page-enter{animation:pageEnter 0.5s var(--ease-out) both;overflow-x:hidden;width:100%;}
+.page-enter{animation:pageEnter 0.5s var(--ease-out) both;overflow-x:hidden;width:100%;touch-action:pan-y;}
 @keyframes pageEnter{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
 
 
@@ -387,8 +387,9 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
   flex:0 0 320px;max-width:320px;scroll-snap-align:start;
   cursor:pointer;transition:transform 0.4s var(--spring),box-shadow 0.4s;
   border:1px solid rgba(255,255,255,0.06);
+  box-shadow:0 0 0 1px rgba(255,255,255,0.04),0 4px 32px rgba(0,0,0,0.5),0 0 40px rgba(255,80,60,0.06);
 }
-.plat-card:hover{transform:translateY(-6px) scale(1.02);box-shadow:0 28px 70px rgba(0,0,0,0.6);}
+.plat-card:hover{transform:translateY(-6px) scale(1.02);box-shadow:0 28px 70px rgba(0,0,0,0.6),0 0 60px rgba(255,80,60,0.12);}
 .plat-card-bg{position:absolute;inset:0;background-size:cover;background-position:center top;transition:transform 0.6s var(--ease-out);opacity:0.55;image-rendering:auto;}
 .plat-card:hover .plat-card-bg{transform:scale(1.04);opacity:0.65;}
 .plat-card-color-layer{position:absolute;inset:0;opacity:0.7;}
@@ -677,7 +678,8 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
 .scroll-row{
   display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;
   scrollbar-width:thin;scrollbar-color:var(--border2) transparent;
-  cursor:grab;
+  cursor:grab;max-width:100%;box-sizing:border-box;
+  touch-action:pan-x;
 }
 .scroll-row:active,.platforms-grid:active,.lang-one-row:active{cursor:grabbing;}
 .platforms-grid,.lang-one-row{cursor:grab;}
@@ -1053,11 +1055,11 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
 .pp-stat{
   flex:1;display:flex;flex-direction:column;align-items:center;
   padding:22px 16px 16px;gap:4px;border-right:1px solid var(--border);
-  position:relative;overflow:hidden;
+  position:relative;overflow:hidden;min-width:0;
 }
 .pp-stat:last-child{border-right:none;}
-.pp-stat-n{font-family:var(--font-display);font-size:32px;line-height:1;}
-.pp-stat-l{font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.pp-stat-n{font-family:var(--font-display);font-size:32px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+.pp-stat-l{font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
 /* Thin color bar at top of each stat */
 .pp-stat-bar{
   position:absolute;top:0;left:0;right:0;height:2px;opacity:0.5;
@@ -1066,7 +1068,9 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
 .pp-tabs{
   display:flex;gap:0;border-bottom:1px solid var(--border);
   background:var(--surface);position:sticky;top:62px;z-index:100;
+  overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;
 }
+.pp-tabs::-webkit-scrollbar{display:none;}
 .pp-tab{
   padding:16px 24px;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
   color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;
@@ -1730,9 +1734,13 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
   .pp-hero{height:360px;}
   .pp-hero-content{bottom:16px;left:16px;right:16px;}
   .pp-hero-logo-wrap .plat-logo-svg{height:36px;}
-  .pp-tabs{overflow-x:auto;top:56px;}
-  .pp-tab{padding:14px 16px;font-size:10px;white-space:nowrap;}
-  .pp-panel{padding:20px 16px;}
+  .pp-tabs{top:56px;}
+  .pp-tab{padding:12px 14px;font-size:10px;white-space:nowrap;flex-shrink:0;}
+  .pp-panel{padding:16px;}
+  .pp-stat{padding:14px 8px 10px;}
+  .pp-stat-n{font-size:20px;}
+  .pp-stat-l{font-size:9px;letter-spacing:0.06em;}
+  .pp-section-title{font-size:22px;}
 
   /* ── Modal → bottom sheet with scale bg ── */
   .modal-panel{
@@ -2631,7 +2639,7 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
 .ep-card-body{flex:1;min-width:0;}
 .ep-card-num{font-size:10px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:var(--red);margin-bottom:3px;}
 .ep-card-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px;line-height:1.3;}
-.ep-card-desc{font-size:13px;color:var(--text2);line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.ep-card-desc{font-size:13px;color:var(--text2);line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .ep-card-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
 .ep-card-watch{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
 .ep-card-watch-link{
