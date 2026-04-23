@@ -1196,6 +1196,18 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
 }
 .modal-root.modal-fullpage .modal-handle{display:none;}
 .modal-handle{width:40px;height:4px;border-radius:4px;background:var(--border2);margin:14px auto 20px;}
+
+/* Mobile swipe-down support for cards in modals */
+@media(max-width:768px){
+  .modal-ep,.lm-season-card,.lm-movie-card,.spinoff-card,.content-card,.browse-card,.movie-big-card{
+    touch-action:pan-y pinch-zoom;
+    -webkit-user-select:none;user-select:none;
+  }
+  .modal-ep:active,.lm-season-card:active,.lm-movie-card:active{
+    transform:scale(0.98);
+    transition:transform 0.1s;
+  }
+}
 .modal-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:8px;}
 .modal-badge{font-size:10px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:var(--red);margin-bottom:5px;}
 .modal-title{font-family:var(--font-display);font-size:32px;line-height:1;color:var(--text);}

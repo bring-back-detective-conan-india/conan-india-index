@@ -2227,38 +2227,67 @@ function renderWherePlatformLabel(name, color){
 
 // ─── SWIPE-TO-DISMISS MODAL ──────────────────────────
 function initSwipeDismiss(){
-  let startY=0,currentY=0,dragging=false;
+  let startY=0,currentY=0,dragging=false,dragSource=null;
   const panel=modalPanel;
+  const SWIPE_THRESHOLD=120;
+  const CARD_SWIPE_THRESHOLD=150;
 
   function onStart(e){
     if(modal.classList.contains('modal-fullpage')) return;
     const t=e.touches?e.touches[0]:e;
-    // Only initiate drag when touching the handle area (top 60px of panel)
     const rect=panel.getBoundingClientRect();
-    if(t.clientY-rect.top>80) return;
-    startY=t.clientY;dragging=true;
-    panel.style.transition='none';
+    const touchY=t.clientY-rect.top;
+
+    // Check if touching a card element
+    const target=e.target;
+    const cardSelectors=['.modal-ep','.lm-season-card','.lm-movie-card','.spinoff-card','.content-card','.browse-card','.movie-big-card'];
+    const isCard=cardSelectors.some(sel=>target.closest(sel));
+
+    if(isCard){
+      dragSource='card';
+      startY=t.clientY;
+      dragging=true;
+      panel.style.transition='none';
+    }else if(touchY<=80){
+      dragSource='handle';
+      startY=t.clientY;
+      dragging=true;
+      panel.style.transition='none';
+    }
   }
+
   function onMove(e){
     if(!dragging)return;
     const t=e.touches?e.touches[0]:e;
-    currentY=Math.max(0,t.clientY-startY);
-    panel.style.transform=`translateY(${currentY}px)`;
-    // Dim backdrop proportionally
-    const prog=Math.min(currentY/300,1);
-    modal.style.background=`rgba(7,7,15,${0.8*(1-prog*0.6)})`;
+    const deltaY=t.clientY-startY;
+
+    if(dragSource==='card'){
+      if(deltaY>30){
+        currentY=Math.max(0,deltaY-30);
+        panel.style.transform=`translateY(${currentY}px)`;
+        const prog=Math.min(currentY/300,1);
+        modal.style.background=`rgba(7,7,15,${0.8*(1-prog*0.6)})`;
+      }
+    }else{
+      currentY=Math.max(0,deltaY);
+      panel.style.transform=`translateY(${currentY}px)`;
+      const prog=Math.min(currentY/300,1);
+      modal.style.background=`rgba(7,7,15,${0.8*(1-prog*0.6)})`;
+    }
   }
+
   function onEnd(){
     if(!dragging)return;
+    const threshold=dragSource==='card'?CARD_SWIPE_THRESHOLD:SWIPE_THRESHOLD;
     dragging=false;
     panel.style.transition='';
     modal.style.background='';
-    if(currentY>120){
+    if(currentY>threshold){
       closeModal();
-    } else {
+    }else{
       panel.style.transform='translateY(0)';
     }
-    currentY=0;
+    currentY=0;dragSource=null;
   }
 
   panel.addEventListener('touchstart',onStart,{passive:true});
