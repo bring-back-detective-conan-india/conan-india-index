@@ -67,6 +67,19 @@ const PLATFORMS = [
     note:"Requires an ETV Win subscription.",
     movies:[2,4,5],
     languages:{dub:["Hindi","Tamil","Telugu","Malayalam","Kannada","Bengali","Marathi","Gujarati","Odia","Punjabi","Assamese"]}
+  },
+  {
+    id:"amasiantv", name:"Amasian TV", type:"streaming",
+    color:"#FF6B35", bg:"#1A0F00",
+    url:"https://amasian.tv",
+    logoUrl:"https://images.plex.tv/photo?size=large-1920&scale=1&url=https%3A%2F%2Fprovider-static.plex.tv%2Fepg%2Fcms%2Fproduction%2F464ba63c-620f-4b2b-8de3-e69c3bc3ee4e%2FAmasian_TV_logo_dark_-_Jason_Hwang.png",
+    badge:"Free Streaming", tagline:"Magic Kaito 1412 · English Dub",
+    description:"Amasian TV is a free streaming platform offering Magic Kaito 1412 with English dub. No subscription required - watch directly in your browser.",
+    note:"Completely free to watch. Features Magic Kaito 1412 series with English audio.",
+    magicKaito:true,
+    magicKaitoEpisodes:Array.from({length: 24}, (_, i) => i + 1),
+    ovas: ["ova1"],
+    languages:{dub:["English"],sub:[]}
   }
 ];
 
@@ -427,6 +440,231 @@ const SPINOFFS = [
     languages:{dub:["English","Hindi"],sub:["English"]}
   }
 ];
+
+// ─── DETECTIVE CONAN OVAs ───────────────────────────────
+const OVAS = [
+  {
+    id:"ova1", tmdb:0, title:"Conan vs. Kid vs. Yaiba - The Grand Battle for the Treasure Sword!!", year:2000, type:"ova",
+    colors:["#1A2A4A","#4A90E2"], episodeNumber:1,
+    still: "https://image.tmdb.org/t/p/w500/133XH39X32Htq5CAsAMztzsn2p7.jpg",
+    desc:"Conan borrows a large amount of manga from Mitsuhiko and crazy things begin to happen around Beika City. A family asks Kogoro to help them protect a special sword in their dojo since Kaitou KID has sent word he's going to steal it."
+  },
+  {
+    id:"ova2", tmdb:0, title:"16 Suspects!?", year:2000, type:"ova",
+    colors:["#2A1A3A","#6A4C93"], episodeNumber:2,
+    still: "https://image.tmdb.org/t/p/w500/9GD5K65E3VkKB9O44xg5qpKae54.jpg",
+    desc:"The whole gang gets invited to Inspector Shiratori's villa, where he keeps his wine collection, to celebrate the completion of it."
+  },
+  {
+    id:"ova3", tmdb:0, title:"Conan, Heiji, and the Vanished Boy", year:2000, type:"ova",
+    colors:["#1A3A2A","#27AE60"], episodeNumber:3,
+    still: "https://image.tmdb.org/t/p/w500/6Jy2IaUtbVrbR43GycVms6oVIhj.jpg",
+    desc:"Conan and Ran are visiting Heiji and Kazuha in Osaka but while they are touring around they come across a group of three kids that look like Ayumi, Mitsuhiko, and Genta."
+  },
+  {
+    id:"ova4", tmdb:0, title:"Conan, Kid, and the Crystal Mother", year:2000, type:"ova",
+    colors:["#3A1A1A","#C0392B"], episodeNumber:4,
+    still: "https://image.tmdb.org/t/p/w500/425liZqczC5PtEaCKF1TQ4PEt9Z.jpg",
+    desc:"Kaitou Kid targets the Crystal Mother, a precious jewel, leading to another confrontation with Conan."
+  },
+  {
+    id:"ova5", tmdb:0, title:"Time Travel of the Silver Sky", year:2000, type:"ova",
+    colors:["#1A1A3A","#5C6BC0"], episodeNumber:5,
+    still: "https://image.tmdb.org/t/p/w500/9rH1zBx1Rl4YL5aTKk91jwYUTL7.jpg",
+    desc:"A time-travel adventure involving the Silver Sky gemstone."
+  },
+  {
+    id:"ova6", tmdb:0, title:"The Target Is Kogoro!! The Detective Boys' Secret Report", year:2000, type:"ova",
+    colors:["#2A2A1A","#F39C12"], episodeNumber:6,
+    still: "https://image.tmdb.org/t/p/w500/1Osjk2CU8m9zj3l071HyyYRO7WZ.jpg",
+    desc:"The Detective Boys investigate when Kogoro becomes the target of mysterious activities."
+  },
+  {
+    id:"ova7", tmdb:0, title:"Follow the Vanished Diamond! Conan and Heiji vs Kid!", year:2000, type:"ova",
+    colors:["#1A2A2A","#16A085"], episodeNumber:7,
+    still: "https://image.tmdb.org/t/p/w500/11BOUmixdkdoUOOn3vi8fTPRfkY.jpg",
+    desc:"A valuable diamond disappears, leading to a three-way confrontation between Conan, Heiji, and Kaitou Kid."
+  },
+  {
+    id:"ova8", tmdb:0, title:"Shinichi Kudo's Written Challenge", year:2000, type:"ova",
+    colors:["#3A2A1A","#D35400"], episodeNumber:8,
+    still: "https://image.tmdb.org/t/p/w500/tsaj9FMNdPnS0pbpOzuAEfeuXgV.jpg",
+    desc:"Shinichi faces a written challenge that tests his detective skills."
+  },
+  {
+    id:"ova9", tmdb:0, title:"A Challenge from Agasa! Agasa vs. Conan and the Detective Boys", year:2000, type:"ova",
+    colors:["#2A1A1A","#E74C3C"], episodeNumber:9,
+    still: "https://image.tmdb.org/t/p/w500/jMrBNxGt3GAD7ZTM7aoXbc7JA2S.jpg",
+    desc:"Professor Agasa challenges Conan and the Detective Boys to solve a mystery."
+  },
+  {
+    id:"ova10", tmdb:0, title:"Magic File", year:2000, type:"ova",
+    colors:["#1A3A3A","#3498DB"], episodeNumber:10,
+    still: "https://image.tmdb.org/t/p/w500/7cln5D2sxflrhgK3ADVZxolwIY3.jpg",
+    desc:"A magical file containing mysterious cases for Conan to solve."
+  },
+  {
+    id:"ova11", tmdb:0, title:"Shinichi Kudo Returns! Showdown with the Black Organization", year:2000, type:"ova",
+    colors:["#2A1A2A","#8E44AD"], episodeNumber:11,
+    still: "https://image.tmdb.org/t/p/w500/sf0fDsUo1KOstXnIYCp7o5qHjcN.jpg",
+    desc:"Shinichi temporarily returns to face off against the Black Organization."
+  },
+  {
+    id:"ova12", tmdb:0, title:"Black History", year:2000, type:"ova",
+    colors:["#1A1A1A","#2C3E50"], episodeNumber:12,
+    still: "https://image.tmdb.org/t/p/w500/uaZP0DU0ysEXIn9YvX7YCa37vZX.jpg",
+    desc:"A look into the dark history surrounding the Black Organization."
+  },
+  {
+    id:"ova13", tmdb:0, title:"Contact with the Black Organization", year:2000, type:"ova",
+    colors:["#3A1A2A","#C0392B"], episodeNumber:13,
+    still: "https://image.tmdb.org/t/p/w500/oleyBnHXzusIQKbqRWBgty7ANmn.jpg",
+    desc:"Conan makes contact with the Black Organization, putting him in grave danger."
+  },
+  {
+    id:"ova14", tmdb:0, title:"The Casebook of Female High-School Detective Sonoko Suzuki", year:2000, type:"ova",
+    colors:["#2A3A1A","#27AE60"], episodeNumber:14,
+    still: "https://image.tmdb.org/t/p/w500/s0HCyegKgbV5MFo43w3cPaRh79j.jpg",
+    desc:"Sonoko Suzuki takes center stage in her own detective casebook."
+  },
+  {
+    id:"ova15", tmdb:0, title:"Shinichi Kudo, The Case of the Mysterious Wall and the Black Lab", year:2000, type:"ova",
+    colors:["#1A2A3A","#2980B9"], episodeNumber:15,
+    still: "https://image.tmdb.org/t/p/w500/iz0CLEAUGEx642NccmpCtGGCQ8t.jpg",
+    desc:"Shinichi investigates a mysterious wall and a black laboratory."
+  },
+  {
+    id:"ova16", tmdb:0, title:"Shinichi and Ran, Memories of Mahjong Tiles and Tanabata", year:2000, type:"ova",
+    colors:["#3A2A2A","#E67E22"], episodeNumber:16,
+    still: "https://image.tmdb.org/t/p/w500/gV1QnIUsexlOLrzLyEqcpxX0l07.jpg",
+    desc:"A nostalgic story involving Shinichi, Ran, mahjong tiles, and the Tanabata festival."
+  },
+  {
+    id:"ova17", tmdb:0, title:"The Stranger from Ten Years Later", year:2000, type:"ova",
+    colors:["#2A1A3A","#9B59B6"], episodeNumber:17,
+    still: "https://image.tmdb.org/t/p/w500/4494r2R0sahWgkscC1NhEsK7aHD.jpg",
+    desc:"A mysterious stranger appears from ten years in the future."
+  },
+  {
+    id:"ova18", tmdb:0, title:"Kid in Trap Island", year:2000, type:"ova",
+    colors:["#1A3A1A","#16A085"], episodeNumber:18,
+    still: "https://image.tmdb.org/t/p/w500/vowq6vWhBaCBan8UT6hPGXj9Frk.jpg",
+    desc:"Kaitou Kid finds himself trapped on an island."
+  },
+  {
+    id:"ova19", tmdb:0, title:"The Osaka Okonomiyaki Odyssey", year:2000, type:"ova",
+    colors:["#3A1A1A","#D35400"], episodeNumber:19,
+    still: "https://image.tmdb.org/t/p/w500/9oMLpkIsmZIL9KEr0KIg8jSpSzh.jpg",
+    desc:"A culinary adventure in Osaka featuring okonomiyaki."
+  },
+  {
+    id:"ova20", tmdb:0, title:"Shinichi Kudo's Written Challenge! The Mystery of the Legendary Strange Bird", year:2000, type:"ova",
+    colors:["#2A2A1A","#F39C12"], episodeNumber:20,
+    still: "https://image.tmdb.org/t/p/w500/dGOYJvK5E2d2ixQlFHYZg83HVOy.jpg",
+    desc:"Shinichi faces another written challenge involving a legendary mysterious bird."
+  },
+  {
+    id:"ova21", tmdb:0, title:"Niigata~Tokyo Souvenir Capriccio", year:2000, type:"ova",
+    colors:["#1A1A2A","#34495E"], episodeNumber:21,
+    still: "https://image.tmdb.org/t/p/w500/nLr33bW9mEmFVXg64xxFH1riy2n.jpg",
+    desc:"A journey from Niigata to Tokyo involving mysterious souvenirs."
+  },
+  {
+    id:"ova22", tmdb:0, title:"Fatuous Detective!? Kogoro Mouri", year:2000, type:"ova",
+    colors:["#2A1A1A","#E74C3C"], episodeNumber:22,
+    still: "https://image.tmdb.org/t/p/w500/wsc27OXYgzJyfH0TBqdRCL92B7I.jpg",
+    desc:"Kogoro Mouri finds himself in a seemingly foolish detective situation."
+  },
+  {
+    id:"ova23", tmdb:0, title:"A Secret Order from London", year:2000, type:"ova",
+    colors:["#1A2A1A","#27AE60"], episodeNumber:23,
+    still: "https://image.tmdb.org/t/p/w500/yvQB1NMvQ4yBxo0kZexXyvk8yOl.jpg",
+    desc:"A secret order arrives from London, drawing Conan into an international case."
+  },
+  {
+    id:"ova24", tmdb:0, title:"Television Personality Maomi Yuki's Worries", year:2000, type:"ova",
+    colors:["#3A2A3A","#8E44AD"], episodeNumber:24,
+    still: "https://image.tmdb.org/t/p/w500/scgrZFlZ0pkCokAhyZd4Sgfc4UG.jpg",
+    desc:"TV personality Maomi Yuki seeks help with her worries from Conan."
+  },
+  {
+    id:"ova25", tmdb:0, title:"Shinichi Kudo and the Kyoto Shinsengumi Murder Case", year:2000, type:"ova",
+    colors:["#2A1A2A","#C0392B"], episodeNumber:25,
+    still: "https://image.tmdb.org/t/p/w500/nbhbFYOp6VYdVnTXKXG7OLLzn0e.jpg",
+    desc:"Shinichi investigates a murder case in Kyoto involving the Shinsengumi."
+  },
+  {
+    id:"ova26", tmdb:0, title:"Flower of Fantasista", year:2000, type:"ova",
+    colors:["#1A3A2A","#2980B9"], episodeNumber:26,
+    still: "https://image.tmdb.org/t/p/w500/dpaXRE08yRCSDDNiQQp6Ll3ppJ5.jpg",
+    desc:"A case involving the mysterious Flower of Fantasista."
+  },
+  {
+    id:"ova27", tmdb:0, title:"The Miracle of Excalibur", year:2000, type:"ova",
+    colors:["#3A1A1A","#D35400"], episodeNumber:27,
+    still: "https://image.tmdb.org/t/p/w500/1I5tlyhOIBp9yZgqSufACU5rpGk.jpg",
+    desc:"A miraculous case involving the legendary sword Excalibur."
+  },
+  {
+    id:"ova28", tmdb:0, title:"Episode 28", year:2000, type:"ova",
+    colors:["#2A2A2A","#7F8C8D"], episodeNumber:28,
+    still: "https://image.tmdb.org/t/p/w500/9yh3PjYQpcyB3LpuRAJJWnAdc7T.jpg",
+    desc:"The 28th OVA episode in the series."
+  },
+  {
+    id:"ova29", tmdb:0, title:"Fugitive: Kogoro Mouri", year:2000, type:"ova",
+    colors:["#1A1A3A","#5C6BC0"], episodeNumber:29,
+    still: "https://image.tmdb.org/t/p/w500/x5IgkiahZYjpTKpLcll8KPeZCIe.jpg",
+    desc:"Kogoro Mouri finds himself as a fugitive on the run."
+  },
+  {
+    id:"ova30", tmdb:0, title:"Happy New Year Mori Kogoro", year:2000, type:"ova",
+    colors:["#3A2A1A","#E67E22"], episodeNumber:30,
+    still: "https://image.tmdb.org/t/p/w500/zz1UkI8JpFqw5QxtkSyT6n7UQ1U.jpg",
+    desc:"A New Year's special featuring Kogoro Mouri."
+  },
+  {
+    id:"ova31", tmdb:0, title:"Episode 31", year:2000, type:"ova",
+    colors:["#2A1A1A","#E74C3C"], episodeNumber:31,
+    still: "https://image.tmdb.org/t/p/w500/7i8moWE9iX4Frnpja1NnJf2QLhl.jpg",
+    desc:"The 31st OVA episode in the series."
+  },
+  {
+    id:"ova32", tmdb:0, title:"Police Academy Arc Wild Police Story CASE. Furuya Rei", year:2000, type:"ova",
+    colors:["#1A2A2A","#16A085"], episodeNumber:32,
+    still: "https://image.tmdb.org/t/p/w500/eXPBajtrI00td7hy5ZO83ea4Juv.jpg",
+    desc:"Focuses on Furuya Rei's police academy days in the Wild Police Story arc."
+  },
+  {
+    id:"ova33", tmdb:0, title:"Kid vs. Komei: The Targeted Lips", year:2000, type:"ova",
+    colors:["#3A1A2A","#9B59B6"], episodeNumber:33,
+    still: "https://image.tmdb.org/t/p/w500/9PYBb4JU60g0ewJcLZP1ipV9QdU.jpg",
+    desc:"Kaitou Kid faces off against Komei in a case involving targeted lips."
+  }
+];
+
+// ─── MAGIC KAITO 1412 ───────────────────────────────────
+const MAGIC_KAITO = {
+  id:"magickaito1412", tmdb:68573, title:"Magic Kaito 1412", year:2014, type:"series",
+  seasons:1, episodes:24,
+  colors:["#1A0030","#5C00C7"],
+  desc:"When Kaito Kuroba's father dies under mysterious circumstances, he finds out his father's secret identity; a famous international criminal known as International Criminal 1412: the Phantom Thief. He vows to stop the organization from obtaining the Pandora Gem – a jewel that grants immortality.",
+  languages:{dub:["English"],sub:["English"]},
+  netflix:false, amasiantv:true, availableInIndia:true,
+  note:"Available for free on Amasian TV with English dub. Features Kaitou Kid as the main character with occasional Detective Conan crossovers.",
+  amasianUrl:"https://amasian.tv/video/series/magic-kaito-1412-eng-dub",
+  cast:[
+    {character:"Kaito Kuroba / Shinichi Kudo", voice:"Kappei Yamaguchi"},
+    {character:"Nakamori Aoko", voice:"Mao Ichimichi"},
+    {character:"Conan Edogawa", voice:"Minami Takayama"},
+    {character:"Hakuba Saguru", voice:"Mamoru Miyano"},
+    {character:"Jii Kounosuke", voice:"Michio Hazama"},
+    {character:"Koizumi Akako", voice:"Eri Kitamura"},
+    {character:"Konno Erika", voice:"Satsuki Yukino"},
+    {character:"Kuroba Chikage", voice:"Michie Tomizawa"},
+    {character:"Kuroba Touichi", voice:"Shuichi Ikeda"}
+  ]
+};
 
 const HERO_SLIDES = [
   {

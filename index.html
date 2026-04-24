@@ -37,6 +37,7 @@
       <div class="nav-drawer" id="navDrawer">
         <a data-nav="spinoffs" data-drawer>Spinoffs</a>
         <a data-nav="manga" data-drawer>Manga</a>
+        <a data-nav="guides" data-drawer>Watch Guides</a>
         <a data-nav="events" data-drawer>Events</a>
         <a data-nav="archive" data-drawer>Archive</a>
       </div>
@@ -53,8 +54,8 @@
 <!-- MOBILE BOTTOM NAV BAR -->
 <nav class="mobile-bottom-bar" id="mobileBottomBar" aria-label="Mobile navigation">
 <button class="mbb-tab active" data-mbb="home"><span class="mbb-tab-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/><polyline points="9 21 9 12 15 12 15 21"/></svg></span></button>
-  <button class="mbb-tab" data-mbb="browse"><span class="mbb-tab-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg></span></button>
-  <button class="mbb-tab" data-mbb="languages"><span class="mbb-tab-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h10M7 2v3M5 9c0 2.21 2.24 4 5 4M5 9c0 2.21 2.24 4 5 4M12 9c0 2.21-2.24 4-5 4"/><path d="M12 20l4-9 4 9"/><line x1="14.5" y1="15.5" x2="19.5" y2="15.5"/></svg></span></button>
+  <button class="mbb-tab" data-mbb="tvshows"><span class="mbb-tab-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3l-4 4-4-4"/></svg></span></button>
+  <button class="mbb-tab" data-mbb="movies"><span class="mbb-tab-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 4v16M16 4v16M2 9h4M18 9h4M2 15h4M18 15h4"/></svg></span></button>
   <button class="mbb-tab" data-mbb="more"><span class="mbb-tab-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="19" cy="12" r="1.2" fill="currentColor"/></svg></span></button>
 </nav>
 
@@ -63,10 +64,10 @@
   <div class="modal-handle" id="mbbMoreHandle"></div>
   <div class="mbb-more-title">More</div>
   <div class="mbb-more-links">
-    <div class="mbb-more-link" data-nav="tvshows"><span class="mbb-more-link-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3l-4 4-4-4"/></svg></span><span>TV Shows</span></div>
-    <div class="mbb-more-link" data-nav="movies"><span class="mbb-more-link-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 4v16M16 4v16M2 9h4M18 9h4M2 15h4M18 15h4"/></svg></span><span>Movies</span></div>
+    <div class="mbb-more-link" data-nav="languages"><span class="mbb-more-link-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span><span>Languages</span></div>
     <div class="mbb-more-link" data-nav="manga"><span class="mbb-more-link-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span><span>Manga</span></div>
     <div class="mbb-more-link" data-nav="spinoffs"><span class="mbb-more-link-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span><span>Spinoffs</span></div>
+    <div class="mbb-more-link" data-nav="guides"><span class="mbb-more-link-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span><span>Watch Guides</span></div>
     <div class="mbb-more-link" data-nav="events"><span class="mbb-more-link-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span>Events</span></div>
     <div class="mbb-more-link" data-nav="platforms"><span class="mbb-more-link-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span><span>All Platforms</span></div>
     <div class="mbb-more-link" data-nav="archive"><span class="mbb-more-link-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg></span><span>Archive</span></div>
@@ -82,6 +83,7 @@
 
 <script src="episodes.js"></script>
 <script src="data.js?v=58"></script>
+<script src="watch-guide.js"></script>
 <script src="app.js?v=58"></script>
 </body>
 </html>

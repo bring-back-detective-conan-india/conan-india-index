@@ -150,6 +150,7 @@ const PLATFORM_LOGOS = {
   appletv: 'https://upload.wikimedia.org/wikipedia/commons/2/28/Apple_TV_Plus_Logo.svg',
   etvbalb: 'https://assets.etvbalbharat.com/languageimages/ETV_ENGLISH.png',
   etvwin: 'https://old.etvwin.com/images/etv-logo-new.png',
+  amasiantv: 'https://images.plex.tv/photo?size=large-1920&scale=1&url=https%3A%2F%2Fprovider-static.plex.tv%2Fepg%2Fcms%2Fproduction%2F464ba63c-620f-4b2b-8de3-e69c3bc3ee4e%2FAmasian_TV_logo_dark_-_Jason_Hwang.png',
 };
 
 const PROVIDER_META = {
@@ -182,14 +183,21 @@ function getPlatformHeroLogoMarkup(p){
 // ─── TMDB POSTER SYSTEM ──────────────────────────────
 const TMDB_KEY = 'fe92cb30660fb8e7aab54dc2cfb699eb'; // v3 API key — no CORS preflight
 const _isMobileSmall = window.matchMedia('(max-width:480px)').matches;
-const TMDB_IMG   = _isMobileSmall ? 'https://image.tmdb.org/t/p/w185' : 'https://image.tmdb.org/t/p/w342';
+const TMDB_IMG   = _isMobileSmall ? 'https://image.tmdb.org/t/p/w154' : 'https://image.tmdb.org/t/p/w185';
 const TMDB_TV_ID = 30983; // Detective Conan
-const TMDB_STILL = _isMobileSmall ? 'https://image.tmdb.org/t/p/w500' : 'https://image.tmdb.org/t/p/w780';
+const TMDB_STILL = _isMobileSmall ? 'https://image.tmdb.org/t/p/w300' : 'https://image.tmdb.org/t/p/w500';
+const TMDB_MODAL_POSTER = 'https://image.tmdb.org/t/p/w500'; // hi-res for modal
 window.MOVIE_POSTERS = new Map();
 window.SPINOFF_POSTERS = new Map();
 window.PVR_SPECIAL_POSTERS = new Map(); // key: pvr event id => TMDB poster url
 window.EPISODE_META = new Map();   // key: local episode number => tmdb metadata
 window.SEASON_STILLS = new Map();  // key: local season id (S1...) => representative still
+
+function getMoviePosterHiRes(m, fallbackIdx){
+  const cached = window.MOVIE_POSTERS.get(m.id);
+  if(cached) return cached.replace('/w154/','/w500/').replace('/w185/','/w500/');
+  return getImg(fallbackIdx !== undefined ? fallbackIdx : m.n);
+}
 
 function getMoviePoster(m, fallbackIdx){
   const cached = window.MOVIE_POSTERS.get(m.id);
@@ -215,6 +223,11 @@ function getSpinoffPoster(sp, fallbackIdx){
   const cached = window.SPINOFF_POSTERS.get(sp.id);
   if(cached) return cached;
   return getImg(fallbackIdx !== undefined ? fallbackIdx : 0);
+}
+
+function debounce(fn, delay){
+  let t;
+  return function(...args){ clearTimeout(t); t = setTimeout(()=>fn.apply(this,args), delay); };
 }
 
 function normalizeTitle(t=''){
@@ -425,7 +438,55 @@ async function fetchTMDBEpisodeMeta(){
     }
   });
 
-  refreshEpisodeSeasonVisuals();
+  // Also fetch Magic Kaito 1412 episodes
+  await fetchMagicKaitoTMDBMeta();
+  
+  // Mark OVAs as not available in India
+  markOVAsAsUnavailable();
+}
+
+async function fetchMagicKaitoTMDBMeta(){
+  if(typeof MAGIC_KAITO === 'undefined' || !MAGIC_KAITO?.tmdb) return;
+  
+  try{
+    const r = await fetch(`https://api.themoviedb.org/3/tv/${MAGIC_KAITO.tmdb}/season/1?api_key=${TMDB_KEY}&language=en-US`);
+    if(!r.ok) return;
+    const j = await r.json();
+    const tmdbEpisodes = Array.isArray(j.episodes) ? j.episodes : [];
+    if(!tmdbEpisodes.length) return;
+
+    const tmdbByEpisodeNo = new Map();
+    tmdbEpisodes.forEach(te=>{
+      if(typeof te.episode_number==='number') tmdbByEpisodeNo.set(te.episode_number, te);
+    });
+
+    // Map Magic Kaito episodes (1-24) to TMDB data
+    for(let epNum = 1; epNum <= 24; epNum++){
+      const te = tmdbByEpisodeNo.get(epNum);
+      if(!te) continue;
+      
+      // Store in EPISODE_META with a special key format for Magic Kaito
+      window.EPISODE_META.set(`mk${epNum}`, {
+        still: te.still_path ? (TMDB_STILL + te.still_path) : null,
+        overview: te.overview || '',
+        name: te.name || '',
+        tmdbSeason: 1,
+        tmdbEpisode: te.episode_number
+      });
+    }
+  }catch(_e){
+    // Silent fail
+  }
+}
+
+function markOVAsAsUnavailable(){
+  if(typeof OVAS === 'undefined' || !Array.isArray(OVAS) || !OVAS.length) return;
+  
+  // Mark all OVAs as unavailable in India
+  OVAS.forEach(ova => {
+    ova.available = false;
+    ova.unavailableNote = 'OVAs are not available for streaming in India';
+  });
 }
 
 function refreshEpisodeSeasonVisuals(){
@@ -442,7 +503,7 @@ function refreshEpisodeSeasonVisuals(){
     if(!n) return;
     const ep = (typeof EPISODES!=='undefined'?EPISODES:[]).find(x=>x.n===n);
     if(!ep) return;
-    const thumb = el.querySelector('.modal-ep-thumb');
+    const thumb = el.querySelector('.modal-ep-thumb, .episode-horizontal-img');
     if(thumb) thumb.style.backgroundImage = `url('${getEpisodeStill(ep,n+1)}')`;
   });
 }
@@ -579,6 +640,20 @@ const Router = {
       renderLanguagesPage();
     } else if(hash === '/merch'){
       renderMerchPage();
+    } else if(hash === '/guides'){
+      renderWatchGuidesIndex();
+    } else if(hash === '/guide'){
+      renderComprehensiveGuide();
+    } else if(hash === '/guide/important-episodes'){
+      renderImportantEpisodesPage();
+    } else if(hash === '/guide/canon-episodes'){
+      renderCanonEpisodesPage();
+    } else if(hash === '/guide/no-filler'){
+      renderNoFillerPage();
+    } else if(hash === '/ovas'){
+      renderOVAsPage();
+    } else if(hash === '/magic-kaito'){
+      renderMagicKaitoPage();
     } else if(hash === '/advocacy'){
       renderAdvocacyPage();
     } else if(hash === '/archive'){
@@ -599,7 +674,7 @@ document.getElementById('nav-logo').addEventListener('click',()=>{
   else Router.navigate('/');
 });
 
-const NAV_ROUTES = new Set(['movies','tvshows','spinoffs','events','manga','languages','browse','merch','archive','advocacy']);
+const NAV_ROUTES = new Set(['movies','tvshows','spinoffs','events','manga','languages','browse','merch','archive','advocacy','guides','guide','guide/important-episodes','guide/canon-episodes','ovas','magic-kaito']);
 function closeDrawer(){
   document.getElementById('navHamburger').classList.remove('open');
   document.getElementById('navDrawer').classList.remove('open');
@@ -693,6 +768,35 @@ function getMoviePlatforms(m){
   return p;
 }
 
+// ─── EPISODE HELPERS ─────────────────────────────────
+function isFiller(ep){
+  // TV Original = filler episode (anime original, not based on manga)
+  return ep && (ep.src==='TV Original' || ep.src==='TV original' || ep.src==='tv original');
+}
+function isCanon(ep){
+  return ep && !isFiller(ep);
+}
+function getEpisodeSpecialType(ep){
+  if(!ep||!ep.special) return null;
+  if(ep.special==='2hr') return '2hr';
+  if(ep.special==='1hr') return '1hr';
+  return 'special';
+}
+function episodeMatchesFilter(ep, filters){
+  // filters: {canon:'all'|'canon'|'filler', special:'all'|'1hr'|'2hr', etv:'all'|'etv'}
+  if(!ep) return false;
+  // Canon/Filler filter
+  if(filters.canon==='canon' && !isCanon(ep)) return false;
+  if(filters.canon==='filler' && !isFiller(ep)) return false;
+  // Special filter
+  if(filters.special==='1hr' && ep.special!=='1hr') return false;
+  if(filters.special==='2hr' && ep.special!=='2hr') return false;
+  if(filters.special==='special' && !ep.special) return false;
+  // ETV filter
+  if(filters.etv==='etv' && !ep.etv) return false;
+  return true;
+}
+
 function itemMatchesFilter(item, type){
   const {type:ft, platform:fp, language:fl} = filterState;
   if(ft!=='all' && ft!==type) return false;
@@ -762,6 +866,7 @@ function renderHome(){
       <div class="section-max">
         <div class="section-eyebrow">🆕 Latest Addition</div>
         <div class="latest-cinematic-card reveal" onclick="Router.navigate('/platform/primevideo')">
+          <div class="lcc-new-badge">🆕 New Addition</div>
           <div class="lcc-img" style="background-image:url('${IMG.ep96}')"></div>
           <div class="lcc-overlay"></div>
           <div class="lcc-content">
@@ -869,7 +974,7 @@ function renderHome(){
           <h2 class="section-title">Beyond <em>Conan</em></h2>
           <button class="section-view-all" onclick="Router.navigate('/spinoffs')">View All →</button>
         </div>
-        <div class="spinoff-grid stagger" id="spinoffs-grid"></div>
+        <div class="browse-grid" id="spinoffs-grid"></div>
       </div>
     </section>
 
@@ -929,6 +1034,7 @@ function renderHome(){
   renderLanguageSection();
   renderSeasonCards();
   renderMoviesRow();
+  initScrollRowTouch();
   renderBrowseSection();
   renderSpinoffs();
   renderPVRArchive();
@@ -1144,6 +1250,53 @@ function renderLanguageSection(){
 
 }
 
+// ─── SCROLL ROW TOUCH HANDLING ───────────────────────
+// Provides momentum-on-release for .scroll-row on mobile.
+// Native pan-x handles the actual scrolling; this only kicks in for momentum
+// after touchend, and only when the gesture is clearly horizontal.
+function initScrollRowTouch(){
+  document.querySelectorAll('.scroll-row').forEach(row=>{
+    if(row._touchScroll) return;
+    row._touchScroll=true;
+
+    let startX=0,startY=0,lastX=0,lastTime=0,velX=0,rafId=null;
+    let isHoriz=false,decided=false;
+
+    row.addEventListener('touchstart',e=>{
+      cancelAnimationFrame(rafId); velX=0;
+      startX=lastX=e.touches[0].clientX;
+      startY=e.touches[0].clientY;
+      lastTime=Date.now(); isHoriz=false; decided=false;
+    },{passive:true});
+
+    row.addEventListener('touchmove',e=>{
+      const x=e.touches[0].clientX;
+      const y=e.touches[0].clientY;
+      if(!decided){
+        const dx=Math.abs(x-startX), dy=Math.abs(y-startY);
+        if(dx<3&&dy<3) return;
+        isHoriz=dx>dy; decided=true;
+      }
+      if(!isHoriz) return;
+      const now=Date.now(), dt=now-lastTime||1;
+      velX=(lastX-x)/dt*16; // px per frame @60fps
+      lastX=x; lastTime=now;
+    },{passive:true});
+
+    row.addEventListener('touchend',()=>{
+      if(!isHoriz||Math.abs(velX)<1) return;
+      // Apply momentum — no scroll-behavior:smooth so this is frame-accurate
+      function momentum(){
+        velX*=0.93;
+        if(Math.abs(velX)<0.4){ velX=0; return; }
+        row.scrollLeft+=velX;
+        rafId=requestAnimationFrame(momentum);
+      }
+      rafId=requestAnimationFrame(momentum);
+    },{passive:true});
+  });
+}
+
 // ─── DRAG-TO-SCROLL HELPER (with momentum) ────────────────────
 function addDragScroll(el){
   if(!el||el._dragScroll) return;
@@ -1152,11 +1305,11 @@ function addDragScroll(el){
   let lastX=0,lastT=0,velX=0,rafId=0;
   const origSnap=el.style.scrollSnapType;
 
-  function cancelMomentum(){ cancelAnimationFrame(rafId); }
+  function cancelMomentum(){ cancelAnimationFrame(rafId); el.style.scrollBehavior=''; }
 
   function momentum(){
     velX*=0.91;
-    if(Math.abs(velX)<0.5){ velX=0; return; }
+    if(Math.abs(velX)<0.5){ velX=0; el.style.scrollBehavior=''; return; }
     el.scrollLeft+=velX;
     rafId=requestAnimationFrame(momentum);
   }
@@ -1192,7 +1345,7 @@ function addDragScroll(el){
     down=false;
     el.style.cursor='';
     el.style.userSelect='';
-    if(didDrag && Math.abs(velX)>1) rafId=requestAnimationFrame(momentum);
+    if(didDrag && Math.abs(velX)>1){ el.style.scrollBehavior='auto'; rafId=requestAnimationFrame(momentum); }
   });
 
   el.addEventListener('click',e=>{
@@ -1244,6 +1397,7 @@ function renderSeasonCards(){
   const el=document.getElementById('seasons-all');
   if(el) el.innerHTML=SEASONS.map((s,i)=>renderSeasonCard(s,i)).join('');
 }
+
 
 // ─── MOVIES ROW ──────────────────────────────────────
 function renderMoviesRow(){
@@ -1412,14 +1566,14 @@ function renderSpinoffs(){
   const el=document.getElementById('spinoffs-grid');
   if(!el)return;
   el.innerHTML=SPINOFFS.map((sp,i)=>`
-    <div class="content-card stagger" data-spinoff-id="${sp.id}" onclick="openSpinoffModal('${sp.id}')" style="--card-color0:${sp.colors[0]};--card-color1:${sp.colors[1]}">
-      <div class="content-card-bg" style="background-image:url('${getSpinoffPoster(sp, i+7)}');background-color:${sp.colors[0]}"></div>
-      <div class="content-card-bg-overlay"></div>
-      <div class="content-card-num">${i+1}</div>
-      <div class="content-card-tags"><div class="season-card-dots">${movieDots(sp)}</div></div>
-      <div class="content-card-content">
-        <div class="content-card-title">${sp.title}</div>
-        <div class="content-card-meta">Spinoff · ${sp.year}</div>
+    <div class="browse-card stagger" data-spinoff-id="${sp.id}" onclick="openSpinoffModal('${sp.id}')">
+      <div class="browse-card-img" style="background-image:url('${getSpinoffPoster(sp, i+7)}')"></div>
+      <div class="browse-card-grad"></div>
+      <div class="browse-card-num">${i+1}</div>
+      <div class="browse-card-content">
+        <div class="browse-card-type">Spinoff · ${sp.year}</div>
+        <div class="browse-card-title">${sp.title}</div>
+        <div class="browse-card-meta">${sp.episodes} eps · <span class="tag tag-netflix" style="font-size:7px">Netflix</span></div>
       </div>
     </div>`).join('');
 }
@@ -1524,7 +1678,7 @@ function renderPlatformPage(id){
   if(!p){Router.navigate('/');return;}
 
   app.innerHTML='';
-  window.scrollTo(0,0);
+  window.scrollTo({top:0,behavior:"instant"});
 
   const pg=document.createElement('div');
   pg.className='platform-page page-enter';
@@ -1533,6 +1687,7 @@ function renderPlatformPage(id){
   let epCount='-',movieCount='-',langCount=0;
   if(p.seriesSeasons) epCount=p.seriesSeasons.length+' Seasons';
   else if(p.seriesRange) epCount='Eps '+p.seriesRange[0]+'–'+p.seriesRange[1];
+  else if(p.magicKaitoEpisodes) epCount=p.magicKaitoEpisodes.length+' Episodes';
   if(p.movies==='all') movieCount=MOVIES.length+' Movies';
   else if(Array.isArray(p.movies)) movieCount=p.movies.length+' Movies';
   langCount=(p.languages?.sub?.length||0)+(p.languages?.dub?.length||0);
@@ -1543,17 +1698,17 @@ function renderPlatformPage(id){
   // Episodes
   if(p.seriesSeasons){
     episodePanel=`<div class="pp-section-title">Seasons Available</div>
-      <div class="scroll-row" style="padding-bottom:16px">
+      <div class="browse-grid">
         ${p.seriesSeasons.map((sid,i)=>{
           const s=SEASONS.find(x=>x.id===sid);
           if(!s)return'';
-          return`<div class="content-card" data-season-id="${s.id}" onclick="openSeasonModal('${s.id}')">
-            <div class="content-card-bg" style="background-image:url('${getSeasonStillByLocalSeasonId(s.id,i+3)}')"></div>
-            <div class="content-card-bg-overlay"></div>
-            <div class="content-card-num">${s.id.replace('S','')}</div>
-            <div class="content-card-content">
-              <div class="content-card-title">${s.label}</div>
-              <div class="content-card-meta">Eps ${s.epRange[0]}–${s.epRange[1]}</div>
+          return`<div class="browse-card" data-season-id="${s.id}" onclick="openSeasonModal('${s.id}')">
+            <div class="browse-card-img" style="background-image:url('${getSeasonStillByLocalSeasonId(s.id,i+3)}')"></div>
+            <div class="browse-card-grad"></div>
+            <div class="browse-card-num">${s.id.replace('S','')}</div>
+            <div class="browse-card-content">
+              <div class="browse-card-type">Season · ${s.year}</div>
+              <div class="browse-card-title">${s.label}</div>
             </div>
           </div>`;
         }).join('')}
@@ -1567,13 +1722,14 @@ function renderPlatformPage(id){
         const sv=SEASONS.find(x=>x.id===sid);if(!sv)return'';
         const etvCount=(typeof EPISODES!=='undefined'?EPISODES:[]).filter(e=>e.season===sid&&e.etv).length;
         if(!etvCount)return'';
-        return`<div class="content-card" data-season-id="${sv.id}" onclick="openSeasonModal('${sv.id}',undefined,undefined,true,true)">
-          <div class="content-card-bg" style="background-image:url('${getSeasonStillByLocalSeasonId(sv.id,i+3)}')"></div>
-          <div class="content-card-bg-overlay"></div>
-          <div class="content-card-num">${sv.id.replace('S','')}</div>
-          <div class="content-card-content">
-            <div class="content-card-title">${sv.label}</div>
-            <div class="content-card-meta" style="color:#FF6B00">${etvCount} ETV eps · Eps ${sv.epRange[0]}–${sv.epRange[1]}</div>
+        return`<div class="browse-card" data-season-id="${sv.id}" onclick="openSeasonModal('${sv.id}',undefined,undefined,true,true)">
+          <div class="browse-card-img" style="background-image:url('${getSeasonStillByLocalSeasonId(sv.id,i+3)}')"></div>
+          <div class="browse-card-grad"></div>
+          <div class="browse-card-num">${sv.id.replace('S','')}</div>
+          <div class="browse-card-content">
+            <div class="browse-card-type">Season · ${sv.year}</div>
+            <div class="browse-card-title">${sv.label}</div>
+            <div class="browse-card-type" style="color:#FF6B00;margin-top:4px">${etvCount} ETV eps</div>
           </div>
         </div>`;
       }).join('');
@@ -1634,7 +1790,7 @@ function renderPlatformPage(id){
           <div class="pp-note" style="border-left:3px solid #FF6B00;padding-left:14px">Dubbing is selective — earlier episodes (roughly 1 to 200) have the broadest language coverage across all 12 languages. Later episodes may only be available in Hindi or a few languages.</div>`;
       etvEpisodesPanel=`<div class="pp-section-title">Seasons on ETV Bal Bharat</div>
           <p style="font-size:13px;color:var(--muted);margin:0 0 16px">Click any season to see the full episode list with ETV air dates.</p>
-          <div class="scroll-row" style="padding-bottom:16px">${etvSeasonCards}</div>`;
+          <div class="browse-grid">${etvSeasonCards}</div>`;
     } else {
       // Build season cards from EPISODES for the seriesRange
       const rangeSeasonCards=(()=>{
@@ -1649,24 +1805,87 @@ function renderPlatformPage(id){
           const metaLabel=full
             ?`Eps ${sv.epRange[0]}–${sv.epRange[1]}`
             :`Eps ${avail[0].n}–${avail[avail.length-1].n} · partial`;
-          return`<div class="content-card" data-season-id="${sv.id}" onclick="openSeasonModal('${sv.id}',${r0},${r1},false)">
-            <div class="content-card-bg" style="background-image:url('${getSeasonStillByLocalSeasonId(sv.id,i+3)}')"></div>
-            <div class="content-card-bg-overlay"></div>
-            <div class="content-card-num">${sv.id.replace('S','')}</div>
-            <div class="content-card-content">
-              <div class="content-card-title">${sv.label}</div>
-              <div class="content-card-meta">${metaLabel} · ${avail.length} eps</div>
+          return`<div class="browse-card" data-season-id="${sv.id}" onclick="openSeasonModal('${sv.id}',${r0},${r1},false)">
+            <div class="browse-card-img" style="background-image:url('${getSeasonStillByLocalSeasonId(sv.id,i+3)}')"></div>
+            <div class="browse-card-grad"></div>
+            <div class="browse-card-num">${sv.id.replace('S','')}</div>
+            <div class="browse-card-content">
+              <div class="browse-card-type">Season · ${sv.year}</div>
+              <div class="browse-card-title">${sv.label}</div>
+              <div class="browse-card-type" style="margin-top:4px">${metaLabel} · ${avail.length} eps</div>
             </div>
           </div>`;
         }).join('');
       })();
       episodePanel=`<div class="pp-section-title">Seasons Available</div>
           <div class="pp-note" style="margin-bottom:16px">Episodes ${p.seriesRange[0]}–${p.seriesRange[1]}${p.languages?.dub?.length?` · ${p.languages.dub.join(' + ')} Dub + Eng Sub`:' · Eng Sub only'}. Click any season for the full episode list.</div>
-          <div class="scroll-row" style="padding-bottom:16px">${rangeSeasonCards}</div>`;
+          <div class="browse-grid">${rangeSeasonCards}</div>`;
     }
 
+  } else if(p.magicKaitoEpisodes && p.magicKaitoEpisodes.length > 0) {
+    // Magic Kaito 1412 episodes with TMDB images
+    episodePanel=`<div class="pp-section-title">Magic Kaito 1412 Episodes</div>
+      <div class="pp-note" style="margin-bottom:16px">All 24 episodes available with English dub. Click any episode for details and watch options.</div>
+      <div class="browse-grid" id="magic-kaito-episodes-grid">
+        ${p.magicKaitoEpisodes.map((epNum,i)=>{
+          const fallbackImages = [
+            'https://i.postimg.cc/4Z8C1vqg/Detective-conan-netflix.webp',
+            'https://i.postimg.cc/MxskY0N8/sagsfdgsdfhsrzh-ASZgsdbb.jpg',
+            'https://i.postimg.cc/b86XR0Wv/BBDCI-Logo-use-for-dark-mode.png',
+            'https://i.postimg.cc/X32MgKhT/etv-bal-bharat-conan-at-night-11pm.jpg'
+          ];
+          const fallbackUrl = fallbackImages[epNum % 4];
+          return`<div class="browse-card" onclick="event.preventDefault(); event.stopPropagation(); openMagicKaitoEpisode('episode', ${epNum});" data-episode="${epNum}">
+            <div class="browse-card-img" style="background-image:url('${fallbackUrl}')" data-fallback="${fallbackUrl}"></div>
+            <div class="browse-card-grad"></div>
+            <div class="browse-card-num">${epNum}</div>
+            <div class="browse-card-content">
+              <div class="browse-card-type">Episode · 2014</div>
+              <div class="browse-card-title">Episode ${epNum}</div>
+              <div class="browse-card-type" style="margin-top:4px;color:#FF6B35">English Dub</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+    
+    // Load TMDB images after page renders
+    setTimeout(() => {
+      loadMagicKaitoTMDBImages();
+      // setupMagicKaitoEpisodeListeners(); // DISABLED - causing routing conflicts
+    }, 1000);
   } else {
     episodePanel=`<div class="pp-note">No series episodes available on this platform.</div>`;
+  }
+
+  // OVAs
+  if(p.ovas && p.ovas.length > 0) {
+    const ovaImages = [IMG.ran, IMG.heiji, IMG.kid, IMG.ai];
+    const ovaPanel = `<div class="pp-section-title">OVAs</div>
+      <div class="browse-grid">
+        ${p.ovas.map((ovaId, index) => {
+          const ova = OVAS.find(o => o.id === ovaId);
+          if (!ova) return '';
+          // Use hardcoded still if available, otherwise fallback to character images
+          const ovaImage = ova.still || ovaImages[index % ovaImages.length];
+          return `<div class="browse-card" onclick="event.preventDefault(); event.stopPropagation(); openMagicKaitoEpisode('ova', '${ova.id}')" data-ep-num="${ova.id}">
+            <div class="browse-card-img" style="background-image:url('${ovaImage}'); background-color: ${ova.colors[0]}"></div>
+            <div class="browse-card-grad"></div>
+            <div class="browse-card-num">OVA</div>
+            <div class="browse-card-content">
+              <div class="browse-card-type">OVA • ${ova.year}</div>
+              <div class="browse-card-title">${ova.title}</div>
+              <div class="browse-card-type" style="margin-top:4px;color:#FF6B35">Special</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+    
+    // Add OVA panel after episode panel
+    if (episodePanel) {
+      episodePanel += ovaPanel;
+    } else {
+      episodePanel = ovaPanel;
+    }
   }
 
   // Movies
@@ -1717,16 +1936,14 @@ function renderPlatformPage(id){
     spinoffPanel=p.spinoffs.map((sid,i)=>{
       const sp=SPINOFFS.find(x=>x.id===sid);
       if(!sp)return'';
-      return`<div class="spinoff-card" data-spinoff-id="${sp.id}" style="height:200px;cursor:pointer" onclick="openSpinoffModal('${sp.id}')">
-        <div class="spinoff-bg" style="background-image:url('${getSpinoffPoster(sp, i+10)}')"></div>
-        <div class="spinoff-overlay"></div>
-        <div class="spinoff-content">
-          <div class="spinoff-label">${sp.year} · ${sp.episodes} Episodes</div>
-          <div class="spinoff-title">${sp.title}</div>
-          <div class="spinoff-dub">
-            ${sp.languages.dub.map(l=>`<span class="tag tag-etv">${l} Dub</span>`).join('')}
-            <span class="tag tag-netflix">Eng Sub</span>
-          </div>
+      return`<div class="browse-card" data-spinoff-id="${sp.id}" onclick="openSpinoffModal('${sp.id}')">
+        <div class="browse-card-img" style="background-image:url('${getSpinoffPoster(sp, i+10)}')"></div>
+        <div class="browse-card-grad"></div>
+        <div class="browse-card-num">${i+1}</div>
+        <div class="browse-card-content">
+          <div class="browse-card-type">Spinoff · ${sp.year} · ${sp.episodes} eps</div>
+          <div class="browse-card-title">${sp.title}</div>
+          <div class="browse-card-meta">${sp.languages.dub.map(l=>`<span class="tag tag-etv">${l} Dub</span>`).join('')} <span class="tag tag-netflix">Eng Sub</span></div>
         </div>
       </div>`;
     }).join('');
@@ -1831,7 +2048,7 @@ function renderPlatformPage(id){
         ${p.id==='etvbalb'?'<div class="pp-note" style="margin-bottom:16px;border-left:3px solid #FF6B00;padding-left:14px">These films aired on ETV Bal Bharat in regional language dubs. They are TV broadcast recordings — not available for streaming on demand.</div>':''}
         ${moviesPanel}
       </div>
-      ${spinoffPanel?`<div class="pp-panel" id="panel-spinoffs"><div class="spinoff-grid" style="max-width:900px">${spinoffPanel}</div></div>`:''}
+      ${spinoffPanel?`<div class="pp-panel" id="panel-spinoffs"><div class="browse-grid" style="max-width:900px">${spinoffPanel}</div></div>`:''}
       <div class="pp-panel" id="panel-languages">${langsPanel}</div>
       ${castPanel?`<div class="pp-panel" id="panel-cast">${castPanel}</div>`:''}
     </div>
@@ -1881,12 +2098,14 @@ function renderPlatformPage(id){
     refreshHover(); refreshMoviePosters();
     const provScroll=pg.querySelector('.pp-provider-grid-new');
     if(provScroll) addDragScroll(provScroll);
+    // Add drag scroll to all season carousels
+    pg.querySelectorAll('.scroll-row').forEach(addDragScroll);
   },100);
 }
 // ─── MOVIES PAGE ─────────────────────────────────────
 function renderMoviesPage(){
   app.innerHTML='';
-  window.scrollTo(0,0);
+  window.scrollTo({top:0,behavior:"instant"});
   const pg=document.createElement('div');
   pg.className='page-enter';
   pg.innerHTML=`
@@ -1994,68 +2213,364 @@ let activeFilter='all';
   setTimeout(()=>refreshHover(),100);
 }
 
-// ─── TV SHOWS PAGE ───────────────────────────────────
+// ─── TV SHOWS PAGE (All Episodes with Filters) ───────
 function renderTVShowsPage(){
   app.innerHTML='';
-  window.scrollTo(0,0);
+  window.scrollTo({top:0,behavior:"instant"});
   const pg=document.createElement('div');
   pg.className='page-enter';
+
+  // Filter state
+  let filters={
+    canon:'all',       // 'all'|'canon'|'filler'
+    special:'all',     // 'all'|'special'|'1hr'|'2hr'
+    platform:'all',    // 'all'|'netflix'|'primevideo'|'appletv'|'etvbalb'|'etvwin'
+    language:'all',    // 'all'|'engsub'|'hindi'|'tamil'|'telugu'|'malayalam'|'kannada'|'bengali'|'marathi'|'gujarati'|'odia'|'punjabi'|'assamese'
+    indiaOnly:false,   // true|false - show only available in India
+    search:'',         // text search
+  };
+
+  // Calculate stats
+  const allEps=typeof EPISODES!=='undefined'?EPISODES:[];
+  const fillerCount=allEps.filter(isFiller).length;
+  const canonCount=allEps.length-fillerCount;
+  const specialCount=allEps.filter(e=>e.special).length;
+  const hr1Count=allEps.filter(e=>e.special==='1hr').length;
+  const hr2Count=allEps.filter(e=>e.special==='2hr').length;
+  const etvCount=allEps.filter(e=>e.etv).length;
+  // Count available episodes in India
+  const availableEps=allEps.filter(e=>{
+    const rows=getEpisodePlatformRows(e);
+    return rows.length>0;
+  }).length;
+
+  // Platform options
+  const platformOpts=[
+    {id:'all',label:'All Platforms'},
+    {id:'netflix',label:'Netflix'},
+    {id:'primevideo',label:'Prime Video'},
+    {id:'appletv',label:'Apple TV'},
+    {id:'etvbalb',label:'ETV Bal Bharat'},
+    {id:'etvwin',label:'ETV Win'},
+  ];
+
+  // Language options
+  const langOpts=[
+    {id:'all',label:'All Languages'},
+    {id:'engsub',label:'English Sub'},
+    {id:'hindi',label:'हिन्दी Hindi'},
+    {id:'tamil',label:'தமிழ் Tamil'},
+    {id:'telugu',label:'తెలుగు Telugu'},
+    {id:'malayalam',label:'മലയാളം Malayalam'},
+    {id:'kannada',label:'ಕನ್ನಡ Kannada'},
+    {id:'bengali',label:'বাংলা Bengali'},
+    {id:'marathi',label:'मराठी Marathi'},
+    {id:'gujarati',label:'ગુજરાતી Gujarati'},
+    {id:'odia',label:'ଓଡ଼ିଆ Odia'},
+    {id:'punjabi',label:'ਪੰਜਾਬੀ Punjabi'},
+    {id:'assamese',label:'অসমীয়া Assamese'},
+  ];
+
   pg.innerHTML=`
     <section class="movies-page-hero">
       <div class="movies-page-hero-bg" style="background-image:url('${IMG.heroTVShows}')"></div>
       <div class="movies-page-hero-overlay"></div>
       <div class="movies-page-hero-content">
         <button class="pp-hero-back" onclick="Router.navigate('/')">← Home</button>
-        <div class="section-eyebrow">TV Series</div>
-        <h1 class="movies-page-title">All <em>${SEASONS.length} Seasons</em></h1>
-        <p class="movies-page-sub">Every season of Detective Conan. Click any card for India availability details.</p>
+        <div class="section-eyebrow">TV Series · All Episodes</div>
+        <h1 class="movies-page-title">All <em>${allEps.length} Episodes</em></h1>
+        <p class="movies-page-sub">${canonCount} Canon · ${fillerCount} Filler · ${specialCount} Specials · ${etvCount} on ETV · ${availableEps} Available in India</p>
       </div>
     </section>
     <section class="movies-page-body">
       <div class="section-max">
-        <div class="movies-page-filter-row">
-          <button class="mpf-btn active" data-sf="all">All Seasons</button>
-          <button class="mpf-btn" data-sf="available">Available in India</button>
-          <button class="mpf-btn" data-sf="notavailable">Not in India</button>
-          <button class="mpf-btn" data-sf="airing">Currently Airing</button>
+        <!-- FILTERS -->
+        <div class="tv-filter-bar">
+          <div class="tv-filter-row">
+            <select class="tv-filter-select" id="tvf-canon">
+              <option value="all">Canon & Filler</option>
+              <option value="canon">Canon Only (${canonCount})</option>
+              <option value="filler">Filler Only (${fillerCount})</option>
+            </select>
+            <select class="tv-filter-select" id="tvf-special">
+              <option value="all">All Types</option>
+              <option value="special">Specials (${specialCount})</option>
+              <option value="1hr">1-Hour (${hr1Count})</option>
+              <option value="2hr">2-Hour (${hr2Count})</option>
+            </select>
+            <select class="tv-filter-select" id="tvf-platform">
+              ${platformOpts.map(p=>`<option value="${p.id}">${p.label}</option>`).join('')}
+            </select>
+            <select class="tv-filter-select" id="tvf-language">
+              ${langOpts.map(l=>`<option value="${l.id}">${l.label}</option>`).join('')}
+            </select>
+            <label class="tv-filter-toggle">
+              <input type="checkbox" id="tvf-india">
+              <span class="tv-toggle-slider"></span>
+              <span class="tv-toggle-label">India Only</span>
+            </label>
+          </div>
         </div>
-        <div class="tv-seasons-grid" id="tv-seasons-grid"></div>
+
+        <!-- FLOATING SEARCH -->
+        <div class="tv-search-float" id="tv-search-float">
+          <button class="tv-search-toggle" id="tv-search-toggle" onclick="toggleTVSearch()">
+            <span class="tv-search-toggle-icon">🔍</span>
+          </button>
+          <div class="tv-search-panel" id="tv-search-panel">
+            <div class="tv-search-inner">
+              <span class="tv-search-icon">🔍</span>
+              <input type="search" class="tv-search-input" id="tvf-search" placeholder="Search episodes...">
+              <button class="tv-search-close" onclick="toggleTVSearch()">✕</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- EPISODES BY SEASON -->
+        <div id="tv-episodes-container"></div>
       </div>
     </section>
     ${renderFooterHTML()}
   `;
   app.appendChild(pg);
 
-  function renderGrid(filter){
-    const grid=document.getElementById('tv-seasons-grid');
-    if(!grid)return;
-    const filtered=SEASONS.filter(s=>{
-      const n=parseInt(s.id.slice(1));
-      const airing=s.year>=2024;
-      if(filter==='available') return s.available;
-      if(filter==='notavailable') return !s.available&&!airing;
-      if(filter==='airing') return airing;
-      return true;
-    });
-    grid.innerHTML=filtered.map((s,i)=>renderSeasonCard(s,i)).join('');
-    setTimeout(()=>{observeAll();refreshHover();},80);
+  function specialStar(sp){
+    if(!sp)return'';
+    if(sp==='2hr')return' <span class="ep-star ep-star--2" title="2-Hour Special">★★</span>';
+    return' <span class="ep-star" title="'+(sp==='1hr'?'1-Hour Special':'Special')+'">★</span>';
   }
 
-  renderGrid('all');
-  pg.querySelectorAll('.mpf-btn').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      pg.querySelectorAll('.mpf-btn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      renderGrid(btn.dataset.sf);
+  // Check if episode is available on a specific platform
+  function episodeHasPlatform(ep,platId){
+    const rows=getEpisodePlatformRows(ep);
+    if(platId==='etvbalb') return !!ep.etv; // etv is a date string or null
+    if(platId==='etvwin'){
+      return rows.some(r=>r.name.includes('ETV Win'));
+    }
+    return rows.some(r=>{
+      const pid=PLATFORM_ROUTE_BY_NAME[r.name];
+      return pid===platId;
     });
-  });
-  setTimeout(()=>refreshHover(),100);
+  }
+
+  // Check if episode has specific language
+  function episodeHasLanguage(ep,langId){
+    const rows=getEpisodePlatformRows(ep);
+    if(langId==='engsub'){
+      return rows.some(r=>{
+        if(r.name==='ETV Bal Bharat') return false; // ETV has dubs not subs
+        return (r.detail||'').includes('Sub:');
+      });
+    }
+    // Check for specific dub language
+    const langMap={'hindi':'Hindi','tamil':'Tamil','telugu':'Telugu','malayalam':'Malayalam','kannada':'Kannada','bengali':'Bengali','marathi':'Marathi','gujarati':'Gujarati','odia':'Odia','punjabi':'Punjabi','assamese':'Assamese'};
+    const targetLang=langMap[langId];
+    if(!targetLang)return false;
+    return rows.some(r=>{
+      if(r.name==='ETV Bal Bharat' && ep.etv){
+        // ETV has this language if it's in their dub list
+        const etvPlat=PLATFORMS.find(p=>p.id==='etvbalb');
+        return etvPlat?.languages?.dub?.includes(targetLang);
+      }
+      return (r.detail||'').toLowerCase().includes(targetLang.toLowerCase());
+    });
+  }
+
+  // Get platform dots for an episode
+  function getEpisodePlatformDots(ep){
+    const rows=getEpisodePlatformRows(ep);
+    if(!rows.length)return'';
+    return`<div class="tv-ep-platforms">${rows.map(r=>`<span class="tv-ep-plat-dot" style="background:${r.color}" title="${r.name}"></span>`).join('')}</div>`;
+  }
+
+  function renderEpisodes(){
+    const container=document.getElementById('tv-episodes-container');
+    if(!container)return;
+
+    // Filter episodes
+    let eps=allEps.filter(e=>{
+      // Canon/Filler
+      if(filters.canon==='canon' && !isCanon(e)) return false;
+      if(filters.canon==='filler' && !isFiller(e)) return false;
+      // Specials
+      if(filters.special==='1hr' && e.special!=='1hr') return false;
+      if(filters.special==='2hr' && e.special!=='2hr') return false;
+      if(filters.special==='special' && !e.special) return false;
+      // Platform + Language (check if language is available ON that specific platform)
+      if(filters.platform!=='all' && filters.language!=='all'){
+        if(!episodeHasLanguageOnPlatform(e,filters.language,filters.platform)) return false;
+      }else if(filters.platform!=='all' && !episodeHasPlatform(e,filters.platform)) return false;
+      else if(filters.language!=='all' && !episodeHasLanguage(e,filters.language)) return false;
+      // Available in India toggle
+      if(filters.indiaOnly){
+        const rows=getEpisodePlatformRows(e);
+        if(rows.length===0) return false;
+      }
+      // Search
+      if(filters.search){
+        const q=filters.search.toLowerCase();
+        return e.title.toLowerCase().includes(q) || String(e.n).includes(q);
+      }
+      return true;
+    });
+
+
+    // Group by season
+    const bySeason=new Map();
+    eps.forEach(e=>{
+      if(!bySeason.has(e.season))bySeason.set(e.season,[]);
+      bySeason.get(e.season).push(e);
+    });
+
+    // Sort seasons numerically (S1, S2, S3... not S1, S10, S11)
+    const sortedSeasons=[...bySeason.keys()].sort((a,b)=>{
+      const numA=parseInt(a.replace('S',''));
+      const numB=parseInt(b.replace('S',''));
+      return numA-numB;
+    });
+
+    if(sortedSeasons.length===0){
+      container.innerHTML=`<div class="tv-no-results">No episodes match your filters</div>`;
+      return;
+    }
+
+    container.innerHTML=sortedSeasons.map(sid=>{
+      const seasonEps=bySeason.get(sid);
+      const s=SEASONS.find(x=>x.id===sid);
+      if(!s)return'';
+
+      return`
+        <div class="tv-season-section">
+          <div class="tv-season-header-static">
+            <div class="tv-season-info">
+              <span class="tv-season-badge">${sid}</span>
+              <span class="tv-season-title">${s.label}</span>
+              <span class="tv-season-year">${s.year}</span>
+              <span class="tv-season-count">${seasonEps.length} episodes</span>
+            </div>
+          </div>
+          <div class="tv-ep-grid-modal">
+            ${seasonEps.map(e=>{
+              const star=specialStar(e.special);
+              const fillerBadge=isFiller(e)?`<span class="modal-ep-filler">TV Original</span>`:'';
+              const etvBadge=e.etv?`<span class="modal-ep-etv">📺 ETV</span>`:'';
+              const still=getEpisodeStill(e,e.n+1);
+              const platDots=getEpisodePlatformDots(e);
+              // No longer adding modal-ep--filler class (removed dimming)
+              return`
+                <div class="modal-ep${e.etv?' modal-ep--etv':''}${e.special?' modal-ep--special':''}" onclick="openEpisodeModal(${e.n})">
+                  <div class="modal-ep-thumb" style="background-image:url('${still}')"></div>
+                  <div class="modal-ep-body">
+                    <div class="modal-ep-num">EP ${e.n}${star}</div>
+                    <div class="modal-ep-title">${e.title}${etvBadge}${fillerBadge}</div>
+                    ${platDots}
+                  </div>
+                </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+    }).join('');
+
+    setTimeout(()=>{observeAll();},80);
+  }
+
+  // Wire up filter handlers
+  const canonSel=document.getElementById('tvf-canon');
+  const specialSel=document.getElementById('tvf-special');
+  const platformSel=document.getElementById('tvf-platform');
+  const languageSel=document.getElementById('tvf-language');
+  const indiaCheck=document.getElementById('tvf-india');
+  const searchInp=document.getElementById('tvf-search');
+
+  // Read initial values from DOM to ensure sync
+  filters.canon=canonSel?.value||'all';
+  filters.special=specialSel?.value||'all';
+  filters.platform=platformSel?.value||'all';
+  filters.language=languageSel?.value||'all';
+  filters.indiaOnly=indiaCheck?.checked||false;
+  filters.search=searchInp?.value||'';
+
+  if(canonSel)canonSel.addEventListener('change',()=>{filters.canon=canonSel.value;renderEpisodes();});
+  if(specialSel)specialSel.addEventListener('change',()=>{filters.special=specialSel.value;renderEpisodes();});
+  if(platformSel)platformSel.addEventListener('change',()=>{filters.platform=platformSel.value;renderEpisodes();});
+  if(languageSel)languageSel.addEventListener('change',()=>{filters.language=languageSel.value;renderEpisodes();});
+  if(indiaCheck)indiaCheck.addEventListener('change',()=>{filters.indiaOnly=indiaCheck.checked;renderEpisodes();});
+  if(searchInp)searchInp.addEventListener('input',debounce(()=>{filters.search=searchInp.value.trim();renderEpisodes();},150));
+
+  // Check if episode has a specific language ON a specific platform
+  function episodeHasLanguageOnPlatform(ep,langId,platId){
+    // If no platform specified, just check if episode has the language anywhere
+    if(platId==='all') return episodeHasLanguage(ep,langId);
+    // If no language specified, just check if episode has the platform
+    if(langId==='all') return episodeHasPlatform(ep,platId);
+
+    const rows=getEpisodePlatformRows(ep);
+
+    // ETV Bal Bharat is special - all its content is multi-language dubs
+    if(platId==='etvbalb'){
+      // Check if episode is on ETV Bal Bharat AND has the requested language
+      if(!ep.etv) return false;
+      // ETV Bal Bharat has all 12 regional Indian dubs
+      const etvLangs=['hindi','tamil','telugu','malayalam','kannada','bengali','marathi','gujarati','odia','punjabi','assamese'];
+      return etvLangs.includes(langId);
+    }
+
+    // For other platforms, check each platform row
+    return rows.some(r=>{
+      const pid=PLATFORM_ROUTE_BY_NAME[r.name];
+      if(pid!==platId) return false;
+      // Check if this platform row has the requested language
+      const type=(r.type||'').toLowerCase();
+      const note=(r.note||'').toLowerCase();
+      const detail=(r.detail||'').toLowerCase();
+      // Handle 'engsub' - English subtitles
+      if(langId==='engsub' && (detail.includes('sub:') || type.includes('sub') || detail.includes('english'))) return true;
+      if(langId==='sub' && type.includes('sub')) return true;
+      if(langId==='dub' && (type.includes('dub') || note.includes('dub'))) return true;
+      // Language-specific checks
+      if(langId==='hindi' && (type.includes('hindi') || note.includes('hindi') || detail.includes('hindi'))) return true;
+      if(langId==='tamil' && (type.includes('tamil') || note.includes('tamil') || detail.includes('tamil'))) return true;
+      if(langId==='telugu' && (type.includes('telugu') || note.includes('telugu') || detail.includes('telugu'))) return true;
+      if(langId==='malayalam' && (type.includes('malayalam') || note.includes('malayalam') || detail.includes('malayalam'))) return true;
+      if(langId==='kannada' && (type.includes('kannada') || note.includes('kannada') || detail.includes('kannada'))) return true;
+      if(langId==='bengali' && (type.includes('bengali') || note.includes('bengali') || detail.includes('bengali'))) return true;
+      if(langId==='marathi' && (type.includes('marathi') || note.includes('marathi') || detail.includes('marathi'))) return true;
+      if(langId==='gujarati' && (type.includes('gujarati') || note.includes('gujarati') || detail.includes('gujarati'))) return true;
+      if(langId==='english' && (type.includes('english') || note.includes('english') || detail.includes('english'))) return true;
+      return false;
+    });
+  }
+
+  // Ensure initial render after DOM is ready
+  setTimeout(()=>{
+    filters.canon=canonSel?.value||'all';
+    filters.special=specialSel?.value||'all';
+    filters.platform=platformSel?.value||'all';
+    filters.language=languageSel?.value||'all';
+    filters.indiaOnly=indiaCheck?.checked||false;
+    filters.search=searchInp?.value||'';
+    renderEpisodes();
+    refreshHover();
+  },50);
 }
+
+// Toggle TV search floating panel
+window.toggleTVSearch=function(){
+  const panel=document.getElementById('tv-search-panel');
+  const toggle=document.getElementById('tv-search-toggle');
+  if(!panel)return;
+  const isOpen=panel.classList.toggle('open');
+  if(toggle)toggle.classList.toggle('active',isOpen);
+  if(isOpen){
+    const input=panel.querySelector('.tv-search-input');
+    if(input)setTimeout(()=>input.focus(),100);
+  }
+};
 
 // ─── SPINOFFS PAGE ───────────────────────────────────
 function renderSpinoffsPage(){
   app.innerHTML='';
-  window.scrollTo(0,0);
+  window.scrollTo({top:0,behavior:"instant"});
   const pg=document.createElement('div');
   pg.className='page-enter';
   pg.innerHTML=`
@@ -2071,16 +2586,16 @@ function renderSpinoffsPage(){
     </section>
     <section class="movies-page-body">
       <div class="section-max">
-        <div class="spinoffs-page-grid">
+        <div class="browse-grid">
           ${SPINOFFS.map((sp,i)=>`
-            <div class="content-card reveal" style="flex:0 0 220px;height:300px;--card-color0:${sp.colors[0]};--card-color1:${sp.colors[1]}" data-spinoff-id="${sp.id}" onclick="openSpinoffModal('${sp.id}')">
-              <div class="content-card-bg" style="background-image:url('${getSpinoffPoster(sp, i+8)}');background-color:${sp.colors[0]}"></div>
-              <div class="content-card-bg-overlay"></div>
-              <div class="content-card-num">${i+1}</div>
-              <div class="content-card-tags"><div class="season-card-dots">${movieDots(sp)}</div></div>
-              <div class="content-card-content">
-                <div class="content-card-title">${sp.title}</div>
-                <div class="content-card-meta">Spinoff · ${sp.year} · ${sp.episodes} eps</div>
+            <div class="browse-card reveal" data-spinoff-id="${sp.id}" onclick="openSpinoffModal('${sp.id}')">
+              <div class="browse-card-img" style="background-image:url('${getSpinoffPoster(sp, i+8)}')"></div>
+              <div class="browse-card-grad"></div>
+              <div class="browse-card-num">${i+1}</div>
+              <div class="browse-card-content">
+                <div class="browse-card-type">Spinoff · ${sp.year}</div>
+                <div class="browse-card-title">${sp.title}</div>
+                <div class="browse-card-meta">${sp.episodes} eps · <span class="tag tag-netflix" style="font-size:7px">Netflix</span></div>
               </div>
             </div>`).join('')}
         </div>
@@ -2095,7 +2610,7 @@ function renderSpinoffsPage(){
 // ─── EVENTS PAGE ─────────────────────────────────────
 function renderEventsPage(){
   app.innerHTML='';
-  window.scrollTo(0,0);
+  window.scrollTo({top:0,behavior:"instant"});
   const pg=document.createElement('div');
   pg.className='page-enter';
   pg.innerHTML=`
@@ -2213,6 +2728,14 @@ function closeModal(){
   modalPanel.classList.remove('modal-movie-panel');
   document.body.classList.remove('modal-open');
   document.body.style.overflow='';
+  // Reset any swiped card transforms
+  modalPanel.querySelectorAll('.modal-ep,.lm-season-card,.lm-movie-card').forEach(card=>{
+    card.style.transform='';
+    card.style.opacity='';
+  });
+  // Reset panel transform
+  modalPanel.style.transform='';
+  modal.style.background='';
 }
 modal.addEventListener('click',e=>{if(e.target===modal)closeModal();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
@@ -2228,31 +2751,50 @@ function renderWherePlatformLabel(name, color){
 // ─── SWIPE-TO-DISMISS MODAL ──────────────────────────
 function initSwipeDismiss(){
   let startY=0,currentY=0,dragging=false,dragSource=null;
+  let startScrollTop=0;
+  let activeCard=null;
   const panel=modalPanel;
   const SWIPE_THRESHOLD=120;
-  const CARD_SWIPE_THRESHOLD=150;
+  const CARD_SWIPE_THRESHOLD=120;
+
+  let startX=0,isHorizontalScroll=false;
 
   function onStart(e){
-    if(modal.classList.contains('modal-fullpage')) return;
     const t=e.touches?e.touches[0]:e;
     const rect=panel.getBoundingClientRect();
     const touchY=t.clientY-rect.top;
 
+    // Store initial scroll position and touch X for direction detection
+    startScrollTop=panel.scrollTop;
+    startX=t.clientX;
+    isHorizontalScroll=false;
+
+    // If the touch is inside a horizontal scroll container, let the browser handle it
+    const horizScrollSelectors=['.scroll-row','.lm-season-scroll','.lm-movie-scroll'];
+    const inHorizScroll=horizScrollSelectors.some(sel=>e.target.closest(sel));
+    if(inHorizScroll){ dragging=false; return; }
+
     // Check if touching a card element
     const target=e.target;
     const cardSelectors=['.modal-ep','.lm-season-card','.lm-movie-card','.spinoff-card','.content-card','.browse-card','.movie-big-card'];
-    const isCard=cardSelectors.some(sel=>target.closest(sel));
+    const cardEl=cardSelectors.map(sel=>target.closest(sel)).find(el=>el);
 
-    if(isCard){
+    if(cardEl && startScrollTop<=0){
+      // Card swipe - track the specific card
       dragSource='card';
+      activeCard=cardEl;
       startY=t.clientY;
       dragging=true;
+      activeCard.style.transition='none';
       panel.style.transition='none';
-    }else if(touchY<=80){
+    }else if(touchY<=80 || (modal.classList.contains('modal-fullpage') && startScrollTop<=0)){
+      // For fullpage modals, allow swipe from anywhere when at top
+      // For regular modals, only allow swipe from handle area (top 80px)
       dragSource='handle';
       startY=t.clientY;
       dragging=true;
       panel.style.transition='none';
+      panel.classList.add('swipe-tracking');
     }
   }
 
@@ -2260,15 +2802,30 @@ function initSwipeDismiss(){
     if(!dragging)return;
     const t=e.touches?e.touches[0]:e;
     const deltaY=t.clientY-startY;
+    const deltaX=Math.abs(t.clientX-startX);
 
-    if(dragSource==='card'){
-      if(deltaY>30){
-        currentY=Math.max(0,deltaY-30);
-        panel.style.transform=`translateY(${currentY}px)`;
-        const prog=Math.min(currentY/300,1);
-        modal.style.background=`rgba(7,7,15,${0.8*(1-prog*0.6)})`;
+    // If the gesture is more horizontal than vertical, abort and let browser scroll
+    if(!isHorizontalScroll && deltaX>deltaY && deltaX>6){
+      isHorizontalScroll=true;
+      dragging=false;
+      panel.classList.remove('swipe-tracking');
+      return;
+    }
+
+    if(dragSource==='card' && deltaY>0){
+      e.preventDefault();
+      currentY=Math.max(0,deltaY);
+      // Move the card with the finger
+      if(activeCard){
+        activeCard.style.transform=`translateY(${currentY}px)`;
+        activeCard.style.opacity=Math.max(0.3,1-(currentY/400));
       }
-    }else{
+      // Also move panel slightly for effect
+      panel.style.transform=`translateY(${currentY*0.3}px)`;
+      const prog=Math.min(currentY/300,1);
+      modal.style.background=`rgba(7,7,15,${0.8*(1-prog*0.5)})`;
+    }else if(dragSource==='handle' && deltaY>0){
+      e.preventDefault();
       currentY=Math.max(0,deltaY);
       panel.style.transform=`translateY(${currentY}px)`;
       const prog=Math.min(currentY/300,1);
@@ -2280,19 +2837,47 @@ function initSwipeDismiss(){
     if(!dragging)return;
     const threshold=dragSource==='card'?CARD_SWIPE_THRESHOLD:SWIPE_THRESHOLD;
     dragging=false;
-    panel.style.transition='';
-    modal.style.background='';
-    if(currentY>threshold){
-      closeModal();
+
+    if(dragSource==='card' && activeCard){
+      activeCard.style.transition='transform 0.35s var(--ease-out),opacity 0.35s';
+      if(currentY>threshold){
+        // Swipe far enough - animate card out and close modal
+        activeCard.style.transform=`translateY(${window.innerHeight}px)`;
+        activeCard.style.opacity='0';
+        panel.style.transition='transform 0.35s var(--ease-out)';
+        panel.style.transform='translateY(0)';
+        setTimeout(()=>closeModal(),150);
+      }else{
+        // Snap back
+        activeCard.style.transform='translateY(0)';
+        activeCard.style.opacity='1';
+        panel.style.transform='translateY(0)';
+        modal.style.background='';
+      }
     }else{
-      panel.style.transform='translateY(0)';
+      panel.style.transition='transform 0.35s var(--ease-out)';
+      modal.style.background='';
+      if(currentY>threshold){
+        closeModal();
+      }else{
+        panel.style.transform='translateY(0)';
+      }
     }
-    currentY=0;dragSource=null;
+
+    currentY=0;dragSource=null;activeCard=null;
+    panel.classList.remove('swipe-tracking');
   }
 
   panel.addEventListener('touchstart',onStart,{passive:true});
-  panel.addEventListener('touchmove',onMove,{passive:true});
+  panel.addEventListener('touchmove',onMove,{passive:false});
   panel.addEventListener('touchend',onEnd,{passive:true});
+
+  // Prevent background scrolling when touching modal panel during swipe
+  document.addEventListener('touchmove',(e)=>{
+    if(modal.classList.contains('open') && dragging){
+      e.preventDefault();
+    }
+  },{passive:false});
 }
 
 // ─── LANGUAGE MODAL ──────────────────────────────────
@@ -2512,7 +3097,9 @@ window.openLangModal=function(langName,flag,platforms){
   };
   const resolvedCastKey = nativeToKey[langName] || nativeToKey[langKey] || langKey;
   const VC_CHECK = typeof VOICE_CAST!=='undefined'?VOICE_CAST:{};
-  const hasCast = !!(VC_CHECK[resolvedCastKey]?.length ||
+  // Subtitles don't have voice cast - only dubs do
+  const isSubtitles = langKey==='English Subtitles' || langName.includes('Subtitles');
+  const hasCast = !isSubtitles && !!(VC_CHECK[resolvedCastKey]?.length ||
     (resolvedCastKey==='Hindi' && VC_CHECK['Hindi (Anime Times)']?.length));
   const castBtn = hasCast
     ? `<div style="padding:16px 0 0"><button class="lang-cast-btn" style="font-size:13px;padding:8px 18px;border-radius:24px;border-width:1.5px" onclick="closeModal();setTimeout(()=>openCastModal('${resolvedCastKey}','${langName} Voice Cast'),120)">🎙️ View Voice Cast</button></div>`
@@ -2537,10 +3124,23 @@ window.openSeasonModal=function(sid,r0,r1,showETV,etvOnly){
   if(showETV===undefined)showETV=true;
   if(etvOnly===undefined)etvOnly=false;
   const s=SEASONS.find(x=>x.id===sid);if(!s)return;
-  // Filter to numeric n only — excludes malformed specials tagged to wrong seasons in episodes.js
-  let eps=(typeof EPISODES!=='undefined'?EPISODES:[]).filter(e=>e.season===sid&&typeof e.n==='number');
-  if(r0!==undefined&&r1!==undefined)eps=eps.filter(e=>e.n>=r0&&e.n<=r1);
-  if(etvOnly) eps=eps.filter(e=>e.etv);
+
+  // Generate unique ID for this modal instance
+  const modalId='season-modal-'+Date.now();
+
+  // Initial filter state - read from DOM elements after render
+  let filters={
+    canon: document.getElementById('tvf-canon')?.value || 'all',
+    platform: document.getElementById('tvf-platform')?.value || 'all',
+    language: document.getElementById('tvf-lang')?.value || 'all',
+    avail: document.getElementById('tvf-avail')?.value || 'all',
+    search: document.getElementById('tvf-search')?.value || ''
+  };
+
+  // Get all episodes for this season
+  let allEps=(typeof EPISODES!=='undefined'?EPISODES:[]).filter(e=>e.season===sid&&typeof e.n==='number');
+  if(r0!==undefined&&r1!==undefined)allEps=allEps.filter(e=>e.n>=r0&&e.n<=r1);
+  if(etvOnly) allEps=allEps.filter(e=>e.etv);
 
   function specialStar(sp){
     if(!sp)return'';
@@ -2548,24 +3148,71 @@ window.openSeasonModal=function(sid,r0,r1,showETV,etvOnly){
     return' <span class="ep-star" title="'+(sp==='1hr'?'1-Hour Special':'Special')+'">★</span>';
   }
 
-  const epGrid=eps.map(e=>{
-    const star=specialStar(e.special);
-    const etvBadge=showETV&&e.etv?`<span class="modal-ep-etv">📺 ETV</span>`:'';
-    const still=getEpisodeStill(e,e.n+1);
-    return`<div class="modal-ep${showETV&&e.etv?' modal-ep--etv':''}${ e.special?' modal-ep--special':''}" data-ep-num="${e.n}" onclick="openEpisodeModal(${e.n})">
-      <div class="modal-ep-thumb" style="background-image:url('${still}')"></div>
-      <div class="modal-ep-body">
-        <div class="modal-ep-num">EP ${e.n}${star}</div>
-        <div class="modal-ep-title">${e.title}${etvBadge}</div>
-      </div>
+  function renderEpisodes(){
+    const grid=document.getElementById(modalId+'-ep-grid');
+    if(!grid)return;
+
+    let eps=allEps.filter(e=>{
+      // Canon/Filler
+      if(filterState.canon==='canon' && !isCanon(e)) return false;
+      if(filterState.canon==='filler' && !isFiller(e)) return false;
+      // Specials
+      if(filterState.special==='1hr' && e.special!=='1hr') return false;
+      if(filterState.special==='2hr' && e.special!=='2hr') return false;
+      if(filterState.special==='special' && !e.special) return false;
+      // ETV
+      if(filterState.etv==='etv' && !e.etv) return false;
+      // Search
+      if(filterState.search){
+        const q=filterState.search.toLowerCase();
+        return e.title.toLowerCase().includes(q) || String(e.n).includes(q);
+      }
+      return true;
+    });
+
+    // Update count
+    const countEl=document.getElementById(modalId+'-ep-count');
+    if(countEl)countEl.textContent=`${eps.length} of ${allEps.length} Episodes`;
+
+    grid.innerHTML=eps.map(e=>{
+      const star=specialStar(e.special);
+      const etvBadge=showETV&&e.etv?`<span class="modal-ep-etv">📺 ETV</span>`:'';
+      const fillerBadge=isFiller(e)?`<span class="modal-ep-filler">TV Original</span>`:'';
+      const still=getEpisodeStill(e,e.n+1);
+      return`<div class="modal-ep${showETV&&e.etv?' modal-ep--etv':''}${ e.special?' modal-ep--special':''}${isFiller(e)?' modal-ep--filler':''}" data-ep-num="${e.n}" onclick="openEpisodeModal(${e.n})">
+        <div class="modal-ep-thumb" style="background-image:url('${still}')"></div>
+        <div class="modal-ep-body">
+          <div class="modal-ep-num">EP ${e.n}${star}</div>
+          <div class="modal-ep-title">${e.title}${etvBadge}${fillerBadge}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Filter UI
+  const filterHTML=`
+    <div class="sm-filter-row" id="${modalId}-filters">
+      <select class="sm-filter-select" data-filter="canon">
+        <option value="all">All Episodes</option>
+        <option value="canon">Canon (Manga)</option>
+        <option value="filler">Filler (TV Original)</option>
+      </select>
+      <select class="sm-filter-select" data-filter="special">
+        <option value="all">All Types</option>
+        <option value="special">Specials Only</option>
+        <option value="1hr">1-Hour Specials</option>
+        <option value="2hr">2-Hour Specials</option>
+      </select>
+      ${showETV?`<select class="sm-filter-select" data-filter="etv">
+        <option value="all">All</option>
+        <option value="etv">ETV Only</option>
+      </select>`:''}
+      <input type="search" class="sm-filter-search" placeholder="Search episodes..." data-filter="search">
     </div>`;
-  }).join('');
 
   const etvSummary=showETV&&etvOnly
-    ?`<div class="modal-etv-summary"><span style="color:#FF6B00">📺</span> <strong>${etvOnly?eps.length:etvOnly}</strong> of ${eps.length} episodes aired on <strong>ETV Bal Bharat</strong></div>`
+    ?`<div class="modal-etv-summary"><span style="color:#FF6B00">📺</span> <strong>${etvOnly?allEps.length:etvOnly}</strong> of ${allEps.length} episodes aired on <strong>ETV Bal Bharat</strong></div>`
     :'';
-
-  const epCountTitle=`<div class="modal-where-title" style="margin-top:16px">${eps.length} Episodes</div>`;
 
   const seasonThumb=getSeasonStillByLocalSeasonId(s.id,SEASONS.indexOf(s)+3);
   const thumbBanner=`<div class="modal-season-thumb" style="background-image:url('${seasonThumb}')">
@@ -2575,34 +3222,27 @@ window.openSeasonModal=function(sid,r0,r1,showETV,etvOnly){
     <div class="modal-season-thumb-eps">Eps ${s.epRange[0]}–${s.epRange[1]||'ongoing'} · ${s.year}</div>
   </div>`;
 
-  if(!s.available&&!etvOnly){
-    const hasETV=etvOnly?eps.length>0:false;
-    openModal(`<div class="modal-handle"></div>
-      ${thumbBanner}
-      <div class="modal-header">
-        <div><div class="modal-badge">TV Series · ${s.label}</div><div class="modal-title">${s.label}</div></div>
-        <button class="modal-close" onclick="closeModal()">✕</button>
-      </div>
-      <div class="modal-desc">Episodes ${s.epRange[0]}–${s.epRange[1]||'ongoing'} · ${s.year}</div>
-      ${hasETV?etvSummary:`<div class="modal-unavail">🚫 <strong>Not Streaming in India</strong><br>${s.unavailableNote}</div>`}
-      ${epCountTitle}
-      <div class="modal-ep-grid">${epGrid}</div>`,{fullPage:true});
-    return;
+  // Platform info (if available)
+  let platformsHTML='';
+  if(s.available||etvOnly){
+    const platformIds = etvOnly
+      ? [...new Set([...(s.platforms||[]), 'etvbalb'])]
+      : (s.platforms||[]);
+    const platforms=platformIds.map(pid=>{
+      const p=PLATFORMS.find(x=>x.id===pid);
+      if(!p) return '';
+      const coverage = p.seriesRange
+        ? `Eps ${p.seriesRange[0]}–${p.seriesRange[1]}`
+        : (Array.isArray(p.seriesSeasons) && p.seriesSeasons.includes(s.id) ? `Eps ${s.epRange[0]}–${s.epRange[1]}` : '');
+      const langInfo = `${p.languages?.sub?.length?'Sub ✓':''} ${p.languages?.dub?.length?'| Dub ✓':''}`.trim();
+      const detail = [coverage,langInfo].filter(Boolean).join(' · ');
+      return `<div class="modal-where-row">${renderWherePlatformLabel(p.name,p.color)}<span class="modal-where-detail">${detail||'Available'}</span></div>`;
+    }).join('');
+    platformsHTML=`<div class="modal-where-title">Where to Watch in India</div>
+      <div class="modal-where">${platforms||'<p style="color:var(--muted);font-size:13px">No streaming info yet.</p>'}</div>`;
   }
 
-  const platformIds = etvOnly
-    ? [...new Set([...(s.platforms||[]), 'etvbalb'])]
-    : (s.platforms||[]);
-  const platforms=platformIds.map(pid=>{
-    const p=PLATFORMS.find(x=>x.id===pid);
-    if(!p) return '';
-    const coverage = p.seriesRange
-      ? `Eps ${p.seriesRange[0]}–${p.seriesRange[1]}`
-      : (Array.isArray(p.seriesSeasons) && p.seriesSeasons.includes(s.id) ? `Eps ${s.epRange[0]}–${s.epRange[1]}` : '');
-    const langInfo = `${p.languages?.sub?.length?'Sub ✓':''} ${p.languages?.dub?.length?'| Dub ✓':''}`.trim();
-    const detail = [coverage,langInfo].filter(Boolean).join(' · ');
-    return `<div class="modal-where-row">${renderWherePlatformLabel(p.name,p.color)}<span class="modal-where-detail">${detail||'Available'}</span></div>`;
-  }).join('');
+  const unavailMsg=(!s.available&&!etvOnly)?`<div class="modal-unavail">🚫 <strong>Not Streaming in India</strong><br>${s.unavailableNote}</div>`:'';
 
   openModal(`<div class="modal-handle"></div>
     ${thumbBanner}
@@ -2611,11 +3251,31 @@ window.openSeasonModal=function(sid,r0,r1,showETV,etvOnly){
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
     <div class="modal-desc">Episodes ${s.epRange[0]}–${s.epRange[1]||'ongoing'} · ${s.year}</div>
-    <div class="modal-where-title">Where to Watch in India</div>
-    <div class="modal-where">${platforms||'<p style="color:var(--muted);font-size:13px">No streaming info yet.</p>'}</div>
+    ${unavailMsg}
+    ${platformsHTML}
     ${etvSummary}
-    ${epCountTitle}
-    <div class="modal-ep-grid">${epGrid}</div>`,{fullPage:true});
+    ${filterHTML}
+    <div class="modal-where-title" id="${modalId}-ep-count" style="margin-top:12px">${allEps.length} Episodes</div>
+    <div class="modal-ep-grid" id="${modalId}-ep-grid"></div>`,{fullPage:true});
+
+  // Render initial episodes
+  setTimeout(renderEpisodes,0);
+
+  // Wire up filter handlers
+  setTimeout(()=>{
+    document.querySelectorAll('#'+modalId+'-filters [data-filter]').forEach(el=>{
+      el.addEventListener('change',(e)=>{
+        const key=e.target.dataset.filter;
+        filterState[key]=e.target.value;
+        renderEpisodes();
+      });
+      el.addEventListener('input',(e)=>{
+        const key=e.target.dataset.filter;
+        filterState[key]=e.target.value;
+        renderEpisodes();
+      });
+    });
+  },50);
 };
 
 function getEpisodePlatformRows(ep){
@@ -2682,10 +3342,1173 @@ window.openEpisodeModal=function(epNum){
   `,{fullPage:true});
 };
 
-// ─── MOVIE MODAL ─────────────────────────────────────
+// ─── COMPREHENSIVE WATCH GUIDE RENDERER ────────────────────────
+function renderComprehensiveGuide() {
+  if (!WATCH_GUIDE) return;
+  
+  app.innerHTML='';
+  window.scrollTo({top:0,behavior:"instant"});
+  const pg=document.createElement('div');
+  pg.className='page-enter';
+
+  // Split episode ranges into individual episodes and merge with old CONAN_DATA attributes
+  const individualEpisodes = splitEpisodeRanges(WATCH_GUIDE.watchOrder);
+  const enrichedEpisodes = enrichEpisodesWithAttributes(individualEpisodes);
+  
+  pg.innerHTML=`
+    <section class="movies-page-hero">
+      <div class="movies-page-hero-bg" style="background-image:url('https://image.tmdb.org/t/p/w1280/vG4KHOzT1qk8ATnBMWUuvwGIlcR.jpg')"></div>
+      <div class="movies-page-hero-overlay"></div>
+      <div class="movies-page-hero-content">
+        <button class="pp-hero-back" onclick="Router.navigate('/')">← Home</button>
+        <div class="section-eyebrow">Based on XerBlade Guide</div>
+        <h1 class="movies-page-title">Important Episodes <em>& Movies Guide</em></h1>
+        <p class="movies-page-sub">Essential Detective Conan episodes and movies every fan should see. Curated from the renowned XerBlade Important Episode List with rich metadata and filtering.</p>
+      </div>
+    </section>
+
+    <!-- Filter System -->
+    <div class="filter-system-container">
+      <!-- Single Row Filter Layout -->
+      <div class="filter-row">
+        <!-- Main Filter Options -->
+        <div class="filter-main-options">
+          <button class="filter-main-btn active" data-main-filter="all">All</button>
+          <button class="filter-main-btn" data-main-filter="important-movies">Only Important & Movies</button>
+          <button class="filter-main-btn" data-main-filter="movies-tieins">Only Movies & Tie-ins</button>
+        </div>
+        
+        <!-- Dropdown Filters -->
+        <div class="filter-dropdowns">
+          <select class="filter-dropdown" id="content-category-filter">
+            <option value="">All Content Types</option>
+            <option value="main-plot">Main Plot</option>
+            <option value="character">Character Development</option>
+            <option value="setup">Introduction & Setup</option>
+            <option value="romance">Romance</option>
+            <option value="fun">Entertainment Value</option>
+            <option value="movie-prequel">Movie Prequels</option>
+            <option value="movie-sequel">Movie Sequels</option>
+          </select>
+          
+          <select class="filter-dropdown" id="faction-filter">
+            <option value="">All Factions & Groups</option>
+            <option value="black-org">Black Organization</option>
+            <option value="fbi">FBI</option>
+            <option value="heiji">Heiji & Osaka</option>
+            <option value="kaito-kid">Kaitou Kid</option>
+            <option value="police">Metropolitan Police</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Navigation -->
+    <div class="quick-nav-container" style="margin: 20px 0; padding: 0 20px;">
+      <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+        <span style="color: var(--text2); font-size: 14px; font-weight: 500;">Quick Jump:</span>
+        <button class="quick-nav-btn" onclick="scrollToEpisode(1)" style="padding: 8px 16px; background: var(--surface1); border: 1px solid var(--border); border-radius: 20px; color: var(--text); cursor: pointer; font-size: 13px; transition: all 0.2s;">Episodes 1-100</button>
+        <button class="quick-nav-btn" onclick="scrollToEpisode(200)" style="padding: 8px 16px; background: var(--surface1); border: 1px solid var(--border); border-radius: 20px; color: var(--text); cursor: pointer; font-size: 13px; transition: all 0.2s;">Episodes 200-400</button>
+        <button class="quick-nav-btn" onclick="scrollToEpisode(500)" style="padding: 8px 16px; background: var(--surface1); border: 1px solid var(--border); border-radius: 20px; color: var(--text); cursor: pointer; font-size: 13px; transition: all 0.2s;">Episodes 500-700</button>
+        <button class="quick-nav-btn" onclick="scrollToEpisode(800)" style="padding: 8px 16px; background: var(--surface1); border: 1px solid var(--border); border-radius: 20px; color: var(--text); cursor: pointer; font-size: 13px; transition: all 0.2s;">Episodes 800+</button>
+      </div>
+    </div>
+
+    <!-- Episodes Grid -->
+    <div class="episodes-grid-horizontal">
+      ${enrichedEpisodes.map((ep, index) => renderConanWatchCard(ep, index)).join('')}
+    </div>
+    
+    ${renderFooterHTML()}
+  `;
+  
+  app.appendChild(pg);
+  setTimeout(() => {observeAll();setupWatchGuideFilters();}, 100);
+}
+
+// ─── ENRICH EPISODES WITH ATTRIBUTES ─────────────────────────
+function enrichEpisodesWithAttributes(episodes) {
+  // Get the old CONAN_DATA structure for attributes
+  const CONAN_DATA = {
+    "meta": {
+      "tags": {
+        "main-plot": "Essential to the overall story arc (Black Organization, Conan's identity, key relationships)",
+        "character": "Significant character introductions or development",
+        "black-org": "Black Organization involvement",
+        "heiji": "Hattori Heiji case or development",
+        "kaito-kid": "Kaitou Kid involvement",
+        "romance": "Romance development for main characters",
+        "fbi": "FBI involvement",
+        "shinichi": "Shinichi/Conan identity-related or Shinichi-as-himself episode",
+        "police": "Metropolitan Police detective love story or police-focused",
+        "setup": "Introduces gadgets, recurring elements, or world-building",
+        "fun": "Notable for humor, meta references, or entertainment value",
+        "movie-prequel": "Official prequel/pre-story to a specific movie",
+        "movie-sequel": "Official sequel/post-story to a specific movie"
+      }
+    }
+  };
+
+  return episodes.map(item => {
+    let enriched = { ...item };
+    
+    // Add content type and faction attributes based on item properties
+    if (item.type === 'episode') {
+      // Get episode data from EPISODES array using the episode number
+      const ep = (typeof EPISODES !== 'undefined' ? EPISODES : []).find(e => e.n === item.episode);
+      if (ep) {
+        enriched.title = ep.title || `Episode ${item.episode}`;
+        enriched.description = ep.title || `Episode ${item.episode}`;
+      } else {
+        enriched.title = `Episode ${item.episode}`;
+        enriched.description = `Episode ${item.episode}`;
+      }
+      
+      // Add tags based on episode properties
+      enriched.tags = [];
+      if (item.mainPlot) enriched.tags.push('main-plot');
+      if (item.special) enriched.tags.push('character');
+      
+      // Add faction tags based on episode content (more specific logic)
+      if (enriched.title && (
+        enriched.title.includes('Black') || enriched.title.includes('Organization') || 
+        enriched.title.includes('Gin') || enriched.title.includes('Vodka') || enriched.title.includes('Vermouth')
+      )) {
+        enriched.tags.push('black-org');
+      }
+      if (enriched.title && enriched.title.includes('Heiji')) {
+        enriched.tags.push('heiji');
+      }
+      // More specific Kaito Kid detection - avoid false positives
+      if (enriched.title && (
+        enriched.title.includes('Kaitou Kid') || enriched.title.includes('Kaito Kid') || 
+        enriched.title.includes('Kid Phantom') || enriched.title.includes('Phantom Thief')
+      )) {
+        enriched.tags.push('kaito-kid');
+      }
+      if (enriched.title && (
+        enriched.title.includes('FBI') || enriched.title.includes('Akai') || enriched.title.includes('Jodie')
+      )) {
+        enriched.tags.push('fbi');
+      }
+      
+    } else if (item.type === 'movie') {
+      // Get movie data from MOVIES array
+      const movieNum = item.numbers ? item.numbers.replace('Movie ', '') : '';
+      const movie = (typeof MOVIES !== 'undefined' ? MOVIES : []).find(m => m.n.toString() === movieNum);
+      if (movie) {
+        enriched.title = movie.title;
+        enriched.description = movie.desc || movie.title;
+      } else {
+        enriched.title = item.title || `Movie ${item.numbers}`;
+        enriched.description = item.title || `Movie ${item.numbers}`;
+      }
+      
+      // Assign faction tags based on movie content research
+      enriched.tags = ['character'];
+      if (item.mainPlot) enriched.tags.push('main-plot');
+      
+      // Movie-specific faction assignments
+      const movieFactions = {
+        '1': [], // Time-Bombed Skyscraper - no specific factions
+        '2': ['romance'], // The Fourteenth Target - romance focused
+        '3': ['kaito-kid'], // The Last Wizard of the Century - Kaito Kid
+        '4': ['romance', 'police'], // Captured in Her Eyes - romance + police
+        '5': ['main-plot'], // Countdown to Heaven - main plot
+        '6': ['character'], // The Phantom of Baker Street - character development
+        '7': ['heiji'], // Crossroad in the Ancient Capital - Heiji focused
+        '8': ['kaito-kid'], // Magician of the Silver Sky - Kaito Kid
+        '9': ['character'], // Strategy Above the Depths - character
+        '10': ['romance'], // The Private Eyes' Requiem - romance
+        '11': ['main-plot'], // Jolly Roger in the Deep Azure - main plot
+        '12': ['character'], // Full Score of Fear - character
+        '13': ['black-org'], // The Raven Chaser - Black Organization
+        '14': ['character'], // The Lost Ship in the Sky - character
+        '15': ['main-plot'], // Quarter of Silence - main plot
+        '16': ['character'], // The Eleventh Striker - character
+        '17': ['fbi'], // Private Eye in the Distant Sea - FBI
+        '18': ['character'], // Sniper from Another Dimension - character
+        '19': ['romance'], // The Sunflowers of Inferno - romance
+        '20': ['main-plot'], // The Darkest Nightmare - Black Organization
+        '21': ['character'], // The Crimson Love Letter - character
+        '22': ['police'], // Zero the Enforcer - Police focused
+        '23': ['character'], // The Fist of Blue Sapphire - character
+        '24': ['main-plot'], // The Scarlet Bullet - main plot
+        '25': ['romance', 'black-org'], // The Bride of Halloween - romance + Black Org
+        '26': ['black-org', 'fbi'], // Black Iron Submarine - Black Org + FBI
+        '27': ['kaito-kid'] // The Million Dollar Pentagram - Kaito Kid
+      };
+      
+      const movieTag = movieFactions[movieNum];
+      if (movieTag) {
+        enriched.tags.push(...movieTag);
+      }
+      
+      // Special handling for movies with Black Organization
+      if (['13', '20', '25', '26'].includes(movieNum)) {
+        if (!enriched.tags.includes('black-org')) {
+          enriched.tags.push('black-org');
+        }
+      }
+      
+    } else if (item.type === 'magic-kaito') {
+      enriched.title = `Magic Kaito 1412 Episode ${item.episode}`;
+      enriched.description = `Magic Kaito 1412 Episode ${item.episode}`;
+      enriched.tags = ['kaito-kid'];
+      
+    } else if (item.type === 'ova') {
+      // Get OVA data from OVAS array
+      const ovaNum = item.numbers ? item.numbers.replace('OVA ', '') : '';
+      const ova = (typeof OVAS !== 'undefined' ? OVAS : []).find(o => o.id === `ova${ovaNum}`);
+      if (ova) {
+        enriched.title = ova.title;
+        enriched.description = ova.desc || ova.title;
+      } else {
+        enriched.title = `OVA ${item.numbers}`;
+        enriched.description = `OVA ${item.numbers}`;
+      }
+      
+      enriched.tags = ['character'];
+      
+    } else {
+      enriched.title = item.title || `${item.type} ${item.episode || item.numbers}`;
+      enriched.description = item.title || `${item.type} ${item.episode || item.numbers}`;
+      enriched.tags = ['character'];
+    }
+    
+    return enriched;
+  });
+}
+
+// ─── CONAN WATCH CARD RENDERER (OLD LAYOUT) ───────────────────
+function renderConanWatchCard(ep, index) {
+  // Determine image based on type, prioritizing TMDB stills for episodes
+  let imageUrl;
+  try {
+    if (ep.type === 'episode' && ep.episode) {
+      // Try to get TMDB still for episodes first
+      const episodeData = (typeof EPISODES !== 'undefined' ? EPISODES : []).find(e => e.n === ep.episode);
+      if (episodeData) {
+        const stillUrl = getEpisodeStill(episodeData, parseInt(ep.episode));
+        if (stillUrl) {
+          imageUrl = stillUrl;
+        }
+      }
+      // Fallback to character images if no TMDB still
+      if (!imageUrl) {
+        const episodeImages = [IMG.conan1, IMG.conan2, IMG.conan5, IMG.ran, IMG.heiji, IMG.ai];
+        imageUrl = episodeImages[index % episodeImages.length];
+      }
+    } else if (ep.type === 'movie') {
+      // Use movie poster images
+      const movieNum = ep.numbers ? ep.numbers.replace('Movie ', '') : '';
+      const movie = (typeof MOVIES !== 'undefined' ? MOVIES : []).find(m => m.n.toString() === movieNum);
+      if (movie) {
+        // Use movie poster with fallback
+        imageUrl = getMoviePoster ? getMoviePoster(movie, parseInt(movieNum)) : IMG.conan3;
+      } else {
+        imageUrl = IMG.conan3;
+      }
+    } else if (ep.type === 'ova' || ep.type === 'magic-file') {
+      // Try to get TMDB still for OVAs first
+      
+      // Magic File to OVA image mapping (Magic File episodes use OVA images)
+      const magicFileToOVA = {
+        '2': '15',  // Magic File 2 → OVA 15
+        '3': '16',  // Magic File 3 → OVA 16
+        '4': '19',  // Magic File 4 → OVA 19
+        '5': '21'   // Magic File 5 → OVA 21
+      };
+      
+      let ovaNum = ep.numbers ? ep.numbers.toString().replace('OVA ', '').replace('Magic File ', '') : '';
+      
+      // If it's a Magic File, map to the correct OVA for the image
+      if (ep.type === 'magic-file' && magicFileToOVA[ovaNum]) {
+        ovaNum = magicFileToOVA[ovaNum];
+      }
+      
+      const ova = (typeof OVAS !== 'undefined' ? OVAS : []).find(o => o.id === `ova${ovaNum}`);
+      if (ova) {
+        // Use hardcoded still if available
+        if (ova.still) {
+          imageUrl = ova.still;
+        } else {
+          // Try cached still first
+          const stillUrl = getEpisodeStill(ova, parseInt(ovaNum));
+          if (stillUrl && stillUrl !== getImg(0)) {
+            imageUrl = stillUrl;
+          } else {
+            // Try to fetch from TMDB for OVAs that might have TMDB data
+            try {
+              const cachedStill = window.OVA_STILLS?.get(ova.id);
+              if (cachedStill) {
+                imageUrl = cachedStill;
+              } else {
+                // Fallback to character-specific images for OVAs
+                const ovaImages = [IMG.ran, IMG.heiji, IMG.kid, IMG.ai];
+                imageUrl = ovaImages[index % ovaImages.length];
+                // Try to fetch TMDB data for OVAs (Season 0 of main series)
+                if (ova.episodeNumber) {
+                  fetchTMDBOVAData(ova.id).then(data => {
+                    if (data?.image) {
+                      if (!window.OVA_STILLS) window.OVA_STILLS = new Map();
+                      window.OVA_STILLS.set(ova.id, data.image);
+                      // Update the card image (both episode-horizontal-img and browse-card-img for OVA panels)
+                      document.querySelectorAll(`[data-ep-num="${ova.id}"] .episode-horizontal-img, [data-ep-num="${ova.id}"] .browse-card-img`).forEach(img => {
+                        img.style.backgroundImage = `url('${data.image}')`;
+                      });
+                    }
+                  });
+                }
+              }
+            } catch (e) {
+              // Fallback to character-specific images for OVAs
+              const ovaImages = [IMG.ran, IMG.heiji, IMG.kid, IMG.ai];
+              imageUrl = ovaImages[index % ovaImages.length];
+            }
+          }
+        }
+      } else {
+        // Fallback to character-specific images for OVAs
+        const ovaImages = [IMG.ran, IMG.heiji, IMG.kid, IMG.ai];
+        imageUrl = ovaImages[index % ovaImages.length];
+      }
+    } else if (ep.type === 'tv-special') {
+      // Use group images for TV specials
+      imageUrl = IMG.conan2;
+    } else if (ep.type === 'magic-kaito') {
+      // Use the same TMDB approach as the modal - fetch directly from Magic Kaito TMDB series
+      if (typeof MAGIC_KAITO !== 'undefined' && MAGIC_KAITO.tmdb) {
+        // Try to get cached image first
+        const mkMetaKey = `mk${ep.episode}`;
+        const mkMeta = window.EPISODE_META.get(mkMetaKey);
+        if (mkMeta && mkMeta.still) {
+          imageUrl = mkMeta.still;
+        } else {
+          // Fetch directly from TMDB like the modal does
+          try {
+            // Use synchronous approach for card rendering
+            const cachedStill = window.MAGIC_KAITO_STILLS?.get(ep.episode);
+            if (cachedStill) {
+              imageUrl = cachedStill;
+            } else {
+              imageUrl = IMG.kid;
+              // Trigger async fetch for next time
+              fetchTMBDEpisodeData(MAGIC_KAITO.tmdb, 1, ep.episode).then(data => {
+                if (data?.image) {
+                  if (!window.MAGIC_KAITO_STILLS) window.MAGIC_KAITO_STILLS = new Map();
+                  window.MAGIC_KAITO_STILLS.set(ep.episode, data.image);
+                  // Update the card image
+                  document.querySelectorAll(`[data-ep-num="${ep.episode}"] .episode-horizontal-img`).forEach(img => {
+                    img.style.backgroundImage = `url('${data.image}')`;
+                  });
+                }
+              });
+            }
+          } catch (e) {
+            imageUrl = IMG.kid;
+          }
+        }
+      } else {
+        imageUrl = IMG.kid;
+      }
+    } else {
+      // Regular episodes fallback
+      const episodeImages = [IMG.conan1, IMG.conan2, IMG.conan5, IMG.ran, IMG.heiji, IMG.ai];
+      imageUrl = episodeImages[index % episodeImages.length];
+    }
+    
+    // Ensure we have a valid URL
+    if (!imageUrl || imageUrl === 'undefined' || imageUrl === 'null') {
+      imageUrl = IMG.conan1; // Ultimate fallback
+    }
+  } catch (error) {
+    imageUrl = IMG.conan1; // Ultimate fallback
+  }
+  
+  // Format the type display
+  let typeDisplay = ep.type;
+  let typeClass = ep.type;
+  if (ep.type === 'movie') {
+    typeDisplay = 'movie';
+    typeClass = 'movie';
+  } else if (ep.type === 'ova') {
+    typeDisplay = 'ova';
+    typeClass = 'ova';
+  } else if (ep.type === 'magic-file') {
+    typeDisplay = 'magic-file';
+    typeClass = 'magic-file';
+  } else if (ep.type === 'tv-special') {
+    typeDisplay = 'tv-special';
+    typeClass = 'tv-special';
+  } else if (ep.type === 'magic-kaito') {
+    typeDisplay = 'magic-kaito';
+    typeClass = 'magic-kaito';
+  }
+  
+  const episodeNumber = ep.episode ? ep.episode.toString() : (ep.numbers || '');
+  // Create distinct data-ep-num for OVA vs Magic File for proper filtering
+  let dataEpNum = '';
+  if (ep.type === 'ova') {
+    dataEpNum = `ova${ep.numbers ? ep.numbers.toString().replace('OVA ', '') : ''}`;
+  } else if (ep.type === 'magic-file') {
+    dataEpNum = `mf${ep.numbers ? ep.numbers.toString().replace('Magic File ', '') : ''}`;
+  } else {
+    dataEpNum = ep.episode || '';
+  }
+  
+  return `
+    <div class="episode-horizontal-card reveal" onclick="openConanWatchModal('${ep.type}', '${episodeNumber}')" data-type="${ep.type}" data-tags="${ep.tags ? ep.tags.join(' ') : ''}">
+      <div class="episode-horizontal-img" style="background-image: url('${imageUrl}')" data-ep-num="${dataEpNum}"></div>
+      <div class="episode-horizontal-content">
+        <div class="episode-horizontal-header">
+          <div class="episode-horizontal-number">${episodeNumber}</div>
+          <div class="episode-horizontal-type ${typeClass}">${typeDisplay}</div>
+        </div>
+        <h3 class="episode-horizontal-title">${ep.title}</h3>
+        <div class="episode-horizontal-tags">
+          ${ep.tags ? ep.tags.map(tag => `<span class="tag-badge ${tag}">${tag.replace('-', ' ')}</span>`).join('') : ''}
+        </div>
+        <p class="episode-horizontal-desc">${ep.description}</p>
+      </div>
+    </div>
+  `;
+}
+
+// ─── OVA MODAL FUNCTION ───────────────────────────────────
+window.showOVAModal = async function(ovaId) {
+  const ova = (typeof OVAS !== 'undefined' ? OVAS : []).find(o => o.id === ovaId);
+  if (!ova) {
+    return;
+  }
+
+  // Use hardcoded still, cached still, or fall back to a character image
+  const fallbackUrl = ova.still || window.OVA_STILLS?.get(ovaId) || IMG.kid;
+  const isUnavailable = ova.available === false;
+
+  const buildModalHtml = (imageUrl) => `
+    <div class="modal-handle"></div>
+    <div class="modal-season-thumb" id="ova-modal-thumb" style="background-image:url('${imageUrl}')">
+      <div class="modal-season-thumb-overlay"></div>
+      <div class="modal-season-thumb-num">OVA</div>
+      <div class="modal-season-thumb-label">${ova.title}</div>
+      <div class="modal-season-thumb-eps">${ova.year} • Special</div>
+    </div>
+    <div class="modal-header">
+      <div><div class="modal-badge">OVA</div><div class="modal-title">${ova.title}</div></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-desc">${ova.desc || ova.title}</div>
+    ${isUnavailable ? `
+      <div class="modal-unavail">🚫 <strong>Not Available in India</strong><br>${ova.unavailableNote || 'This content is not available for streaming in India.'}</div>
+    ` : ''}
+    <div class="modal-where-title">Details</div>
+    <div class="modal-where">
+      <div class="modal-where-row">
+        <span class="modal-where-plat" style="color:#888">⬤ Release Year</span>
+        <span class="modal-where-detail">${ova.year}</span>
+      </div>
+      <div class="modal-where-row">
+        <span class="modal-where-plat" style="color:#888">⬤ Type</span>
+        <span class="modal-where-detail">Original Video Animation</span>
+      </div>
+      <div class="modal-where-row">
+        <span class="modal-where-plat" style="color:#${isUnavailable ? '#FF6B00' : '#888'}">⬤ Availability</span>
+        <span class="modal-where-detail">${isUnavailable ? 'Not Available in India' : 'Available'}</span>
+      </div>
+    </div>
+  `;
+
+  // Open immediately with fallback image
+  openModal(buildModalHtml(fallbackUrl), { fullPage: true });
+
+  // If the OVA has a TMDB episode number, fetch the real still and swap it in
+  if (ova.episodeNumber) {
+    try {
+      const data = await fetchTMDBOVAData(ovaId);
+      if (data?.image) {
+        if (!window.OVA_STILLS) window.OVA_STILLS = new Map();
+        window.OVA_STILLS.set(ovaId, data.image);
+        const thumb = document.getElementById('ova-modal-thumb');
+        if (thumb) {
+          thumb.style.backgroundImage = `url('${data.image}')`;
+        }
+      }
+    } catch (err) {
+      // Keep fallback image
+    }
+  }
+};
+
+// ─── MODAL HANDLER FOR CONAN WATCH CARDS ─────────────────────
+function openConanWatchModal(type, number) {
+  if (type === 'episode') {
+    openEpisodeModal(number);
+  } else if (type === 'movie') {
+    // Convert "Movie X" to proper movie ID
+    const movieNum = number.replace('Movie ', '');
+    const movie = (typeof MOVIES !== 'undefined' ? MOVIES : []).find(m => m.n.toString() === movieNum);
+    if (movie) {
+      openMovieModal(movie.id);
+    }
+  } else if (type === 'magic-kaito') {
+    openMagicKaitoEpisode('episode', parseInt(number));
+  } else if (type === 'ova' || type === 'magic-file') {
+    // For OVAs, find the OVA and open a modal
+    const ovaNum = number.replace('OVA ', '').replace('Magic File ', '');
+    const ova = (typeof OVAS !== 'undefined' ? OVAS : []).find(o => o.id === `ova${ovaNum}`);
+    if (ova) {
+      showOVAModal(ova.id);
+    }
+  } else if (type === 'tv-special') {
+    // Handle TV specials
+    openSpecialModal(number);
+  }
+}
+
+// ─── FILTER SETUP FOR WATCH GUIDE ───────────────────────────
+function setupWatchGuideFilters() {
+  // Refresh episode images with TMDB stills if available
+  setTimeout(() => {
+    refreshEpisodeSeasonVisuals();
+    // Additional refresh for guide-specific images
+    document.querySelectorAll('[data-ep-num]').forEach(el=>{
+      const n = Number(el.dataset.epNum);
+      if(!n) return;
+      const ep = (typeof EPISODES!=='undefined'?EPISODES:[]).find(x=>x.n===n);
+      if(!ep) return;
+      const thumb = el.querySelector('.episode-horizontal-img');
+      if(thumb) {
+        const stillUrl = getEpisodeStill(ep, n);
+        if(stillUrl) {
+          thumb.style.backgroundImage = `url('${stillUrl}')`;
+        }
+      }
+    });
+  }, 1000);
+  
+  const mainFilterButtons = document.querySelectorAll('.filter-main-btn');
+  const contentCategoryFilter = document.getElementById('content-category-filter');
+  const factionFilter = document.getElementById('faction-filter');
+  const episodeCards = document.querySelectorAll('.episode-horizontal-card');
+  
+  function applyFilters() {
+    const activeMainFilter = document.querySelector('.filter-main-btn.active').dataset.mainFilter;
+    const contentCategory = contentCategoryFilter.value;
+    const faction = factionFilter.value;
+    
+    // Movie tie-in identifiers based on user's list
+    const movieTieInOVAs = ['ova2', 'ova3', 'ova4', 'ova7'];
+    const movieTieInMagicFiles = ['mf2', 'mf3', 'mf4', 'mf5']; // Magic File data-ep-num values
+    const movieTieInEpisodes = [694, 735, 742, 774, 813, 855, 898, 907, 936, 1002, 1039, 1080, 1083, 1120, 1161, 1197];
+    const movieTieInTVSpecials = ['lupin', 'bonus']; // Partial matches for TV special IDs
+    
+    episodeCards.forEach(card => {
+      const type = card.dataset.type || '';
+      const tags = card.dataset.tags || '';
+      const epNum = card.dataset.epNum || '';
+      const episodeNumberEl = card.querySelector('.episode-horizontal-number');
+      const episodeNumText = episodeNumberEl ? episodeNumberEl.textContent : '';
+      const episodeNum = parseInt(episodeNumText);
+      
+      let showCard = true;
+      
+      // Determine content type
+      const isMovie = type === 'movie';
+      const isOVA = type === 'ova';
+      const isMagicFile = type === 'magic-file';
+      const isTVSpecial = type === 'tv-special';
+      const isMagicKaito = type === 'magic-kaito';
+      const isRegularEpisode = type === 'episode';
+      
+      // Check if this is a movie tie-in
+      let isMovieTieIn = false;
+      
+      if (isOVA && movieTieInOVAs.includes(epNum)) {
+        isMovieTieIn = true;
+      } else if (isMagicFile && movieTieInMagicFiles.includes(epNum)) {
+        isMovieTieIn = true;
+      } else if (isTVSpecial) {
+        // Check by title for TV specials
+        const titleEl = card.querySelector('.episode-horizontal-title');
+        const title = titleEl ? titleEl.textContent.toLowerCase() : '';
+        if (title.includes('lupin') || title.includes('bonus')) {
+          isMovieTieIn = true;
+        }
+      } else if (isRegularEpisode && !isNaN(episodeNum) && movieTieInEpisodes.includes(episodeNum)) {
+        isMovieTieIn = true;
+      }
+      
+      // Any non-episode, non-movie content (OVA, Magic File, TV Special, Magic Kaito) is considered a tie-in
+      const isTieInContent = isOVA || isMagicFile || isTVSpecial || isMagicKaito;
+      
+      // Main filter logic
+      // 'all' - show everything (default)
+      // 'important-movies' - important episodes and movies (no tie-in OVAs, Magic Files, TV specials)
+      // 'movies-tieins' - only movies and movie tie-ins (no regular important episodes, no non-tie-in content)
+      
+      if (activeMainFilter === 'important-movies') {
+        // Show: movies, regular episodes (non-tie-in), Magic Kaito
+        // Hide: all tie-in content (OVAs, Magic Files that are movie prequels, TV specials)
+        if (isMovieTieIn || (isTieInContent && !isMagicKaito)) {
+          showCard = false;
+        }
+      } else if (activeMainFilter === 'movies-tieins') {
+        // Show: only movies and movie tie-ins
+        // Hide: regular episodes, Magic Kaito, and any non-movie-tie-in content
+        if (!isMovie && !isMovieTieIn) {
+          showCard = false;
+        }
+      }
+      
+      // Content category filter
+      if (contentCategory && !tags.includes(contentCategory)) {
+        showCard = false;
+      }
+      
+      // Faction filter
+      if (faction && !tags.includes(faction)) {
+        showCard = false;
+      }
+      
+      card.style.display = showCard ? 'block' : 'none';
+    });
+  }
+  
+  // Setup event listeners
+  mainFilterButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      mainFilterButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      applyFilters();
+    });
+  });
+  
+  contentCategoryFilter.addEventListener('change', applyFilters);
+  factionFilter.addEventListener('change', applyFilters);
+}
+
+function renderModernWatchCard(item, index) {
+  let imageUrl, title, clickAction, typeDisplay, typeClass, typeIcon;
+  
+  if (item.type === 'episode') {
+    // Get episode data from EPISODES array
+    const ep = (typeof EPISODES !== 'undefined' ? EPISODES : []).find(e => e.n === item.episode);
+    
+    // Try to get TMDB still, fallback to local images
+    let stillUrl = null;
+    if (ep) {
+      const meta = getEpisodeMeta(ep);
+      if (meta && meta.still) {
+        stillUrl = meta.still;
+      }
+    }
+    
+    // Fallback images based on episode number
+    const fallbackImages = [IMG.conan1, IMG.conan2, IMG.ran, IMG.heiji, IMG.kid, IMG.ai, IMG.agi];
+    const fallbackIdx = item.episode % fallbackImages.length;
+    
+    imageUrl = stillUrl || fallbackImages[fallbackIdx];
+    title = ep ? ep.title : `Episode ${item.episode}`;
+    clickAction = `onclick="openEpisodeModal('${item.episode}')"`;
+    typeDisplay = 'Episode';
+    typeClass = 'episode';
+    typeIcon = '📺';
+  } else if (item.type === 'movie') {
+    // Get movie data
+    const movieNum = item.numbers.replace('Movie ', '');
+    const movie = (typeof MOVIES !== 'undefined' ? MOVIES : []).find(m => m.id === movieNum.toLowerCase());
+    
+    // Try to get TMDB poster, fallback to local images
+    let posterUrl = null;
+    if (movie) {
+      const cached = window.MOVIE_POSTERS.get(movie.id);
+      if (cached) {
+        posterUrl = cached.replace('/w154/','/w500/').replace('/w185/','/w500/');
+      }
+    }
+    
+    // Fallback images for movies
+    const movieFallbacks = [IMG.conan1, IMG.conan2, IMG.ran, IMG.heiji];
+    const fallbackIdx = parseInt(movieNum) % movieFallbacks.length;
+    
+    imageUrl = posterUrl || movieFallbacks[fallbackIdx];
+    title = item.title || `Movie ${movieNum}`;
+    clickAction = `onclick="openMovieModal('${movieNum.toLowerCase()}')"`;
+    typeDisplay = 'Movie';
+    typeClass = 'movie';
+    typeIcon = '🎬';
+  } else if (item.type === 'magic-kaito') {
+    // Magic Kaito episodes
+    const kaitoImages = [IMG.kid, IMG.conan1, IMG.ran, IMG.heiji];
+    imageUrl = kaitoImages[item.episode % 4];
+    title = `Magic Kaito 1412 Episode ${item.episode}`;
+    clickAction = `onclick="openMagicKaitoEpisode('episode', ${item.episode})"`;
+    typeDisplay = 'Magic Kaito';
+    typeClass = 'magic-kaito';
+    typeIcon = '🎩';
+  } else if (item.type === 'ova') {
+    // OVA items - find OVA data to get hardcoded still URL
+    const ova = OVAS.find(o => o.id === item.id);
+    const ovaImages = [IMG.ran, IMG.heiji, IMG.kid, IMG.ai];
+    const ovaIndex = parseInt(item.id?.replace('ova', '') || '0');
+    // Use hardcoded still if available, otherwise fallback to character images
+    imageUrl = ova?.still || ovaImages[ovaIndex % 4];
+    title = item.title || ova?.title || `OVA ${item.episode || ''}`;
+    clickAction = `onclick="openMagicKaitoEpisode('ova', '${item.id}')"`;
+    typeDisplay = 'OVA';
+    typeClass = 'ova';
+    typeIcon = '📼';
+  } else {
+    // Fallback
+    imageUrl = IMG.conan1;
+    title = item.title || `${item.type} ${item.episode || item.numbers}`;
+    clickAction = '';
+    typeDisplay = item.type;
+    typeClass = item.type;
+    typeIcon = '📋';
+  }
+  
+  const mainPlotBadge = item.mainPlot ? '<span class="modern-badge modern-badge--main">Main Plot</span>' : '';
+  const specialBadge = item.special ? `<span class="modern-badge modern-badge--special">${item.special}</span>` : '';
+  const episodeNumber = item.episode ? item.episode.toString() : item.numbers;
+  
+  return `
+    <div class="modern-watch-card reveal" ${clickAction} data-type="${item.type}" data-tags="${item.mainPlot ? 'main-plot' : ''} ${item.special ? 'special' : ''}" data-ep-id="${item.id || item.episode || ''}">
+      <div class="modern-card-image">
+        <div class="modern-card-img" style="background-image: url('${imageUrl}')" data-ep-num="${item.episode || item.id || ''}"></div>
+        <div class="modern-card-overlay">
+          <div class="modern-card-play">▶</div>
+        </div>
+        <div class="modern-card-type ${typeClass}">
+          <span class="type-icon">${typeIcon}</span>
+          <span class="type-text">${typeDisplay}</span>
+        </div>
+      </div>
+      <div class="modern-card-content">
+        <div class="modern-card-number">${episodeNumber}</div>
+        <h3 class="modern-card-title">${title}</h3>
+        <div class="modern-card-badges">
+          ${mainPlotBadge}
+          ${specialBadge}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderWatchOrderCard(item, index) {
+  let imageUrl, title, clickAction, typeDisplay, typeClass;
+  
+  if (item.type === 'episode') {
+    // Get episode data from EPISODES array
+    const ep = (typeof EPISODES !== 'undefined' ? EPISODES : []).find(e => e.n === item.episode);
+    
+    // Try to get TMDB still, fallback to local images
+    let stillUrl = null;
+    if (ep) {
+      const meta = getEpisodeMeta(ep);
+      if (meta && meta.still) {
+        stillUrl = meta.still;
+      }
+    }
+    
+    // Fallback images based on episode number
+    const fallbackImages = [IMG.conan1, IMG.conan2, IMG.ran, IMG.heiji, IMG.kid, IMG.ai, IMG.agi];
+    const fallbackIdx = item.episode % fallbackImages.length;
+    
+    imageUrl = stillUrl || fallbackImages[fallbackIdx];
+    title = ep ? ep.title : `Episode ${item.episode}`;
+    clickAction = `onclick="openEpisodeModal('${item.episode}')"`;
+    typeDisplay = 'Episode';
+    typeClass = 'episode';
+  } else if (item.type === 'movie') {
+    // Get movie data
+    const movieNum = item.numbers.replace('Movie ', '');
+    const movie = (typeof MOVIES !== 'undefined' ? MOVIES : []).find(m => m.id === movieNum.toLowerCase());
+    
+    // Try to get TMDB poster, fallback to local images
+    let posterUrl = null;
+    if (movie) {
+      const cached = window.MOVIE_POSTERS.get(movie.id);
+      if (cached) {
+        posterUrl = cached.replace('/w154/','/w500/').replace('/w185/','/w500/');
+      }
+    }
+    
+    // Fallback images for movies
+    const movieFallbacks = [IMG.conan1, IMG.conan2, IMG.ran, IMG.heiji];
+    const fallbackIdx = parseInt(movieNum) % movieFallbacks.length;
+    
+    imageUrl = posterUrl || movieFallbacks[fallbackIdx];
+    title = item.title || `Movie ${movieNum}`;
+    clickAction = `onclick="openMovieModal('${movieNum.toLowerCase()}')"`;
+    typeDisplay = 'Movie';
+    typeClass = 'movie';
+  } else if (item.type === 'magic-kaito') {
+    // Magic Kaito episodes
+    const kaitoImages = [IMG.kid, IMG.conan1, IMG.ran, IMG.heiji];
+    imageUrl = kaitoImages[item.episode % 4];
+    title = `Magic Kaito 1412 Episode ${item.episode}`;
+    clickAction = `onclick="openMagicKaitoEpisode('episode', ${item.episode})"`;
+    typeDisplay = 'Magic Kaito';
+    typeClass = 'magic-kaito';
+  } else if (item.type === 'ova') {
+    // OVA items - find OVA data to get hardcoded still URL
+    const ova = OVAS.find(o => o.id === item.id);
+    const ovaImages = [IMG.ran, IMG.heiji, IMG.kid, IMG.ai];
+    const ovaIndex = parseInt(item.id?.replace('ova', '') || '0');
+    // Use hardcoded still if available, otherwise fallback to character images
+    imageUrl = ova?.still || ovaImages[ovaIndex % 4];
+    title = item.title || ova?.title || `OVA ${item.episode || ''}`;
+    clickAction = `onclick="openMagicKaitoEpisode('ova', '${item.id}')"`;
+    typeDisplay = 'OVA';
+    typeClass = 'ova';
+  } else {
+    // Fallback
+    imageUrl = IMG.conan1;
+    title = item.title || `${item.type} ${item.episode || item.numbers}`;
+    clickAction = '';
+    typeDisplay = item.type;
+    typeClass = item.type;
+  }
+  
+  const mainPlotBadge = item.mainPlot ? '<span class="tag-badge main-plot">Main Plot</span>' : '';
+  const specialBadge = item.special ? `<span class="tag-badge special">${item.special}</span>` : '';
+  const episodeNumber = item.episode ? item.episode.toString() : item.numbers;
+  
+  return `
+    <div class="episode-horizontal-card reveal" ${clickAction} data-type="${item.type}" data-tags="${item.mainPlot ? 'main-plot' : ''} ${item.special ? 'special' : ''}" data-ep-id="${item.id || item.episode || ''}">
+      <div class="episode-horizontal-img" style="background-image: url('${imageUrl}')" data-ep-num="${item.episode || item.id || ''}"></div>
+      <div class="episode-horizontal-content">
+        <div class="episode-horizontal-header">
+          <div class="episode-horizontal-number">${episodeNumber}</div>
+          <div class="episode-horizontal-type ${typeClass}">${typeDisplay}</div>
+        </div>
+        <h3 class="episode-horizontal-title">${title}</h3>
+        <div class="episode-horizontal-tags">
+          ${mainPlotBadge}
+          ${specialBadge}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ─── MODERN WATCH GUIDE FUNCTIONALITY ───────────────────────
+function setupModernWatchGuide() {
+  // Filter tabs functionality
+  const filterTabs = document.querySelectorAll('.filter-tab');
+  const watchCards = document.querySelectorAll('.modern-watch-card');
+  
+  filterTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      // Update active tab
+      filterTabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      
+      // Filter cards
+      const filter = tab.dataset.filter;
+      filterWatchCards(filter);
+    });
+  });
+  
+  // Search functionality
+  const searchInput = document.querySelector('.guide-search-input');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      const searchTerm = e.target.value.toLowerCase();
+      searchWatchCards(searchTerm);
+    });
+  }
+}
+
+function filterWatchCards(filter) {
+  const watchCards = document.querySelectorAll('.modern-watch-card');
+  const activeFilterTab = document.querySelector('.filter-tab.active');
+  const currentFilter = activeFilterTab ? activeFilterTab.dataset.filter : 'all';
+  
+  watchCards.forEach(card => {
+    const type = card.dataset.type || '';
+    const tags = card.dataset.tags || '';
+    const mainPlot = tags.includes('main-plot');
+    
+    let showCard = true;
+    
+    if (currentFilter === 'episode' && type !== 'episode') {
+      showCard = false;
+    } else if (currentFilter === 'movie' && type !== 'movie') {
+      showCard = false;
+    } else if (currentFilter === 'magic-kaito' && type !== 'magic-kaito') {
+      showCard = false;
+    } else if (currentFilter === 'main-plot' && !mainPlot) {
+      showCard = false;
+    }
+    
+    card.style.display = showCard ? 'block' : 'none';
+  });
+}
+
+function searchWatchCards(searchTerm) {
+  const watchCards = document.querySelectorAll('.modern-watch-card');
+  
+  watchCards.forEach(card => {
+    const title = card.querySelector('.modern-card-title')?.textContent.toLowerCase() || '';
+    const number = card.querySelector('.modern-card-number')?.textContent.toLowerCase() || '';
+    const type = card.querySelector('.type-text')?.textContent.toLowerCase() || '';
+    
+    const matchesSearch = title.includes(searchTerm) || 
+                         number.includes(searchTerm) || 
+                         type.includes(searchTerm);
+    
+    card.style.display = matchesSearch ? 'block' : 'none';
+  });
+}
+
+// ─── IMPORTANT EPISODES PAGE RENDERER ───────────────────────
+function renderImportantEpisodesPage() {
+  if (!WATCH_GUIDE) return;
+  
+  app.innerHTML='';
+  window.scrollTo({top:0,behavior:"instant"});
+  const pg=document.createElement('div');
+  pg.className='page-enter';
+
+  // Filter only main plot episodes and movies, then enrich with attributes
+  const importantItems = WATCH_GUIDE.watchOrder.filter(item => 
+    item.mainPlot || item.type === 'movie'
+  );
+  const individualEpisodes = splitEpisodeRanges(importantItems);
+  const enrichedEpisodes = enrichEpisodesWithAttributes(individualEpisodes);
+  
+  pg.innerHTML=`
+    <section class="movies-page-hero">
+      <div class="movies-page-hero-bg" style="background-image:url('https://image.tmdb.org/t/p/w1280/j2qXQ8kHpMMX6U9qkPLo0yw8fF4.jpg')"></div>
+      <div class="movies-page-hero-overlay"></div>
+      <div class="movies-page-hero-content">
+        <button class="pp-hero-back" onclick="Router.navigate('/guide')">← Watch Guide</button>
+        <div class="section-eyebrow">Curated Episodes · Based on XerBlade Guide</div>
+        <h1 class="movies-page-title">Important Episodes <em>XerBlade Guide</em></h1>
+        <p class="movies-page-sub">The essential Detective Conan episodes every fan should see, from character introductions to main plot developments.</p>
+      </div>
+    </section>
+
+    <!-- Filter System -->
+    <div class="filter-system-container">
+      <!-- Main Filter Options -->
+      <div class="filter-main-options">
+        <button class="filter-main-btn active" data-main-filter="important">All Important</button>
+        <button class="filter-main-btn" data-main-filter="important-movies">Important + Movies</button>
+        <button class="filter-main-btn" data-main-filter="complete">Important + Movies + Tie-ins</button>
+      </div>
+      
+      <!-- Dropdown Filters -->
+      <div class="filter-dropdowns">
+        <select class="filter-dropdown" id="content-category-filter">
+          <option value="">All Content Types</option>
+          <option value="main-plot">Main Plot</option>
+          <option value="character">Character Development</option>
+          <option value="setup">Introduction & Setup</option>
+          <option value="romance">Romance</option>
+          <option value="fun">Entertainment Value</option>
+          <option value="movie-prequel">Movie Prequels</option>
+          <option value="movie-sequel">Movie Sequels</option>
+        </select>
+        
+        <select class="filter-dropdown" id="faction-filter">
+          <option value="">All Factions & Groups</option>
+          <option value="black-org">Black Organization</option>
+          <option value="fbi">FBI</option>
+          <option value="heiji">Heiji & Osaka</option>
+          <option value="kaito-kid">Kaitou Kid</option>
+          <option value="police">Metropolitan Police</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Episodes Grid -->
+    <div class="episodes-grid-horizontal">
+      ${enrichedEpisodes.map((ep, index) => renderConanWatchCard(ep, index)).join('')}
+    </div>
+    
+    <!-- About Section -->
+    <section class="section">
+      <div class="container">
+        <div class="content-card">
+          <h2>About the XerBlade Guide</h2>
+          <p>This comprehensive episode guide is based on the renowned XerBlade Important Episode List, widely considered the go-to resource for Detective Conan fans seeking to watch the most significant episodes.</p>
+        </div>
+      </div>
+    </section>
+    ${renderFooterHTML()}
+  `;
+  
+  app.appendChild(pg);
+  setTimeout(() => {observeAll();setupWatchGuideFilters();}, 100);
+}
+
+// ─── CANON EPISODES PAGE RENDERER ───────────────────────────
+function renderCanonEpisodesPage() {
+  if (!WATCH_GUIDE || typeof EPISODES === 'undefined') return;
+  
+  app.innerHTML='';
+  window.scrollTo({top:0,behavior:"instant"});
+  const pg=document.createElement('div');
+  pg.className='page-enter';
+
+  // Filter only canon episodes (non-filler) and enrich with attributes
+  const canonEpisodes = EPISODES.filter(ep => !isFiller(ep));
+  const canonItems = canonEpisodes.map(ep => ({
+    type: 'episode',
+    episode: ep.n,
+    title: ep.title,
+    mainPlot: false // Could be enhanced with logic to identify main plot canon episodes
+  }));
+  const enrichedEpisodes = enrichEpisodesWithAttributes(canonItems);
+  
+  pg.innerHTML=`
+    <section class="movies-page-hero">
+      <div class="movies-page-hero-bg" style="background-image:url('https://image.tmdb.org/t/p/w1280/y7Wr1CbEiu1Lpv7ZQmVPwKovire.jpg')"></div>
+      <div class="movies-page-hero-overlay"></div>
+      <div class="movies-page-hero-content">
+        <button class="pp-hero-back" onclick="Router.navigate('/guide')">← Watch Guide</button>
+        <div class="section-eyebrow">Manga Canon Only</div>
+        <h1 class="movies-page-title">Detective Conan <em>Canon Episodes</em></h1>
+        <p class="movies-page-sub">All canon episodes from the original manga - no filler content, with rich metadata and filtering options.</p>
+      </div>
+    </section>
+
+    <!-- Episodes Grid -->
+    <div class="episodes-grid-horizontal">
+      ${enrichedEpisodes.map((ep, index) => renderConanWatchCard(ep, index)).join('')}
+    </div>
+    
+    <!-- About Section -->
+    <section class="section">
+      <div class="container">
+        <div class="content-card">
+          <h2>About Canon Episodes</h2>
+          <p>This guide contains only canon episodes that directly adapt content from the original manga by Gosho Aoyama. Filler episodes and anime-original content are excluded to provide the pure story experience.</p>
+        </div>
+      </div>
+    </section>
+    ${renderFooterHTML()}
+  `;
+  
+  app.appendChild(pg);
+  setTimeout(() => {observeAll();}, 100);
+}
+
+// ─── SCROLL TO EPISODE FUNCTION ─────────────────────────
+function scrollToEpisode(startNum) {
+  const cards = document.querySelectorAll('.episode-horizontal-card');
+  for (const card of cards) {
+    const numEl = card.querySelector('.episode-horizontal-number');
+    if (numEl) {
+      const num = parseInt(numEl.textContent);
+      if (!isNaN(num) && num >= startNum) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        break;
+      }
+    }
+  }
+}
+
+// ─── WATCH GUIDES INDEX PAGE RENDERER ─────────────────────
+function renderWatchGuidesIndex() {
+  app.innerHTML='';
+  window.scrollTo({top:0,behavior:"instant"});
+  const pg=document.createElement('div');
+  pg.className='page-enter';
+
+  pg.innerHTML=`
+    <section class="movies-page-hero">
+      <div class="movies-page-hero-bg" style="background-image:url('https://image.tmdb.org/t/p/w1280/vG4KHOzT1qk8ATnBMWUuvwGIlcR.jpg')"></div>
+      <div class="movies-page-hero-overlay"></div>
+      <div class="movies-page-hero-content">
+        <button class="pp-hero-back" onclick="Router.navigate('/')">← Home</button>
+        <div class="section-eyebrow">Watch Guides</div>
+        <h1 class="movies-page-title">Detective Conan <em>Watch Guides</em></h1>
+        <p class="movies-page-sub">Curated watch orders and episode guides for every type of Detective Conan fan. Choose your perfect viewing experience.</p>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="browse-grid">
+        <!-- Canon Episodes Guide Card -->
+        <div class="browse-card reveal" onclick="Router.navigate('/guide/canon-episodes')">
+          <div class="browse-card-img" style="background-image:url('https://image.tmdb.org/t/p/w500/y7Wr1CbEiu1Lpv7ZQmVPwKovire.jpg')"></div>
+          <div class="browse-card-grad"></div>
+          <div class="browse-card-num">01</div>
+          <div class="browse-card-content">
+            <div class="browse-card-type">Manga Canon Only</div>
+            <div class="browse-card-title">Canon Episodes Guide</div>
+            <div class="browse-card-meta">No Filler • Pure Story Experience</div>
+          </div>
+          <div class="browse-card-hover">
+            <div class="browse-card-hover-desc">All canon episodes from the original manga by Gosho Aoyama. Filler episodes and anime-original content are excluded to provide the pure story experience.</div>
+          </div>
+        </div>
+
+        <!-- Important Episodes & Movies Guide Card -->
+        <div class="browse-card reveal" onclick="Router.navigate('/guide')">
+          <div class="browse-card-img" style="background-image:url('https://image.tmdb.org/t/p/w500/j2qXQ8kHpMMX6U9qkPLo0yw8fF4.jpg')"></div>
+          <div class="browse-card-grad"></div>
+          <div class="browse-card-num">02</div>
+          <div class="browse-card-content">
+            <div class="browse-card-type">Based on XerBlade Guide</div>
+            <div class="browse-card-title">Important Episodes & Movies</div>
+            <div class="browse-card-meta">Essential Episodes • All Movies • Tie-ins</div>
+          </div>
+          <div class="browse-card-hover">
+            <div class="browse-card-hover-desc">Essential Detective Conan episodes every fan should see, curated from the renowned XerBlade Important Episode List. Includes all movies, OVAs, and Magic Kaito 1412 with rich metadata and filtering.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- About Section -->
+      <section class="section">
+        <div class="container">
+          <div class="content-card">
+            <h2>About Our Watch Guides</h2>
+            <p>Our comprehensive watch guides are designed to help you navigate the extensive Detective Conan universe. Whether you're a new fan looking for the essential episodes or a seasoned viewer wanting to experience the complete story, we have the perfect guide for you.</p>
+            <div style="margin-top: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+              <div style="padding: 16px; background: var(--surface1); border-radius: 8px; border: 1px solid var(--border);">
+                <h4 style="color: var(--red); margin-bottom: 8px;">🎯 Essential Episodes</h4>
+                <p style="font-size: 14px; color: var(--text2);">Focus on the most important plot points and character developments.</p>
+              </div>
+              <div style="padding: 16px; background: var(--surface1); border-radius: 8px; border: 1px solid var(--border);">
+                <h4 style="color: var(--red); margin-bottom: 8px;">📖 Manga Canon</h4>
+                <p style="font-size: 14px; color: var(--text2);">Experience the story as intended by the original creator.</p>
+              </div>
+              <div style="padding: 16px; background: var(--surface1); border-radius: 8px; border: 1px solid var(--border);">
+                <h4 style="color: var(--red); margin-bottom: 8px;">🔍 Rich Metadata</h4>
+                <p style="font-size: 14px; color: var(--text2);">Detailed faction tags, content types, and advanced filtering.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    
+    ${renderFooterHTML()}
+  `;
+  
+  app.appendChild(pg);
+  setTimeout(() => {observeAll();}, 100);
+}
+
+// Initialize modern watch guide when page loads
+setTimeout(() => {
+  if (document.querySelector('.modern-guide-container')) {
+    setupModernWatchGuide();
+  }
+}, 500);
+
+// ─── MOVIE MODAL ────────────────────────────────────────
 window.openMovieModal=function(mid){
   const m=MOVIES.find(x=>x.id===mid);if(!m)return;
-  const poster=getMoviePoster(m, MOVIES.indexOf(m)+2);
+  const poster=getMoviePosterHiRes(m, MOVIES.indexOf(m)+2);
   const watchBtns=[];
   if(m.netflix)    watchBtns.push({name:'Netflix',   color:'#E50914',bg:'#1a0000',detail:'English Sub · Japanese Audio',url:m.netflixUrl});
   if(m.etv)        watchBtns.push({name:'ETV Bal Bharat',color:'#FF6B00',bg:'#1a0a00',detail:'TV · Multi-language Dub',url:'#etv',isInternal:true});
@@ -2726,12 +4549,14 @@ window.openMovieModal=function(mid){
   `,{fullPage:true, movieModal:true});
 
   // If poster isn't cached yet, patch when it arrives (checked at 1s and 4s).
+  // Use hi-res (w500) version — modal is big enough to benefit from it.
   if(!window.MOVIE_POSTERS.get(m.id)){
     [1000,4000].forEach(ms=>setTimeout(()=>{
       const url=window.MOVIE_POSTERS.get(m.id);
       if(url){
+        const hiRes=url.replace('/w154/','/w500/').replace('/w185/','/w500/');
         const el=modalPanel.querySelector('.mml-poster-img');
-        if(el && el.src!==url) el.src=url;
+        if(el) el.src=hiRes;
       }
     },ms));
   }
@@ -2741,25 +4566,37 @@ window.openMovieModal=function(mid){
 window.openSpinoffModal=function(sid){
   const sp=SPINOFFS.find(x=>x.id===sid);if(!sp)return;
   const spImg = getSpinoffPoster(sp, 9);
+  const dubTags = sp.languages.dub.map(l=>`<span class="tag tag-etv" style="font-size:11px">${l} Dub</span>`).join(' ');
   openModal(`<div class="modal-handle"></div>
     <div class="modal-movie-hero">
       <div class="mmh-poster" style="background-image:url('${spImg}');background-color:#111"></div>
-      <div class="mmh-overlay" style="background:linear-gradient(to right, rgba(7,7,15,0.9) 0%, rgba(7,7,15,0.6) 45%, transparent 100%)"></div>
+      <div class="mmh-overlay" style="background:linear-gradient(to right, rgba(7,7,15,0.95) 0%, rgba(7,7,15,0.65) 50%, transparent 100%)"></div>
       <div class="mmh-info">
-        <div class="mmh-badge">Spinoff · ${sp.year}</div>
+        <div class="mmh-badge">Spinoff Series · ${sp.year}</div>
         <div class="mmh-title">${sp.title}</div>
+        <div class="mmh-meta" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
+          <span style="font-size:13px;color:var(--text2)">${sp.episodes} Episodes</span>
+          <span style="color:var(--border2)">·</span>
+          ${dubTags}
+          <span class="tag tag-netflix" style="font-size:11px">Eng Sub</span>
+        </div>
       </div>
       <button class="modal-close mmh-close" onclick="closeModal()">✕</button>
     </div>
     <div class="modal-movie-body">
-      <p class="modal-desc">${sp.episodes} Episodes<br>${sp.desc}</p>
-      <div class="modal-where-title">Where to Watch in India</div>
-      <div class="modal-where">
+      <p class="modal-desc">${sp.desc}</p>
+      <div class="modal-where-title">Watch in India</div>
+      <div class="modal-where" style="margin-bottom:20px">
         <div class="modal-where-row">
           ${renderWherePlatformLabel('Netflix','#E50914')}
-          <span class="modal-where-detail">${sp.languages.dub.map(l=>l+' Dub').join(' · ')} · English Sub</span>
+          <span class="modal-where-detail">English Sub · ${sp.languages.dub.join(' · ')} Dub</span>
         </div>
       </div>
+      <a class="watch-btn" href="https://www.netflix.com/title/80090370" target="_blank" rel="noopener"
+        style="--btn-color:#E50914;--btn-bg:#1a0000;display:flex;text-decoration:none;margin-bottom:8px">
+        <span class="watch-btn-name">Watch on Netflix</span>
+        <span class="watch-btn-detail">Subscription required · All episodes available</span>
+      </a>
     </div>`);
 };
 
@@ -2784,7 +4621,7 @@ window.openPVRModal=function(eid){
 // ─── MANGA PAGE ──────────────────────────────────────
 async function renderMangaPage(){
   app.innerHTML='';
-  window.scrollTo(0,0);
+  window.scrollTo({top:0,behavior:"instant"});
   // Loading state while fetching
   const loading=document.createElement('div');
   loading.style.cssText='min-height:100vh;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase';
@@ -2872,7 +4709,7 @@ async function renderMangaPage(){
 // ─── BROWSE PAGE ─────────────────────────────────────
 function renderBrowsePage(){
   app.innerHTML='';
-  window.scrollTo(0,0);
+  window.scrollTo({top:0,behavior:"instant"});
   const pg=document.createElement('div');
   pg.className='page-enter';
 
@@ -2934,6 +4771,8 @@ function renderBrowsePage(){
 
   // State
   const bs={type:'all',platform:'all',language:'all',query:''};
+
+  // Filter state - will be initialized after DOM elements exist
 
   function syncBrowseFilterControls(){
     pg.querySelectorAll('[data-bselect]').forEach(sel=>{
@@ -3072,7 +4911,7 @@ function renderBrowsePage(){
 // ─── LANGUAGES PAGE ──────────────────────────────────
 function renderLanguagesPage(){
   app.innerHTML='';
-  window.scrollTo(0,0);
+  window.scrollTo({top:0,behavior:"instant"});
   const pg=document.createElement('div');
   pg.className='page-enter';
 
@@ -3181,7 +5020,7 @@ function renderLanguagesPage(){
 // ─── ADVOCACY PAGE ───────────────────────────────────
 function renderAdvocacyPage(){
   app.innerHTML='';
-  window.scrollTo(0,0);
+  window.scrollTo({top:0,behavior:"instant"});
   const pg=document.createElement('div');
   pg.className='page-enter';
 
@@ -3424,7 +5263,7 @@ window.advFormSubmit=function(e){
 // ─── MERCH PAGE ──────────────────────────────────────
 function renderMerchPage(){
   app.innerHTML='';
-  window.scrollTo(0,0);
+  window.scrollTo({top:0,behavior:"instant"});
   const pg=document.createElement('div');
   pg.className='page-enter';
   pg.innerHTML=`
@@ -3574,6 +5413,875 @@ function renderPVREventCard(ev,i){
   </div>`;
 }
 
+// ─── WATCH GUIDE PAGE ────────────────────────────────
+function renderGuidePage(){
+  app.innerHTML='';
+  window.scrollTo({top:0,behavior:"instant"});
+  const pg=document.createElement('div');
+  pg.className='page-enter';
+
+  pg.innerHTML=renderComprehensiveGuide() + renderFooterHTML();
+
+  app.appendChild(pg);
+  setTimeout(()=>pg.classList.remove('page-enter'),10);
+  initScrollReveal();
+}
+
+// ─── IMPORTANT EPISODES GUIDE PAGE ─────────────────────
+function renderImportantEpisodesPage(){
+  app.innerHTML='';
+  window.scrollTo({top:0,behavior:"instant"});
+  const pg=document.createElement('div');
+  pg.className='page-enter';
+
+  // Complete data from JSON - process all items into individual cards
+  const CONAN_DATA = {
+    "meta": {
+      "description": "Detective Conan important episodes, movies, and movie tie-in specials. Data sourced from detectiveconanworld.com and xerblade.com guide.",
+      "episodeNumbering": "Japanese original numbering (jpn). INTL numbers included where different.",
+      "tags": {
+        "main-plot": "Essential to the overall story arc (Black Organization, Conan's identity, key relationships)",
+        "character": "Significant character introductions or development",
+        "black-org": "Black Organization involvement",
+        "heiji": "Hattori Heiji case or development",
+        "kaito-kid": "Kaitou Kid involvement",
+        "romance": "Romance development for main characters",
+        "fbi": "FBI involvement",
+        "shinichi": "Shinichi/Conan identity-related or Shinichi-as-himself episode",
+        "police": "Metropolitan Police detective love story or police-focused",
+        "setup": "Introduces gadgets, recurring elements, or world-building",
+        "fun": "Notable for humor, meta references, or entertainment value",
+        "movie-prequel": "Official prequel/pre-story to a specific movie",
+        "movie-sequel": "Official sequel/post-story to a specific movie"
+      }
+    },
+    "sequence": [
+      { "id": "ep1-2", "type": "episode", "jpn": "1-2", "intl": "1-2", "title": "Initial Setup (Roller Coaster Murder Case / Introduction)", "tags": ["main-plot"], "description": "Series premiere. Shinichi shrinks into Conan. Introduces Ran, Kogoro, Agasa, Megure, Gin, and Vodka." },
+      { "id": "ep3", "type": "episode", "jpn": "3", "intl": "3", "title": "Idol Stalking Case", "tags": ["character"], "description": "Character development and recurring elements introduced for the first time." },
+      { "id": "ep4", "type": "episode", "jpn": "4", "intl": "4", "title": "Shinkansen Bomb Case", "tags": ["character"], "description": "Mitsuhiko, Ayumi, and Genta's first focus episode." },
+      { "id": "ep5", "type": "episode", "jpn": "5", "intl": "5", "title": "Haunted Mansion Murder Case", "tags": ["character"], "description": "Minor character development and foreshadowing for episode 7." },
+      { "id": "ep7", "type": "episode", "jpn": "7", "intl": "7", "title": "Locked Room in the Sky / Ran's Suspicion", "tags": ["main-plot", "romance"], "description": "First time Ran comes close to exposing Conan's identity. Major character development." },
+      { "id": "ep10", "type": "episode", "jpn": "10", "intl": "10", "title": "Bicycle Race Accident Case", "tags": ["setup"], "description": "Introduces minor recurring elements referenced many times in the future." },
+      { "id": "ep11", "type": "episode", "jpn": "11", "intl": "11-12", "title": "Moonlight Sonata Murder Case", "tags": ["character"], "description": "Events referenced in character development in episodes 77-78. (1 Hour Special)" },
+      { "id": "ep12", "type": "episode", "jpn": "12", "intl": "13", "title": "Drive-by Shooting Case", "tags": ["setup", "character"], "description": "Introduces the turbo skateboard and detective badge. Formalizes the Detective Boys." },
+      { "id": "ep13", "type": "episode", "jpn": "13", "intl": "14", "title": "Tenkaichi Night Festival Murder Case", "tags": ["main-plot", "character"], "description": "Introduces Miyano Akemi. Critically important to the main plot." },
+      { "id": "ep18", "type": "episode", "jpn": "18", "intl": "19", "title": "Conan Edogawa Kidnapping Case", "tags": ["character"], "description": "Introduces Superintendent Matsumoto." },
+      { "id": "ep20", "type": "episode", "jpn": "20", "intl": "21", "title": "The Wealthy Daughter Murder Case", "tags": ["setup"], "description": "Introduces the Elasticity Suspenders." },
+      { "id": "ep27-28", "type": "episode", "jpn": "27-28", "intl": "28-29", "title": "Kogoro Mouri Character Development Case", "tags": ["character"], "description": "Mori Kogoro character development." },
+      { "id": "ep32", "type": "episode", "jpn": "32", "intl": "33", "title": "Art Museum Owner Murder Case", "tags": ["character"], "description": "Introduces Kisaki Eri, Ran's mother." },
+      { "id": "ep34-35", "type": "episode", "jpn": "34-35", "intl": "35-36", "title": "Kogoro's Class Reunion Murder Case", "tags": ["character"], "description": "Suzuki Sonoko development. Her first manga appearance adapted." },
+      { "id": "ep43", "type": "episode", "jpn": "43", "intl": "44", "title": "Conan vs. Kid vs. Yaiba Bomb Case", "tags": ["main-plot", "character", "black-org"], "description": "Introduces two characters central to many future main plot events. Black Organization reference." },
+      { "id": "ep48-50", "type": "episode", "jpn": "48-50", "intl": "49-51", "title": "Conan vs. Heiji, Battle of Deductions", "tags": ["main-plot", "character", "heiji"], "description": "Introduces Hattori Heiji. First time Conan temporarily returns to his original body." },
+      { "id": "ep54", "type": "episode", "jpn": "54", "intl": "56", "title": "Murder in the Locked Apartment", "tags": ["main-plot", "black-org"], "description": "Black Organization involvement." },
+      { "id": "ep57-58", "type": "episode", "jpn": "57-58", "intl": "59-60", "title": "Final Screening Murder Case", "tags": ["main-plot", "heiji"], "description": "Hattori Heiji major development." },
+      { "id": "mk-ep1-2", "type": "magic-kaito", "jpn": "MK1-2", "title": "Magic Kaito 1412 Episodes 1-2", "tags": ["kaito-kid", "character"], "description": "Introduces Kaitou Kid and Nakamori Ginzo. Watch before episode 76." },
+      { "id": "ep76", "type": "episode", "jpn": "76", "intl": "78-79", "title": "The Kaitou Kid's Miraculous Midair Walk", "tags": ["kaito-kid", "character"], "description": "First appearance of Kaitou Kid in Detective Conan. (1 Hour Special)" },
+      { "id": "ep77-78", "type": "episode", "jpn": "77-78", "intl": "80-81", "title": "Conan and Heiji's Locked Room", "tags": ["heiji", "character"], "description": "Heiji case. Some Conan development." },
+      { "id": "ep81-82", "type": "episode", "jpn": "81-82", "intl": "84-85", "title": "The Forgotten Crow", "tags": ["fun"], "description": "Voice actor references galore." },
+      { "id": "ep96", "type": "episode", "jpn": "96", "intl": "99-102", "title": "The Vanished Detective", "tags": ["character", "romance"], "description": "Main character development. (2 Hour Special)" },
+      { "id": "movie1", "type": "movie", "number": 1, "title": "The Time-Bombed Skyscraper", "year": 1997, "tags": ["romance", "character"], "description": "A chain of bombing cases linked to Shinichi's past investigations.", "relatedEpisodes": [] },
+      { "id": "ep100-101", "type": "episode", "jpn": "100-101", "intl": "106-107", "title": "The Two Faces of Haibara Ai", "tags": ["shinichi", "character"], "description": "Shinichi case. Main character development." },
+      { "id": "ep118", "type": "episode", "jpn": "118", "intl": "124-125", "title": "Heiji and Kazuha in Grave Danger!", "tags": ["heiji", "character"], "description": "Heiji case. Introduces Toyama Kazuha. Builds on Conan development from eps 11 and 77-79. (1 Hour Special)" },
+      { "id": "ep128", "type": "episode", "jpn": "128", "intl": "135", "title": "The Black Organization: One Billion Yen Robbery Case", "tags": ["main-plot", "black-org"], "description": "Black Organization major event." },
+      { "id": "ep129", "type": "episode", "jpn": "129", "intl": "136-139", "title": "The Shi Shi Oh Murder Case / Haibara Ai Introduction", "tags": ["main-plot", "character", "black-org"], "description": "Introduces Haibara Ai, the second most central character to the plot. (2 Hour Special)" },
+      { "id": "ep130-131", "type": "episode", "jpn": "130-131", "intl": "140-141", "title": "The Night Baron Murder Case", "tags": ["character"], "description": "Introduces Sato Miwako." },
+      { "id": "ep132-134", "type": "episode", "jpn": "132-134", "intl": "142-144", "title": "Conan, Ran, and the Black Organization", "tags": ["kaito-kid"], "description": "Kaitou Kid case." },
+      { "id": "ep136-137", "type": "episode", "jpn": "136-137", "intl": "146-147", "title": "The Man Who Died Twice", "tags": ["character"], "description": "Character development." },
+      { "id": "ep141-142", "type": "episode", "jpn": "141-142", "intl": "151-152", "title": "The Locked Room in the Sky", "tags": ["heiji"], "description": "Heiji case." },
+      { "id": "ep146-147", "type": "episode", "jpn": "146-147", "intl": "156-157", "title": "Metropolitan Police Detective Love Story", "tags": ["police", "character"], "description": "Metropolitan Police Detective Love Story. Introduces Miyamoto Yumi." },
+      { "id": "ep153-154", "type": "episode", "jpn": "153-154", "intl": "163-164", "title": "The Zombie Murder Case", "tags": ["character"], "description": "Introduces Kyogoku Makoto." },
+      { "id": "ep156-157", "type": "episode", "jpn": "156-157", "intl": "166-167", "title": "Metropolitan Police Detective Love Story 2", "tags": ["police", "character"], "description": "Metropolitan Police Detective Love Story 2." },
+      { "id": "ep162", "type": "episode", "jpn": "162", "intl": "172-173", "title": "The Locked Room in the Sky: Shinichi's First Case", "tags": ["shinichi", "main-plot"], "description": "The Locked Room in the Sky: Kudo Shinichi's First Case. (1 Hour Special)" },
+      { "id": "movie2", "type": "movie", "number": 2, "title": "The Fourteenth Target", "year": 1998, "tags": ["character", "romance", "character-pasts"], "description": "People close to Kogoro are attacked in a pattern resembling The A.B.C. Murders.", "relatedEpisodes": [] },
+      { "id": "ep166-168", "type": "episode", "jpn": "166-168", "intl": "177-179", "title": "The Shinkansen Transport Case", "tags": ["heiji"], "description": "Heiji case." },
+      { "id": "ep170-171", "type": "episode", "jpn": "170-171", "intl": "181-182", "title": "The Snowy Mountain Hut Case", "tags": ["main-plot", "character"], "description": "Introduces Araide Tomoaki. Becomes extremely important later on." },
+      { "id": "ep174", "type": "episode", "jpn": "174", "intl": "185-188", "title": "The Desperate Revival Arc", "tags": ["heiji"], "description": "Heiji case. (2 Hour Special)" },
+      { "id": "ep176-178", "type": "episode", "jpn": "176-178", "intl": "190-192", "title": "Reunion with the Black Organization", "tags": ["main-plot", "black-org"], "description": "Reunion with the Black Organization major arc." },
+      { "id": "movie3", "type": "movie", "number": 3, "title": "The Last Wizard of the Century", "year": 1999, "tags": ["character", "kaito-kid"], "description": "Kaitou Kid seeks a treasure connected to the Romanovs.", "relatedEpisodes": [] },
+      { "id": "ep188-193", "type": "episode", "jpn": "188-193", "intl": "203-208", "title": "The Desperate Revival", "tags": ["main-plot", "shinichi", "romance"], "description": "The Desperate Revival arc. Major main character development." },
+      { "id": "ep199-200", "type": "episode", "jpn": "199-200", "intl": "214-215", "title": "The Jet Black Mystery Train", "tags": ["character"], "description": "Character development." },
+      { "id": "ep205-206", "type": "episode", "jpn": "205-206", "intl": "220-221", "title": "Metropolitan Police Detective Love Story 3", "tags": ["police", "character"], "description": "Metropolitan Police Detective Love Story 3." },
+      { "id": "ep212-213", "type": "episode", "jpn": "212-213", "intl": "228-229", "title": "Haibara Development Case", "tags": ["character", "black-org"], "description": "Haibara development." },
+      { "id": "ep217-218", "type": "episode", "jpn": "217-218", "intl": "233-234", "title": "Megure's Sealed Secret", "tags": ["character"], "description": "Megure development." },
+      { "id": "mk-ep4-6", "type": "magic-kaito", "jpn": "MK4-6", "title": "Magic Kaito 1412 Episodes 4-6", "tags": ["kaito-kid", "character"], "description": "Introduces Hakuba Saguru and the origin of the rivalry between Conan and Kid. Watch before episode 219." },
+      { "id": "ep219", "type": "episode", "jpn": "219", "intl": "235-238", "title": "Conan vs. Kid vs. Yaiba: Battle for the Sword", "tags": ["main-plot", "kaito-kid"], "description": "Kaitou Kid case. Background info important for later plot. (2 Hour Special)" },
+      { "id": "ep220-221", "type": "episode", "jpn": "220-221", "intl": "239-240", "title": "The Locked Room in the Sky 2", "tags": ["heiji", "character"], "description": "Introduces Heiji's mother." },
+      { "id": "ep222-224", "type": "episode", "jpn": "222-224", "intl": "241-243", "title": "Heiji and the Vampire Mansion", "tags": ["heiji", "character"], "description": "Heiji case. Some Conan development." },
+      { "id": "ep226-227", "type": "episode", "jpn": "226-227", "intl": "245-246", "title": "The Cornered Famous Detective", "tags": ["main-plot", "fbi", "character"], "description": "Introduces Jodie Saintemillion." },
+      { "id": "ep230-231", "type": "episode", "jpn": "230-231", "intl": "249-250", "title": "The Mysterious Package", "tags": ["main-plot", "fbi", "black-org", "character"], "description": "Introduces Akai Shuichi. Jodie and Araide development. Black Organization activity." },
+      { "id": "ep238-239", "type": "episode", "jpn": "238-239", "intl": "257-258", "title": "Heiji Hattori's Desperate Battle", "tags": ["heiji", "character"], "description": "Heiji case. Conan development." },
+      { "id": "ova2-16suspects", "type": "ova", "title": "OVA 2: 16 Suspects!?", "tags": ["movie-prequel", "character"], "relatedMovie": "movie4", "relatedMovieTitle": "Captured in Her Eyes", "preOrPost": "prequel", "description": "Features Shiratori's wine collection which is drunk in Movie 4. Watch before Movie 4." },
+      { "id": "movie4", "type": "movie", "number": 4, "title": "Captured in Her Eyes", "year": 2000, "tags": ["romance", "character", "character-pasts"], "description": "Ran witnesses a murder and loses her memory from shock.", "relatedEpisodes": ["ova2-16suspects"] },
+      { "id": "ep240-241", "type": "episode", "jpn": "240-241", "intl": "259-260", "title": "The Groaning Cliff Castle", "tags": ["character"], "description": "Character development." },
+      { "id": "ep242", "type": "episode", "jpn": "242", "intl": "261", "title": "The Mysterious Passengers on the Shinkansen", "tags": ["character", "black-org"], "description": "Haibara development and minor Black Organization info." },
+      { "id": "ep246-247", "type": "episode", "jpn": "246-247", "intl": "265-266", "title": "Haibara Ai's Critical Moment", "tags": ["character", "black-org"], "description": "Haibara development." },
+      { "id": "ep253-254", "type": "episode", "jpn": "253-254", "intl": "272-273", "title": "Metropolitan Police Detective Love Story 4", "tags": ["main-plot", "police", "romance"], "description": "Metropolitan Police Detective Love Story 4." },
+      { "id": "ep258-259", "type": "episode", "jpn": "258-259", "intl": "277-278", "title": "The Trembling Metropolitan Police Headquarters", "tags": ["main-plot", "fbi", "character"], "description": "Introduces James Black. Shuichi development." },
+      { "id": "ep263", "type": "episode", "jpn": "263", "intl": "282-285", "title": "The Osaka Perfect Crime Case", "tags": ["heiji"], "description": "Heiji case. (2 Hour Special)" },
+      { "id": "ep266-268", "type": "episode", "jpn": "266-268", "intl": "288-290", "title": "The Mysterious Woman from the Past", "tags": ["main-plot", "fbi", "character"], "description": "Makoto development. More Shuichi. Black Organization connections." },
+      { "id": "ep269-272", "type": "episode", "jpn": "269-272", "intl": "291-294", "title": "The Black Organization's Trap", "tags": ["main-plot", "black-org", "fbi"], "description": "Black Organization info and Jodie development. More Shuichi." },
+      { "id": "ep277-278", "type": "episode", "jpn": "277-278", "intl": "299-300", "title": "The Unusual Combination of Heiji and Jodie", "tags": ["main-plot", "heiji", "fbi"], "description": "Lots of Heiji and Jodie development." },
+      { "id": "movie5", "type": "movie", "number": 5, "title": "Countdown to Heaven", "year": 2001, "tags": ["character", "romance", "black-org"], "description": "The Black Organization and twin towers bombing plot.", "relatedEpisodes": [] },
+      { "id": "ep279-280", "type": "episode", "jpn": "279-280", "intl": "301-302", "title": "The Scar That Evokes the Past", "tags": ["main-plot", "character", "black-org"], "description": "Haibara development and Black Organization clues." },
+      { "id": "ep284-285", "type": "episode", "jpn": "284-285", "intl": "306-307", "title": "The Haunting of Shinichi", "tags": ["main-plot", "fbi"], "description": "More Shuichi development." },
+      { "id": "ep286-288", "type": "episode", "jpn": "286-288", "intl": "308-310", "title": "Kudo Shinichi's New York Case", "tags": ["main-plot", "fbi", "shinichi"], "description": "Shinichi's New York Case. Extremely important Shuichi development." },
+      { "id": "ep289-290", "type": "episode", "jpn": "289-290", "intl": "311-312", "title": "The Pitch Black Darkness in the Detective's Office", "tags": ["main-plot", "black-org"], "description": "Black Organization info." },
+      { "id": "ep291-293", "type": "episode", "jpn": "291-293", "intl": "313-315", "title": "Heiji Hattori vs. Shinichi Kudo: Battle of Deductions", "tags": ["heiji"], "description": "Heiji case." },
+      { "id": "ep301-304", "type": "episode", "jpn": "301,302,304", "intl": "323,324,326-329", "title": "The Missing Melody in Fallen Snow", "tags": ["police", "character"], "description": "Sato and Takagi development. (304 is 2 Hour Special)" },
+      { "id": "ep307-308", "type": "episode", "jpn": "307-308", "intl": "332-333", "title": "The Unseen Man's Alibi Case", "tags": ["main-plot", "black-org"], "description": "Black Organization buildup." },
+      { "id": "ep309-311", "type": "episode", "jpn": "309-311", "intl": "334-336", "title": "Contact with the Black Organization", "tags": ["main-plot", "black-org", "fbi"], "description": "Contact with the Black Organization major arc." },
+      { "id": "ep312-313", "type": "episode", "jpn": "312-313", "intl": "337-338", "title": "The Secret of the Organization's Betrayal", "tags": ["main-plot", "black-org", "character"], "description": "Followup to Contact arc. Haibara development. Black Organization backstory." },
+      { "id": "movie6", "type": "movie", "number": 6, "title": "The Phantom of Baker Street", "year": 2002, "tags": ["romance"], "description": "Virtual reality game where children are trapped in a simulation of Victorian London.", "relatedEpisodes": [] },
+      { "id": "ep323-327", "type": "episode", "jpn": "323-327", "intl": "348-352", "title": "Murder in the Orient Express", "tags": ["heiji"], "description": "Heiji case." },
+      { "id": "ep329-330", "type": "episode", "jpn": "329-330", "intl": "354-355", "title": "The Flower of Fantasista", "tags": ["character", "black-org"], "description": "Haibara development." },
+      { "id": "ep333-334", "type": "episode", "jpn": "333-334", "intl": "358-359", "title": "The Wandering Red Butterfly", "tags": ["character"], "description": "Character development." },
+      { "id": "ep335-336", "type": "episode", "jpn": "335-336", "intl": "360-361", "title": "Kudo Yukiko's Hollywood Case", "tags": ["main-plot", "fbi", "character"], "description": "Yukiko development and more Shuichi." },
+      { "id": "ep338-339", "type": "episode", "jpn": "338-339", "intl": "363-364", "title": "The Footsteps of the Dark Organization", "tags": ["main-plot", "fbi", "character", "black-org"], "description": "Haibara, Shuichi, Jodie, and Araide development." },
+      { "id": "ep340-341", "type": "episode", "jpn": "340-341", "intl": "365-366", "title": "The Pitch-Black Darkness of the Big City", "tags": ["main-plot", "character"], "description": "Haibara development." },
+      { "id": "ep343-344", "type": "episode", "jpn": "343-344", "intl": "369-370", "title": "The Beautiful Assassin", "tags": ["main-plot", "character", "romance"], "description": "Jodie and Ran development." },
+      { "id": "ep345", "type": "episode", "jpn": "345", "intl": "371-375", "title": "Head-to-Head Match with the Black Organization", "tags": ["main-plot", "black-org", "fbi"], "description": "Head-to-Head Match with the Black Organization: A Dual Mystery on a Full Moon Night. (2.5 Hour Special)" },
+      { "id": "ova3-heijivanshed", "type": "ova", "title": "OVA 3: Conan, Heiji, and the Vanished Boy", "tags": ["movie-prequel", "heiji", "character"], "relatedMovie": "movie7", "relatedMovieTitle": "Crossroad in the Ancient Capital", "preOrPost": "prequel", "description": "Conan and Heiji help find a missing boy in Osaka. Watch before Movie 7." },
+      { "id": "movie7", "type": "movie", "number": 7, "title": "Crossroad in the Ancient Capital", "year": 2003, "tags": ["character", "romance", "character-pasts", "heiji"], "description": "A serial killer in Kyoto with connections to the past.", "relatedEpisodes": ["ova3-heijivanshed"] },
+      { "id": "ep346-347", "type": "episode", "jpn": "346-347", "intl": "376-377", "title": "The Frozen Fingerprint", "tags": ["character", "black-org"], "description": "Haibara followup development." },
+      { "id": "mk-ep16", "type": "magic-kaito", "jpn": "MK16", "title": "Magic Kaito 1412 Episode 16", "tags": ["kaito-kid"], "description": "Crossover with Detective Conan episode 356. Watch before episode 356." },
+      { "id": "ep356", "type": "episode", "jpn": "356", "intl": "386-387", "title": "Kaitou Kid and the Four Masterworks", "tags": ["kaito-kid"], "description": "Kaitou Kid case. (1 Hour Special)" },
+      { "id": "ep358-359", "type": "episode", "jpn": "358-359", "intl": "389-390", "title": "Metropolitan Police Detective Love Story 5", "tags": ["police", "character"], "description": "Metropolitan Police Detective Love Story 5." },
+      { "id": "ep361-362", "type": "episode", "jpn": "361-362", "intl": "392-393", "title": "The Dark Night's Visitor", "tags": ["main-plot", "fbi", "character"], "description": "Jodie and Araide development." },
+      { "id": "ep381-383", "type": "episode", "jpn": "381-383", "intl": "412-417", "title": "The Locked Room in the Sky: Shinichi's First Case Part 2", "tags": ["heiji"], "description": "Heiji case. (383 is 2 Hour Special)" },
+      { "id": "ep385-387", "type": "episode", "jpn": "385-387", "intl": "419-421", "title": "The Shadow of the Black Organization", "tags": ["main-plot", "black-org"], "description": "Black Organization info." },
+      { "id": "ova4-crystalmother", "type": "ova", "title": "OVA 4: Conan, Kid, and the Crystal Mother", "tags": ["movie-prequel", "kaito-kid"], "relatedMovie": "movie8", "relatedMovieTitle": "Magician of the Silver Sky", "preOrPost": "prequel", "description": "Kid attempts to steal a jewel. Watch before Movie 8." },
+      { "id": "movie8", "type": "movie", "number": 8, "title": "Magician of the Silver Sky", "year": 2004, "tags": ["character", "romance", "kaito-kid"], "description": "Kaitou Kid impersonates Ran's father on a plane hijacking case.", "relatedEpisodes": ["ova4-crystalmother"] },
+      { "id": "ep390-391", "type": "episode", "jpn": "390-391", "intl": "424-425", "title": "Metropolitan Police Detective Love Story 6", "tags": ["police", "character", "romance"], "description": "Metropolitan Police Detective Love Story 6." },
+      { "id": "ep394-396", "type": "episode", "jpn": "394-396", "intl": "428-430", "title": "Kaitou Kid and the Blush Mermaid", "tags": ["kaito-kid"], "description": "Kaitou Kid case." },
+      { "id": "ep398-399", "type": "episode", "jpn": "398-399", "intl": "432-433", "title": "The Shadow of the Black Organization 2", "tags": ["main-plot", "black-org"], "description": "Setup and building suspense." },
+      { "id": "ep400", "type": "episode", "jpn": "400", "intl": "434", "title": "Illustrated Diary of a Middle School Detective", "tags": ["main-plot", "character"], "description": "Major character development." },
+      { "id": "ep406-408", "type": "episode", "jpn": "406-408", "intl": "440-442", "title": "The Big Monster Gomera Murder Case", "tags": ["heiji"], "description": "Heiji case." },
+      { "id": "ep421-422", "type": "episode", "jpn": "421-422", "intl": "455-456", "title": "The Shinkansen Transport Case 2", "tags": ["character"], "description": "Agasa development." },
+      { "id": "ep425", "type": "episode", "jpn": "425", "intl": "459-463", "title": "Black Impact! The Moment the Black Organization Reaches Out", "tags": ["main-plot", "black-org"], "description": "Black Impact! The Moment the Black Organization Reaches Out. (2.5 Hour Special)" },
+      { "id": "ep429-430", "type": "episode", "jpn": "429-430", "intl": "467-468", "title": "The Case of the Hunted Detective", "tags": ["main-plot", "character"], "description": "Introduces Hondo Eisuke." },
+      { "id": "ep431-432", "type": "episode", "jpn": "431-432", "intl": "469-470", "title": "Metropolitan Police Detective Love Story 7", "tags": ["police", "character", "romance"], "description": "Metropolitan Police Detective Love Story 7." },
+      { "id": "movie9", "type": "movie", "number": 9, "title": "Strategy Above the Depths", "year": 2005, "tags": ["character", "character-pasts"], "description": "A murder aboard a cruise ship.", "relatedEpisodes": [] },
+      { "id": "ep449", "type": "episode", "jpn": "449", "intl": "487-488", "title": "Metropolitan Police Detective Love Story: Fake Wedding", "tags": ["police", "romance"], "description": "Metropolitan Police Detective Love Story — Fake Wedding. (1 Hour Special)" },
+      { "id": "ep457-458", "type": "episode", "jpn": "457-458", "intl": "497-498", "title": "Conan and Heiji vs. Kid: The Impossible Alibi", "tags": ["character", "romance"], "description": "Sonoko and Makoto development." },
+      { "id": "ep462-465", "type": "episode", "jpn": "462-465", "intl": "502-505", "title": "The Shadow of the Black Organization 3", "tags": ["main-plot", "black-org", "character"], "description": "The Shadow of the Black Organization major arc." },
+      { "id": "ep469-470", "type": "episode", "jpn": "469-470", "intl": "509-510", "title": "Kaitou Kid and the Amazing Detective Team", "tags": ["kaito-kid"], "description": "Kaitou Kid case." },
+      { "id": "ep472-473", "type": "episode", "jpn": "472-473", "intl": "512-513", "title": "The Dream of the Kudo Shinichi US Tour", "tags": ["kaito-kid", "shinichi"], "description": "Kaitou Kid + Shinichi case." },
+      { "id": "movie10", "type": "movie", "number": 10, "title": "The Private Eyes' Requiem", "year": 2006, "tags": ["kaito-kid"], "description": "Kogoro is blackmailed at a theme park.", "relatedEpisodes": [] },
+      { "id": "ep479", "type": "episode", "jpn": "479", "intl": "519-522", "title": "Heiji's Desperate Situation", "tags": ["heiji"], "description": "Heiji case. (2 Hour Special)" },
+      { "id": "ep484-485", "type": "episode", "jpn": "484-485", "intl": "527-528", "title": "The Confrontation with the Black Organization: A Trap with a Postcard on a Switchback", "tags": ["main-plot", "character"], "description": "Eisuke development." },
+      { "id": "ep487", "type": "episode", "jpn": "487", "intl": "530-531", "title": "Metropolitan Police Detective Love Story 8", "tags": ["police", "romance"], "description": "Metropolitan Police Detective Love Story 8: The Left Hand's Ring Finger. (1 Hour Special)" },
+      { "id": "ep490", "type": "episode", "jpn": "490", "intl": "536-537", "title": "The Desperate Situation", "tags": ["heiji"], "description": "Heiji case. (1 Hour Special)" },
+      { "id": "ep491-504", "type": "episode", "jpn": "491-504", "intl": "538-551", "title": "Clash of Red and Black", "tags": ["main-plot", "black-org", "fbi"], "description": "Clash of Red and Black. The longest Black Organization arc to date. Major development." },
+      { "id": "ova7-agasa", "type": "ova", "title": "OVA 7: A Challenge from Agasa! Agasa vs. Conan and the Detective Boys", "tags": ["movie-prequel", "character"], "relatedMovie": "movie11", "relatedMovieTitle": "Jolly Roger in the Deep Azure", "preOrPost": "prequel", "description": "Agasa challenges the Detective Boys to solve his mystery. Watch before Movie 11." },
+      { "id": "movie11", "type": "movie", "number": 11, "title": "Jolly Roger in the Deep Azure", "year": 2007, "tags": ["character"], "description": "Conan and the group investigate a mystery on a tropical island.", "relatedEpisodes": ["ova7-agasa"] },
+      { "id": "ep507-508", "type": "episode", "jpn": "507-508", "intl": "554-555", "title": "The Jet-Black Impact", "tags": ["main-plot", "character"], "description": "Eisuke development." },
+      { "id": "ep509-511", "type": "episode", "jpn": "509-511", "intl": "556-558", "title": "The Crisis Aboard the Luxury Liner", "tags": ["main-plot", "character", "black-org"], "description": "Introduces Okiya Subaru. Black Organization info." },
+      { "id": "mk-ep21", "type": "magic-kaito", "jpn": "MK21", "title": "Magic Kaito 1412 Episode 21", "tags": ["kaito-kid"], "description": "Crossover with Detective Conan episode 515. Watch alongside or before episode 515." },
+      { "id": "ep515", "type": "episode", "jpn": "515", "intl": "562-563", "title": "Kaitou Kid and the Blush Mermaid 2", "tags": ["kaito-kid"], "description": "Kaitou Kid case. (1 Hour Special)" },
+      { "id": "ep516-517", "type": "episode", "jpn": "516-517", "intl": "564-566", "title": "The Osaka Prefectural Police's Dark Plot", "tags": ["heiji", "character"], "description": "Heiji case. Introduces Yamato Kansuke and Uehara Yui. (516 is 1 Hour Special)" },
+      { "id": "mf2-shinichi", "type": "magic-file", "number": 2, "title": "Magic File 2: Shinichi Kudo, The Case of the Mysterious Wall and the Black Lab", "tags": ["movie-prequel", "shinichi", "character"], "relatedMovie": "movie12", "relatedMovieTitle": "Full Score of Fear", "preOrPost": "prequel", "description": "A Shinichi-as-protagonist prequel to Movie 12. Watch immediately before Movie 12." },
+      { "id": "movie12", "type": "movie", "number": 12, "title": "Full Score of Fear", "year": 2008, "tags": ["character-pasts"], "description": "Murder at a concert hall involving a musical prodigy.", "relatedEpisodes": ["mf2-shinichi"] },
+      { "id": "ep521-525", "type": "episode", "jpn": "521-525", "intl": "570-576", "title": "The Red Shadow of Darkness", "tags": ["main-plot", "shinichi", "heiji"], "description": "Shinichi case. Major development for main characters including Heiji. (521 and 522 are 1 Hour Specials)" },
+      { "id": "ep532-535", "type": "episode", "jpn": "532-535", "intl": "583-586", "title": "Superintendent Matsumoto's Tragedy", "tags": ["police", "character"], "description": "Development for Superintendent Matsumoto, Takagi, and Sato." },
+      { "id": "ep537-538", "type": "episode", "jpn": "537-538", "intl": "588-589", "title": "Kaitou Kid and the Sky High Showdown", "tags": ["kaito-kid"], "description": "Kaitou Kid case." },
+      { "id": "ep542-543", "type": "episode", "jpn": "542-543", "intl": "593-594", "title": "The Conspiracy of the Wandering Man", "tags": ["main-plot", "character"], "description": "Subaru development." },
+      { "id": "ep557-561", "type": "episode", "jpn": "557-561", "intl": "608-612", "title": "The Red Fuji Case", "tags": ["character"], "description": "Character stuff for main characters. Introduces Morofushi Takaaki. Yamato and Uehara development." },
+      { "id": "ep563-564", "type": "episode", "jpn": "563-564", "intl": "614-615", "title": "Big Bang of the Betrayal", "tags": ["main-plot", "fbi", "black-org"], "description": "FBI and Black Organization major events." },
+      { "id": "ep568-569", "type": "episode", "jpn": "568-569", "intl": "619-620", "title": "The Full Moon Night's Double Mystery", "tags": ["character"], "description": "Inspector Shiratori and Kobayashi-sensei development." },
+      { "id": "lupin-vs-dc-tv", "type": "tv-special", "title": "Lupin III vs. Detective Conan (TV Special)", "tags": ["movie-prequel", "kaito-kid", "fbi"], "relatedMovie": "lupin-movie", "relatedMovieTitle": "Lupin III vs. Detective Conan: The Movie", "preOrPost": "prequel", "description": "TV crossover special that precedes the theatrical crossover film." },
+      { "id": "mf3-shinichi-ran", "type": "magic-file", "number": 3, "title": "Magic File 3: Shinichi and Ran, Memories of Mahjong Tiles and Tanabata", "tags": ["movie-prequel", "shinichi", "romance"], "relatedMovie": "movie13", "relatedMovieTitle": "The Raven Chaser", "preOrPost": "prequel", "description": "Flashback to Shinichi and Ran's middle school days. Ends with the Detective Boys inviting Conan beetle hunting, leading into the movie. Watch immediately before Movie 13." },
+      { "id": "movie13", "type": "movie", "number": 13, "title": "The Raven Chaser", "year": 2009, "tags": ["character", "black-org"], "description": "A serial murder case where all victims were investigated by the same detective, linked to the Black Organization.", "relatedEpisodes": ["mf3-shinichi-ran"] },
+      { "id": "ep573-574", "type": "episode", "jpn": "573-574", "intl": "624-625", "title": "The Threatening Package", "tags": ["heiji"], "description": "Heiji case." },
+      { "id": "ep578-581", "type": "episode", "jpn": "578-581", "intl": "629-632", "title": "The Gathering of the Detectives", "tags": ["main-plot", "fbi", "black-org", "character"], "description": "Subaru and Jodie development. Black Organization activity." },
+      { "id": "ep583-585", "type": "episode", "jpn": "583-585", "intl": "634-636", "title": "Love Story at the Police Headquarters", "tags": ["character"], "description": "Inspector Shiratori and Kobayashi-sensei development." },
+      { "id": "ep586-587", "type": "episode", "jpn": "586-587", "intl": "637-638", "title": "Kaitou Kid and the Blush Mermaid 3", "tags": ["kaito-kid"], "description": "Kaitou Kid case." },
+      { "id": "ep592-593", "type": "episode", "jpn": "592-593", "intl": "643-644", "title": "Ran's Crisis!", "tags": ["character", "romance"], "description": "Ran development." },
+      { "id": "ep610-613", "type": "episode", "jpn": "610-613", "intl": "661-664", "title": "The Aichi Heiji Case", "tags": ["heiji"], "description": "Heiji case." },
+      { "id": "ep616-621", "type": "episode", "jpn": "616-621", "intl": "667-672", "title": "Holmes' Revelation", "tags": ["main-plot", "shinichi", "fbi", "character"], "description": "Holmes' Revelation arc. Major development for main characters." },
+      { "id": "ep622-623", "type": "episode", "jpn": "622-623", "intl": "673-674", "title": "The Suspect is Kogoro Mouri!", "tags": ["main-plot", "character", "black-org"], "description": "Haibara and Subaru development." },
+      { "id": "ep624", "type": "episode", "jpn": "624", "intl": "675", "title": "The Ryoma Treasure Case", "tags": ["character"], "description": "Introduces Miike Naeko." },
+      { "id": "mk-ep9-11", "type": "magic-kaito", "jpn": "MK9-11", "title": "Magic Kaito 1412 Episodes 9-11", "tags": ["kaito-kid"], "description": "Lead-in to Detective Conan episodes 627-628. These MK episodes should be watched before DC 627-628." },
+      { "id": "ep627-628", "type": "episode", "jpn": "627-628", "intl": "678-679", "title": "Kaitou Kid vs. the Strongest Safe", "tags": ["kaito-kid"], "description": "Kaitou Kid case. Magic Kaito 1412 eps 9-11 serve as the prologue to this." },
+      { "id": "mf4-osaka", "type": "magic-file", "number": 4, "title": "Magic File 4: The Osaka Okonomiyaki Odyssey", "tags": ["movie-prequel", "heiji", "character"], "relatedMovie": "movie14", "relatedMovieTitle": "The Lost Ship in the Sky", "preOrPost": "prequel", "description": "Heiji and Kazuha adventure in Osaka. Watch immediately before Movie 14." },
+      { "id": "movie14", "type": "movie", "number": 14, "title": "The Lost Ship in the Sky", "year": 2010, "tags": ["romance", "kaito-kid", "character-pasts"], "description": "Kaitou Kid and a hijacked airship. Introduces Jirokichi Suzuki.", "relatedEpisodes": ["mf4-osaka"] },
+      { "id": "ep646-647", "type": "episode", "jpn": "646-647", "intl": "697-698", "title": "The Handcuff Trick Case", "tags": ["main-plot", "character"], "description": "Introduces Sera Masumi." },
+      { "id": "ep648-650", "type": "episode", "jpn": "648-650", "intl": "699-701", "title": "A Dangerous Duo", "tags": ["main-plot", "character"], "description": "Sera development." },
+      { "id": "mf5-niigata", "type": "magic-file", "number": 5, "title": "Magic File 5: Niigata~Tokyo Souvenir Capriccio", "tags": ["movie-prequel", "character"], "relatedMovie": "movie15", "relatedMovieTitle": "Quarter of Silence", "preOrPost": "prequel", "description": "Conan and friends on a trip that leads into the movie setting. Watch immediately before Movie 15." },
+      { "id": "movie15", "type": "movie", "number": 15, "title": "Quarter of Silence", "year": 2011, "tags": ["character"], "description": "A murder in a snowy mountain village threatened by a dam project.", "relatedEpisodes": ["mf5-niigata"] },
+      { "id": "ep651", "type": "episode", "jpn": "651", "intl": "702-703", "title": "The Suspects are All Managers", "tags": ["main-plot", "heiji", "character"], "description": "Heiji case. Some Sera development. (1 Hour Special)" },
+      { "id": "ep652-655", "type": "episode", "jpn": "652-655", "intl": "704-707", "title": "The Heiji and Kazuha Case", "tags": ["heiji", "character"], "description": "Heiji case. Introduces Yonehara Sakurako." },
+      { "id": "ep656-657", "type": "episode", "jpn": "656-657", "intl": "708-709", "title": "The Murderous Game at the Detective Agency", "tags": ["main-plot", "character", "fbi"], "description": "Sera and Subaru development." },
+      { "id": "ep659-660", "type": "episode", "jpn": "659-660", "intl": "711-712", "title": "Chiba and Miike Case", "tags": ["character"], "description": "Detective Chiba and Miike development." },
+      { "id": "ep667-668", "type": "episode", "jpn": "667-668", "intl": "719-720", "title": "The Mystery of Naniwa Winery", "tags": ["main-plot", "character", "black-org"], "description": "Introduces Amuro Toru." },
+      { "id": "ep671-674", "type": "episode", "jpn": "671-674", "intl": "723-726", "title": "Detectives' Nocturne", "tags": ["main-plot", "character", "black-org", "fbi"], "description": "Detectives' Nocturne. Major development for Subaru, Sera, and Amuro. Black Organization activity." },
+      { "id": "ep675-676", "type": "episode", "jpn": "675-676", "intl": "727-728", "title": "The Duel of the Detectives", "tags": ["main-plot", "character", "black-org"], "description": "Sera development and Black Organization buildup." },
+      { "id": "ep681-683", "type": "episode", "jpn": "681-683", "intl": "733-735", "title": "The Life-Threatening Broadcast of Love", "tags": ["main-plot", "police", "romance", "character"], "description": "The Life-Threatening Broadcast of Love. Major Sato and Takagi development. Sera and Amuro development." },
+      { "id": "ep684-685", "type": "episode", "jpn": "684-685", "intl": "736-737", "title": "The Dangerous Two Weeks", "tags": ["main-plot", "character", "black-org"], "description": "Haibara and Subaru development." },
+      { "id": "ep690-691", "type": "episode", "jpn": "690-691", "intl": "742-743", "title": "The Trembling Metropolitan Police Headquarters 2", "tags": ["main-plot", "fbi", "character"], "description": "Subaru, Sera, and Conan's dad development." },
+      { "id": "ep694-prequel-m17", "type": "episode", "jpn": "694", "intl": "746", "title": "The Missing Sweets in the Old Shop", "tags": ["movie-prequel", "character"], "relatedMovie": "movie17", "relatedMovieTitle": "Private Eye in the Distant Sea", "preOrPost": "prequel", "description": "Pre-story for Movie 17. Conan and group travel to Kyoto, ending with the warship Hotaka anchoring at Maizuru Bay — where Movie 17 begins. Watch immediately before Movie 17." },
+      { "id": "bonusfile1-fantasista", "type": "bonus-file", "title": "Bonus File 1: Flower of Fantasista", "tags": ["movie-prequel", "character"], "relatedMovie": "movie16", "relatedMovieTitle": "The Eleventh Striker", "preOrPost": "prequel", "description": "Football-themed pre-story for Movie 16." },
+      { "id": "movie16", "type": "movie", "number": 16, "title": "The Eleventh Striker", "year": 2012, "tags": ["character-pasts"], "description": "Bomb threats at J-League football stadiums.", "relatedEpisodes": ["bonusfile1-fantasista", "ep742-jleague", "ep907-jleague", "ep1083-jleague"] },
+      { "id": "movie17", "type": "movie", "number": 17, "title": "Private Eye in the Distant Sea", "year": 2013, "tags": ["character", "romance"], "description": "Murder aboard a Maritime Self-Defense Force warship.", "relatedEpisodes": ["ep694-prequel-m17"] },
+      { "id": "ep699-700", "type": "episode", "jpn": "699-700", "intl": "751-752", "title": "Haibara and Sera's Crisis", "tags": ["main-plot", "character", "black-org"], "description": "Haibara and Sera development with Subaru and Amuro. Buildup for the next major event." },
+      { "id": "ep701-704", "type": "episode", "jpn": "701-704", "intl": "753-756", "title": "The Pitch Black Mystery Train", "tags": ["main-plot", "black-org", "kaito-kid", "character"], "description": "The Pitch Black Mystery Train. Major Black Organization event. Important development for Haibara, Conan's mom, Shuichi, Subaru, Sera, and Amuro." },
+      { "id": "ep705-706", "type": "episode", "jpn": "705-706", "intl": "757-758", "title": "The Trembling Metropolitan Police Headquarters 3", "tags": ["main-plot", "character", "black-org"], "description": "Followup with plan details and Amuro." },
+      { "id": "ep710-715", "type": "episode", "jpn": "710-715", "intl": "762-767", "title": "Heiji Hattori and the Vampire Mansion", "tags": ["heiji"], "description": "Heiji case." },
+      { "id": "ep722-723", "type": "episode", "jpn": "722-723", "intl": "774-775", "title": "The Raven Chaser II", "tags": ["main-plot", "character"], "description": "Amuro and Subaru development." },
+      { "id": "ep724-725", "type": "episode", "jpn": "724-725", "intl": "776-777", "title": "Kaitou Kid and the Blush Mermaid 4", "tags": ["kaito-kid"], "description": "Kaitou Kid case." },
+      { "id": "ep727-728", "type": "episode", "jpn": "727-728", "intl": "779-780", "title": "The Detective Agency Murder Case", "tags": ["main-plot", "character"], "description": "Slight Sera development." },
+      { "id": "ep731-732", "type": "episode", "jpn": "731-732", "intl": "783-784", "title": "Shukichi and Yumi's Love Story", "tags": ["main-plot", "character"], "description": "Introduces Haneda Shukichi. Yumi development. Chiba and Miike development." },
+      { "id": "ep734", "type": "episode", "jpn": "734", "intl": "786-787", "title": "Jodie's Memories and the Cherry Blossom Viewing Trap", "tags": ["main-plot", "black-org", "fbi"], "description": "Black Organization activity with Jodie development. (1 Hour Special)" },
+      { "id": "ep735-prequel-m18", "type": "episode", "jpn": "735", "intl": "788", "title": "The Coded Invitation", "tags": ["movie-prequel", "character"], "relatedMovie": "movie18", "relatedMovieTitle": "Dimensional Sniper", "preOrPost": "prequel", "description": "Pre-story for Movie 18. Watch immediately before Movie 18." },
+      { "id": "movie18", "type": "movie", "number": 18, "title": "Dimensional Sniper", "year": 2014, "tags": ["character", "fbi"], "description": "A sniper is targeting tall buildings in Tokyo; Akai Shuichi returns.", "relatedEpisodes": ["ep735-prequel-m18"] },
+      { "id": "ep742-jleague", "type": "episode", "jpn": "742", "intl": "795", "title": "Promise with a J-Leaguer", "tags": ["movie-sequel", "character"], "relatedMovie": "movie16", "relatedMovieTitle": "The Eleventh Striker", "preOrPost": "sequel", "description": "Post-story for Movie 16. Features Sanada from Movie 16." },
+      { "id": "ep740-741", "type": "episode", "jpn": "740-741", "intl": "793-794", "title": "The Haunted Mansion Case", "tags": ["character"], "description": "Minor Sera development." },
+      { "id": "ep744-745", "type": "episode", "jpn": "744-745", "intl": "797-798", "title": "The Makoto and Sonoko Abduction Case", "tags": ["main-plot", "character", "romance"], "description": "Significant Sera and Makoto development." },
+      { "id": "ep746-747", "type": "episode", "jpn": "746-747", "intl": "799-800", "title": "Kaitou Kid vs. Kyogoku Makoto", "tags": ["kaito-kid", "character"], "description": "Kaitou Kid vs. Kyogoku Makoto." },
+      { "id": "ep748-749", "type": "episode", "jpn": "748-749", "intl": "801-802", "title": "Metropolitan Police Detective Love Story 9", "tags": ["police", "romance"], "description": "Metropolitan Police Detective Love Story 9." },
+      { "id": "ep754-756", "type": "episode", "jpn": "754-756", "intl": "807-809", "title": "Sera Masumi and the Assassin's Bullet", "tags": ["main-plot", "character", "fbi"], "description": "Sera development. Introduces Mary (Sera's sister from outside the territory)." },
+      { "id": "ep759-760", "type": "episode", "jpn": "759-760", "intl": "812-813", "title": "The Mystery Train Departure", "tags": ["main-plot", "character", "fbi"], "description": "Sera and Mary development." },
+      { "id": "ep763-764", "type": "episode", "jpn": "763-764", "intl": "816-817", "title": "The Truth Behind the Darkness", "tags": ["heiji"], "description": "Heiji case." },
+      { "id": "ep770-771", "type": "episode", "jpn": "770-771", "intl": "823-824", "title": "Kogoro's Dangerous Investigation", "tags": ["main-plot", "character"], "description": "Amuro development." },
+      { "id": "ep772-773", "type": "episode", "jpn": "772-773", "intl": "825-826", "title": "Shinichi Case: The Desperate Situation", "tags": ["shinichi", "character"], "description": "Shinichi case." },
+      { "id": "ep774-prequel-m19", "type": "episode", "jpn": "774", "intl": "827", "title": "Munch's Missing Scream", "tags": ["movie-prequel", "kaito-kid", "character"], "relatedMovie": "movie19", "relatedMovieTitle": "Sunflowers of Inferno", "preOrPost": "prequel", "description": "Pre-story for Movie 19. Munch's Scream stolen during transport. Watch immediately before Movie 19." },
+      { "id": "ep779-783", "type": "episode", "jpn": "779-783", "intl": "832-836", "title": "The Scarlet Series", "tags": ["main-plot", "black-org", "fbi", "character"], "description": "The Scarlet series. Major development for Amuro, Subaru, and all significant FBI characters." },
+      { "id": "movie19", "type": "movie", "number": 19, "title": "Sunflowers of Inferno", "year": 2015, "tags": ["romance", "kaito-kid", "character-pasts"], "description": "Kaitou Kid goes after Van Gogh's lost Sunflowers painting.", "relatedEpisodes": ["ep774-prequel-m19"] },
+      { "id": "ep785-786", "type": "episode", "jpn": "785-786", "intl": "838-839", "title": "The Shukichi and Yumi Wedding Case", "tags": ["main-plot", "character", "fbi"], "description": "Haneda Shukichi and Yumi development. Subaru and Mary development." },
+      { "id": "ep787-788", "type": "episode", "jpn": "787-788", "intl": "840-841", "title": "Sera and Mary's Secret", "tags": ["main-plot", "character", "fbi"], "description": "Sera and Mary development." },
+      { "id": "ep792-793", "type": "episode", "jpn": "792-793", "intl": "845-846", "title": "The Organization's Trap", "tags": ["main-plot", "black-org"], "description": "Black Organization info." },
+      { "id": "ep808-809", "type": "episode", "jpn": "808-809", "intl": "863-864", "title": "Heiji's Desperate Battle 2", "tags": ["heiji"], "description": "Heiji case." },
+      { "id": "ep810-812", "type": "episode", "jpn": "810-812", "intl": "865-867", "title": "The Man Called Zero", "tags": ["main-plot", "character"], "description": "Introduces Kuroda Hyoe. Yamato, Uehara, and Morofushi development." },
+      { "id": "ep813-prequel-m20", "type": "episode", "jpn": "813", "intl": "868", "title": "The Shadow Approaching Amuro", "tags": ["movie-prequel", "character", "black-org"], "relatedMovie": "movie20", "relatedMovieTitle": "The Darkest Nightmare", "preOrPost": "prequel", "description": "Pre-story for Movie 20. A mysterious man stalks Amuro at Cafe Poirot. Watch immediately before Movie 20." },
+      { "id": "ep814-815", "type": "episode", "jpn": "814-815", "intl": "869-870", "title": "The Kuroda Development Case", "tags": ["main-plot", "character"], "description": "Kuroda followup." },
+      { "id": "movie20", "type": "movie", "number": 20, "title": "The Darkest Nightmare", "year": 2016, "tags": ["character", "black-org", "fbi"], "description": "A PSB spy with amnesia washes ashore; the Black Organization hunts her.", "relatedEpisodes": ["ep813-prequel-m20"] },
+      { "id": "ep822-823", "type": "episode", "jpn": "822-823", "intl": "877-878", "title": "Kogoro's Deduction Showdown", "tags": ["main-plot", "character"], "description": "Kuroda followup." },
+      { "id": "ep827-828", "type": "episode", "jpn": "827-828", "intl": "882-883", "title": "Sera Masumi's True Identity", "tags": ["main-plot", "character", "fbi"], "description": "Sera, Shukichi, and Mary development." },
+      { "id": "ep830-832", "type": "episode", "jpn": "830-832", "intl": "885-887", "title": "The Great Detective of the West Case", "tags": ["heiji"], "description": "Heiji case." },
+      { "id": "ep836-837", "type": "episode", "jpn": "836-837", "intl": "891-892", "title": "The Mystery of the Scream", "tags": ["main-plot", "fbi", "character"], "description": "Amuro, Sera, and Shuichi development." },
+      { "id": "ep843-844", "type": "episode", "jpn": "843-844", "intl": "898-899", "title": "The Trembling Metropolitan Police Headquarters 4", "tags": ["main-plot", "character"], "description": "Hints related to Mary." },
+      { "id": "ep847-848", "type": "episode", "jpn": "847-848", "intl": "902-903", "title": "Chiba and Miike Love Story", "tags": ["character", "police"], "description": "Detective Chiba and Miike development. Recap of main plot details." },
+      { "id": "ep849-850", "type": "episode", "jpn": "849-850", "intl": "904-905", "title": "Shukichi's Important Background", "tags": ["main-plot", "character"], "description": "Yumi development. Important background on Haneda Shukichi. Relevant to Shuichi." },
+      { "id": "ep853-854", "type": "episode", "jpn": "853-854", "intl": "908-909", "title": "Shinichi and Ran's Memories", "tags": ["shinichi", "romance", "character"], "description": "Shinichi case." },
+      { "id": "ep855-prequel-m21", "type": "episode", "jpn": "855", "intl": "910", "title": "The Mystery of the Vanished Black Belt", "tags": ["movie-prequel", "character", "romance"], "relatedMovie": "movie21", "relatedMovieTitle": "The Crimson Love Letter", "preOrPost": "prequel", "description": "Pre-story for Movie 21. Sonoko and Makoto in Osaka at a karate dojo. Watch immediately before Movie 21." },
+      { "id": "ep861-867", "type": "episode", "jpn": "861-864,866,867", "intl": "916-919,921,922", "title": "Black Organization Setup Arc", "tags": ["main-plot", "black-org", "fbi", "character"], "description": "Black Organization setup with Subaru, Amuro, Sera, and Mary development." },
+      { "id": "movie21", "type": "movie", "number": 21, "title": "The Crimson Love Letter", "year": 2017, "tags": ["character", "romance", "character-pasts", "heiji"], "description": "Heiji and Kazuha caught up in a karuta tournament and bombing plot in Kyoto.", "relatedEpisodes": ["ep855-prequel-m21"], "note": "Reasonably necessary if following the Heiji/Kazuha plotline. Some aspects of the Scarlet School Trip case won't make sense if skipped." },
+      { "id": "ep872-874", "type": "episode", "jpn": "872-874", "intl": "927-929", "title": "Heiji Hattori and the Vampire Mansion 2", "tags": ["heiji", "character"], "description": "Heiji case. Introduces Ooka Momiji." },
+      { "id": "ep878-879", "type": "episode", "jpn": "878-879", "intl": "933-934", "title": "Sera Masumi Development Case 2", "tags": ["main-plot", "character", "fbi"], "description": "Sera development." },
+      { "id": "ep881-882", "type": "episode", "jpn": "881-882", "intl": "936-937", "title": "Shinichi Case: The Night Conan Was Almost Discovered", "tags": ["main-plot", "shinichi", "fbi", "character"], "description": "Shinichi case with Sera, Shuichi development." },
+      { "id": "ep885-886", "type": "episode", "jpn": "885-886", "intl": "940-941", "title": "Heiji and Amuro Case", "tags": ["heiji", "character"], "description": "Heiji and Amuro case. Introduces Iori Muga. Momiji development." },
+      { "id": "ep887-888", "type": "episode", "jpn": "887-888", "intl": "942-943", "title": "Kaitou Kid and the Luna Memoria", "tags": ["kaito-kid"], "description": "Kaitou Kid case." },
+      { "id": "ep889-890", "type": "episode", "jpn": "889-890", "intl": "944-945", "title": "The Mystery of the Missing Princess", "tags": ["main-plot", "character"], "description": "Introduces Wakasa Rumi." },
+      { "id": "ep894-895", "type": "episode", "jpn": "894-895", "intl": "949-950", "title": "The Workplace Murder Case", "tags": ["main-plot", "character", "black-org"], "description": "Introduces Wakita Kanenori." },
+      { "id": "ep896-897", "type": "episode", "jpn": "896-897", "intl": "951-952", "title": "Rumi-sensei Development Case", "tags": ["main-plot", "character"], "description": "Rumi-sensei development." },
+      { "id": "ep898-prequel-m22", "type": "episode", "jpn": "898", "intl": "953", "title": "The Melting Cake!", "tags": ["movie-prequel", "character"], "relatedMovie": "movie22", "relatedMovieTitle": "Zero the Enforcer", "preOrPost": "prequel", "description": "Pre-story for Movie 22. Amuro's cake mysteriously melts at Cafe Poirot. Watch immediately before Movie 22." },
+      { "id": "ep907-jleague", "type": "episode", "jpn": "907", "intl": "962", "title": "The J League Bodyguard", "tags": ["movie-sequel", "character"], "relatedMovie": "movie16", "relatedMovieTitle": "The Eleventh Striker", "preOrPost": "sequel", "description": "Post-story for Movie 16. Commemorates 25th J-League anniversary. Features Yasuhito Endo from Movie 16." },
+      { "id": "ep909-910", "type": "episode", "jpn": "909-910", "intl": "964-965", "title": "The Kuroda Development Case 2", "tags": ["main-plot", "character"], "description": "Kuroda and Rumi-sensei development." },
+      { "id": "ep916-917", "type": "episode", "jpn": "916-917", "intl": "971-972", "title": "Heiji Hattori's Desperate Battle 3", "tags": ["heiji"], "description": "Heiji case." },
+      { "id": "movie22", "type": "movie", "number": 22, "title": "Zero the Enforcer", "year": 2018, "tags": ["character", "black-org"], "description": "Amuro (Zero) is suspected of bombing the Tokyo Summit.", "relatedEpisodes": ["ep898-prequel-m22"] },
+      { "id": "ep919-920-925-926", "type": "episode", "jpn": "919-920,925-926", "intl": "974-975,980-981", "title": "The Threatening Letter Setup", "tags": ["main-plot", "character"], "description": "Setup. Slight Amuro development." },
+      { "id": "ep927-928", "type": "episode", "jpn": "927-928", "intl": "982-985", "title": "Scarlet School Trip", "tags": ["main-plot", "shinichi", "fbi", "romance", "character"], "description": "Scarlet School Trip. Shinichi case. Main character development. Sera Masumi and Mary development. (Both 1 Hour Specials)" },
+      { "id": "ep936-prequel-m23", "type": "episode", "jpn": "936", "intl": "991", "title": "Intrigue at the Food Court", "tags": ["movie-prequel", "character"], "relatedMovie": "movie23", "relatedMovieTitle": "The Fist of Blue Sapphire", "preOrPost": "prequel", "description": "Pre-story for Movie 23. Detective Boys overhear a sinister conversation at a food festival. Watch immediately before Movie 23." },
+      { "id": "ep941-942", "type": "episode", "jpn": "941-942", "intl": "998-999", "title": "Followup from Scarlet School Trip", "tags": ["main-plot", "black-org", "character"], "description": "Followup. Kuroda, Rumi-sensei, and Wakita development. Black Organization development." },
+      { "id": "movie23", "type": "movie", "number": 23, "title": "The Fist of Blue Sapphire", "year": 2019, "tags": ["character", "romance", "kaito-kid"], "description": "Kaitou Kid in Singapore, Makoto's championship match, and a serial murder case.", "relatedEpisodes": ["ep936-prequel-m23"] },
+      { "id": "ep952-954", "type": "episode", "jpn": "952-954", "intl": "1009-1011", "title": "Amuro's Desperate Battle", "tags": ["main-plot", "character"], "description": "Amuro development." },
+      { "id": "ep971-974", "type": "episode", "jpn": "971-974", "intl": "1028-1031", "title": "The Complex Alibi Case", "tags": ["main-plot", "character", "police"], "description": "Chiba, Miike, Kuroda, Amuro, Yumi, and Shukichi development." },
+      { "id": "ep983-984", "type": "episode", "jpn": "983-984", "intl": "1040-1041", "title": "Heiji and Kaitou Kid Development Case", "tags": ["main-plot", "heiji", "kaito-kid", "character"], "description": "Heiji case, Kaitou Kid, Morofushi, Amuro, and Hiromitsu development." },
+      { "id": "ep993-995", "type": "episode", "jpn": "993-995", "intl": "1050-1052", "title": "Sera Masumi Development Arc", "tags": ["main-plot", "character", "romance"], "description": "Sera Masumi development. Makoto is around." },
+      { "id": "ep1002-prequel-m24", "type": "episode", "jpn": "1002", "intl": "1059", "title": "The Beika City Shopping Center Garbage Bin Mystery", "tags": ["movie-prequel", "character"], "relatedMovie": "movie24", "relatedMovieTitle": "The Scarlet Bullet", "preOrPost": "prequel", "description": "Pre-story for Movie 24. Originally scheduled as ep 975 but delayed due to COVID-19. Watch immediately before Movie 24." },
+      { "id": "ep1003-1005", "type": "episode", "jpn": "1003-1005", "intl": "1060-1062", "title": "The 36-Cell Perfect Game", "tags": ["main-plot", "character"], "description": "Hiromitsu and Wakita development." },
+      { "id": "movie24", "type": "movie", "number": 24, "title": "The Scarlet Bullet", "year": 2021, "tags": ["character", "romance", "fbi"], "description": "World Sports Games in Tokyo; FBI linked kidnappings; Akai family focus.", "relatedEpisodes": ["ep1002-prequel-m24"] },
+      { "id": "ep1011-1012", "type": "episode", "jpn": "1011-1012", "intl": "1068-1069", "title": "Rumi-sensei Development Case 2", "tags": ["main-plot", "character"], "description": "Rumi-sensei development." },
+      { "id": "ep1018-1020", "type": "episode", "jpn": "1018-1020", "intl": "1075-1077", "title": "Subaru and Sera's Secret", "tags": ["main-plot", "character", "fbi"], "description": "Subaru, Sera Masumi, and Mary development." },
+      { "id": "ep1024-1025", "type": "episode", "jpn": "1024-1025", "intl": "1081-1082", "title": "Heiji Case: Haneda Koji Development", "tags": ["main-plot", "heiji", "character"], "description": "Heiji case. Haneda Koji development." },
+      { "id": "ep1033-1035", "type": "episode", "jpn": "1033-1035", "intl": "1090-1092", "title": "Shukichi, Yumi, Shuichi, and Mary Development", "tags": ["main-plot", "character", "fbi"], "description": "Shukichi, Yumi, Shuichi, and Mary development." },
+      { "id": "ep1039-prequel-m25", "type": "episode", "jpn": "1039", "intl": "1096", "title": "The Flying Jack-o'-lantern", "tags": ["movie-prequel", "character"], "relatedMovie": "movie25", "relatedMovieTitle": "The Bride of Halloween", "preOrPost": "prequel", "description": "Pre-story for Movie 25. Jack-o'-lantern thefts at Beika Shopping Centre Halloween event. Watch immediately before Movie 25." },
+      { "id": "ep1045-1046", "type": "episode", "jpn": "1045-1046", "intl": "1102-1103", "title": "Sera Masumi and Mary: Black Organization Arc", "tags": ["main-plot", "character", "black-org", "fbi"], "description": "Sera Masumi and Mary development and Black Organization activity." },
+      { "id": "movie25", "type": "movie", "number": 25, "title": "The Bride of Halloween", "year": 2022, "tags": ["romance", "black-org", "character-pasts"], "description": "A serial murder case targeting police officers on Halloween, connected to the Black Organization.", "relatedEpisodes": ["ep1039-prequel-m25"] },
+      { "id": "ep1053-1054", "type": "episode", "jpn": "1053-1054", "intl": "1110-1111", "title": "Rumi Development Case 3", "tags": ["main-plot", "character"], "description": "Rumi development." },
+      { "id": "ep1059-1060", "type": "episode", "jpn": "1059-1060", "intl": "1116-1117", "title": "Wakita Development Case 2", "tags": ["main-plot", "character"], "description": "Wakita development." },
+      { "id": "ep1071-1072", "type": "episode", "jpn": "1071-1072", "intl": "1128-1129", "title": "Kaitou Kid: Important Plot Episode", "tags": ["main-plot", "kaito-kid", "character"], "description": "Kaitou Kid case. Plot-important." },
+      { "id": "ep1077-1079", "type": "episode", "jpn": "1077-1079", "intl": "1134-1136", "title": "The Black Organization's Scheme", "tags": ["main-plot", "black-org", "character"], "description": "The Black Organization's Scheme major arc." },
+      { "id": "ep1080-prequel-m26", "type": "episode", "jpn": "1080", "intl": "1137", "title": "The Cameras Targeting Haibara", "tags": ["movie-prequel", "character", "black-org"], "relatedMovie": "movie26", "relatedMovieTitle": "Black Iron Submarine", "preOrPost": "prequel", "description": "Pre-story for Movie 26. Suspicious men seem to be watching Haibara at a department store. Watch immediately before Movie 26." },
+      { "id": "ep1083-jleague", "type": "episode", "jpn": "1083", "intl": "1140", "title": "Behind the Scenes of the J League Finals", "tags": ["movie-sequel", "character"], "relatedMovie": "movie16", "relatedMovieTitle": "The Eleventh Striker", "preOrPost": "sequel", "description": "Post-story for Movie 16. Commemorates 30th J-League anniversary. Detective Boys at a Kawasaki Frontale vs FC Tokyo match." },
+      { "id": "ep1085-1086", "type": "episode", "jpn": "1085-1086", "intl": "1142-1143", "title": "Heiji Case: Post Movie 26", "tags": ["heiji"], "description": "Heiji case." },
+      { "id": "ep1093-1094", "type": "episode", "jpn": "1093-1094", "intl": "1150-1151", "title": "Haibara and Rumi Development", "tags": ["main-plot", "character"], "description": "Haibara and Rumi development." },
+      { "id": "ep1098-1099", "type": "episode", "jpn": "1098-1099", "intl": "1155-1156", "title": "Hagiwara Chihaya Introduction", "tags": ["character"], "description": "Introduces Hagiwara Chihaya." },
+      { "id": "ep1105-1106", "type": "episode", "jpn": "1105-1106", "intl": "1162-1163", "title": "Kaitou Kid and the Siren's Splash", "tags": ["kaito-kid", "main-plot", "character"], "description": "Kaitou Kid case. Wakita development." },
+      { "id": "ep1109-1110", "type": "episode", "jpn": "1109-1110", "intl": "1166-1167", "title": "Takagi Development Case", "tags": ["character", "police"], "description": "Takagi development." },
+      { "id": "ep1115-1116", "type": "episode", "jpn": "1115-1116", "intl": "1172-1173", "title": "Hagiwara Chihaya Development", "tags": ["character"], "description": "Hagiwara Chihaya development." },
+      { "id": "movie26", "type": "movie", "number": 26, "title": "Black Iron Submarine", "year": 2023, "tags": ["character", "black-org", "fbi"], "description": "A PSB submarine and Black Organization linked plot. Haibara-focused.", "relatedEpisodes": ["ep1080-prequel-m26"] },
+      { "id": "ep1120-prequel-m27", "type": "episode", "jpn": "1120", "intl": "1177", "title": "Mystery of the Lost Treasure", "tags": ["movie-prequel", "character", "kaito-kid"], "relatedMovie": "movie27", "relatedMovieTitle": "The Million-dollar Pentagram", "preOrPost": "prequel", "description": "Pre-story for Movie 27. Conan and Sonoko investigate a stolen pottery collection. Watch immediately before Movie 27." },
+      { "id": "ep1135-1136", "type": "episode", "jpn": "1135-1136", "intl": "1192-1193", "title": "Heiji Case: Kuroda Development", "tags": ["main-plot", "heiji", "character"], "description": "Heiji case. Kuroda development." },
+      { "id": "movie27", "type": "movie", "number": 27, "title": "The Million-dollar Pentagram", "year": 2024, "tags": ["kaito-kid"], "description": "Kaitou Kid in Hakodate seeking a legendary sword. Heiji-focused.", "relatedEpisodes": ["ep1120-prequel-m27"] },
+      { "id": "ep1144-1145", "type": "episode", "jpn": "1144-1145", "intl": "1201-1202", "title": "The Hotel Serial Bombing Case", "tags": ["main-plot", "character", "black-org"], "description": "Sera Masumi and Mary development. Black Organization buildup." },
+      { "id": "ep1148-1149", "type": "episode", "jpn": "1148-1149", "intl": "1205-1206", "title": "The Detective Boys and the Two Leaders", "tags": ["main-plot", "character"], "description": "Rumi development." },
+      { "id": "ep1150-1151", "type": "episode", "jpn": "1150-1151", "intl": "1207-1208", "title": "Kaitou Kid and the Crown Trick", "tags": ["main-plot", "kaito-kid", "character"], "description": "Kaitou Kid case. Wakita development." },
+      { "id": "ep1161-sequel-m28", "type": "episode", "jpn": "1161", "intl": "1218", "title": "The Secret's Afterimage", "tags": ["movie-sequel", "character", "police"], "relatedMovie": "movie28", "relatedMovieTitle": "One-eyed Flashback", "preOrPost": "sequel", "description": "Post-story for Movie 28. Megure brings a case to Kogoro connected to events in the movie. Watch after Movie 28." },
+      { "id": "ep1164-1167", "type": "episode", "jpn": "1164-1167", "intl": "1221-1224", "title": "The 17-Year-Old Truth", "tags": ["main-plot", "character", "black-org"], "description": "Chess Tournament Murder Case. Kuroda, Rumi, and Wakita development." },
+      { "id": "ep1169-1170", "type": "episode", "jpn": "1169-1170", "intl": "1226-1227", "title": "The Mystery of the Man-Eating Classroom", "tags": ["character"], "description": "Standalone case." },
+      { "id": "ep1171-1172", "type": "episode", "jpn": "1171-1172", "intl": "1228-1229", "title": "The Reason He Became a Butler", "tags": ["character"], "description": "Standalone case." },
+      { "id": "ep1178-1179", "type": "episode", "jpn": "1178-1179", "intl": "1235-1236", "title": "The Crimson Skeleton of Mt. Washio", "tags": ["character"], "description": "Standalone case." },
+      { "id": "ep1184-1185", "type": "episode", "jpn": "1184-1185", "intl": "1241-1242", "title": "The Red-Brick Warehouse and the Vanishing Kidnapper", "tags": ["character"], "description": "Standalone case." },
+      { "id": "ep1187", "type": "episode", "jpn": "1187", "intl": "1244", "title": "Episode ZERO: The Shinichi Kudo Aquarium Case", "tags": ["shinichi", "romance", "character"], "description": "30th anniversary special. Shinichi case adapted from a special edition manga. (1 Hour Special)" },
+      { "id": "ep1193-1194", "type": "episode", "jpn": "1193-1194", "intl": "1250-1251", "title": "Kid VS Hakuba: The Azure Throne", "tags": ["kaito-kid", "character"], "description": "Kaitou Kid vs. Hakuba Saguru case." },
+      { "id": "movie28", "type": "movie", "number": 28, "title": "One-eyed Flashback", "year": 2025, "tags": ["character", "fbi"], "description": "A case connected to a 17-year-old unsolved case; Akai family focus.", "relatedEpisodes": ["ep1161-sequel-m28"] },
+      { "id": "ep1197-prequel-m29", "type": "episode", "jpn": "1197", "intl": "1254", "title": "The Cosplay Rider of the Wind", "tags": ["movie-prequel", "character"], "relatedMovie": "movie29", "relatedMovieTitle": "Fallen Angel of the Highway", "preOrPost": "prequel", "description": "Pre-story for Movie 29. Purse-snatching incidents by motorcycle thieves. Watch immediately before Movie 29." },
+      { "id": "movie29", "type": "movie", "number": 29, "title": "Fallen Angel of the Highway", "year": 2026, "tags": ["character"], "description": "Movie 29. (2026)", "relatedEpisodes": ["ep1197-prequel-m29"] }
+    ]
+  };
+
+  // Function to process JSON data into individual episode cards
+  function processConanData(data) {
+    const processedEpisodes = [];
+    
+    data.sequence.forEach(item => {
+      if (item.type === 'episode') {
+        // Split episode ranges into individual episodes
+        const episodeRanges = item.jpn.split(',');
+        episodeRanges.forEach(range => {
+          if (range.includes('-')) {
+            // Handle range like "1-2" or "188-193"
+            const [start, end] = range.split('-').map(n => parseInt(n.trim()));
+            for (let i = start; i <= end; i++) {
+              processedEpisodes.push({
+                episodes: i.toString(),
+                title: item.title,
+                description: item.description,
+                type: item.tags[0] || 'character',
+                tags: item.tags,
+                id: item.id,
+                jpn: i.toString(),
+                intl: item.intl
+              });
+            }
+          } else {
+            // Handle single episode
+            processedEpisodes.push({
+              episodes: range.trim(),
+              title: item.title,
+              description: item.description,
+              type: item.tags[0] || 'character',
+              tags: item.tags,
+              id: item.id,
+              jpn: range.trim(),
+              intl: item.intl
+            });
+          }
+        });
+      } else if (item.type === 'movie') {
+        // Handle movies
+        processedEpisodes.push({
+          episodes: `Movie ${item.number}`,
+          title: `${item.title} (${item.year})`,
+          description: item.description,
+          type: 'movie',
+          tags: item.tags,
+          id: item.id,
+          jpn: `M${item.number}`,
+          intl: `M${item.number}`,
+          year: item.year
+        });
+      } else {
+        // Handle OVAs, Magic Files, TV Specials, etc.
+        const typeMap = {
+          'ova': 'OVA',
+          'magic-file': 'Magic File',
+          'tv-special': 'TV Special',
+          'magic-kaito': 'Magic Kaito',
+          'bonus-file': 'Bonus File'
+        };
+        
+        const prefix = typeMap[item.type] || item.type;
+        const number = item.number || '';
+        
+        processedEpisodes.push({
+          episodes: `${prefix} ${number}`,
+          title: item.title,
+          description: item.description,
+          type: item.type,
+          tags: item.tags,
+          id: item.id,
+          jpn: item.jpn || prefix,
+          intl: item.intl || prefix
+        });
+      }
+    });
+    
+    return processedEpisodes;
+  }
+
+  // Process all the data
+  const allEpisodes = processConanData(CONAN_DATA);
+
+  pg.innerHTML=`
+    <section class="movies-page-hero">
+      <div class="movies-page-hero-bg" style="background-image:url('${IMG.conan3}')"></div>
+      <div class="movies-page-hero-overlay"></div>
+      <div class="movies-page-hero-content">
+        <button class="pp-hero-back" onclick="Router.navigate('/guide')">← Watch Guides</button>
+        <div class="section-eyebrow">Curated Episodes · Based on XerBlade Guide</div>
+        <h1 class="movies-page-title">Important Episodes <em>XerBlade Guide</em></h1>
+        <p class="movies-page-sub">The essential Detective Conan episodes every fan should see, from character introductions to main plot developments.</p>
+      </div>
+    </section>
+
+    <!-- Filter System -->
+    <div class="filter-system-container">
+      <!-- Main Filter Options -->
+      <div class="filter-main-options">
+        <button class="filter-main-btn active" data-main-filter="important">All Important</button>
+        <button class="filter-main-btn" data-main-filter="important-movies">Important + Movies</button>
+        <button class="filter-main-btn" data-main-filter="complete">Important + Movies + Tie-ins</button>
+      </div>
+      
+      <!-- Dropdown Filters -->
+      <div class="filter-dropdowns">
+        <select class="filter-dropdown" id="content-category-filter">
+          <option value="">All Content Types</option>
+          <option value="main-plot">Main Plot</option>
+          <option value="character">Character Development</option>
+          <option value="setup">Introduction & Setup</option>
+          <option value="romance">Romance</option>
+          <option value="fun">Entertainment Value</option>
+          <option value="movie-prequel">Movie Prequels</option>
+          <option value="movie-sequel">Movie Sequels</option>
+        </select>
+        
+        <select class="filter-dropdown" id="faction-filter">
+          <option value="">All Factions</option>
+          <option value="black-org">Black Organization</option>
+          <option value="fbi">FBI</option>
+          <option value="heiji">Heiji Hattori</option>
+          <option value="kaito-kid">Kaitou Kid</option>
+          <option value="police">Police</option>
+          <option value="romance">Romance</option>
+        </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Season Navigator -->
+    <div class="season-navigator-container">
+      <div class="season-nav-header">
+        <h3>Quick Navigation</h3>
+      </div>
+      <div class="season-nav-grid">
+        <button class="season-nav-btn" onclick="scrollToSeason('early')">Episodes 1-100</button>
+        <button class="season-nav-btn" onclick="scrollToSeason('mid')">Episodes 200-400</button>
+        <button class="season-nav-btn" onclick="scrollToSeason('late')">Episodes 500-700</button>
+        <button class="season-nav-btn" onclick="scrollToSeason('current')">Episodes 800+</button>
+        <button class="season-nav-btn" onclick="scrollToSeason('movies')">Movies</button>
+        <button class="season-nav-btn" onclick="scrollToSeason('specials')">Specials & OVAs</button>
+      </div>
+    </div>
+
+    <!-- Episodes Grid -->
+    <div class="episodes-grid-horizontal">
+      ${allEpisodes.map((ep, index) => {
+        const isEven = index % 2 === 0;
+        const episodeNumber = ep.episodes.includes('Movie') ? ep.episodes : (ep.episodes.includes('Episode') ? ep.episodes : parseInt(ep.episodes) || 0);
+        
+        // Determine image based on type using reliable images with fallbacks
+        let imageUrl;
+        try {
+          if (ep.type === 'movie') {
+            // Use specific movie images
+            imageUrl = ep.year && parseInt(ep.year) >= 2020 ? IMG.conan3 : IMG.conan4;
+          } else if (ep.type === 'ova' || ep.type === 'magic-file') {
+            // Use character-specific images for OVAs
+            const ovaImages = [IMG.haibara, IMG.ran, IMG.heiji, IMG.kid];
+            imageUrl = ovaImages[index % ovaImages.length];
+          } else if (ep.type === 'tv-special') {
+            // Use group images for TV specials
+            imageUrl = IMG.group;
+          } else if (ep.type === 'magic-kaito') {
+            // Use Kaitou Kid image for Magic Kaito episodes
+            imageUrl = IMG.kid;
+          } else {
+            // Regular episodes - cycle through main character images
+            const episodeImages = [IMG.conan1, IMG.conan2, IMG.conan5, IMG.ran, IMG.heiji, IMG.haibara];
+            imageUrl = episodeImages[index % episodeImages.length];
+          }
+          
+          // Ensure we have a valid URL
+          if (!imageUrl || imageUrl === 'undefined' || imageUrl === 'null') {
+            imageUrl = IMG.conan1; // Ultimate fallback
+          }
+        } catch (error) {
+          imageUrl = IMG.conan1; // Ultimate fallback
+        }
+        
+        // Format the type display
+        let typeDisplay = ep.type;
+        let typeClass = ep.type;
+        if (ep.type === 'movie') {
+          typeDisplay = 'movie';
+          typeClass = 'movie';
+        } else if (ep.type === 'episode') {
+          typeDisplay = 'episode';
+          typeClass = 'episode';
+        } else if (ep.type === 'ova') {
+          typeDisplay = 'ova';
+          typeClass = 'ova';
+        } else if (ep.type === 'magic-file') {
+          typeDisplay = 'magic-file';
+          typeClass = 'magic-file';
+        } else if (ep.type === 'tv-special') {
+          typeDisplay = 'tv-special';
+          typeClass = 'tv-special';
+        } else if (ep.type === 'magic-kaito') {
+          typeDisplay = 'magic-kaito';
+          typeClass = 'magic-kaito';
+        }
+        
+        return `
+          <div class="episode-horizontal-card" onclick="openEpisodeModal('${ep.episodes}')" data-type="${ep.type}" data-tags="${ep.tags ? ep.tags.join(' ') : ''}">
+            <div class="episode-horizontal-img" style="background-image: url('${imageUrl}')"></div>
+            <div class="episode-horizontal-content">
+              <div class="episode-horizontal-header">
+                <div class="episode-horizontal-number">${ep.episodes}</div>
+                <div class="episode-horizontal-type ${typeClass}">${typeDisplay}</div>
+              </div>
+              <h3 class="episode-horizontal-title">${ep.title}</h3>
+              <div class="episode-horizontal-tags">
+                ${ep.tags ? ep.tags.map(tag => `<span class="tag-badge ${tag}">${tag.replace('-', ' ')}</span>`).join('') : ''}
+              </div>
+              <p class="episode-horizontal-desc">${ep.description}</p>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+    
+    <!-- About Section -->
+    <section class="section">
+      <div class="container">
+        <div class="content-card">
+          <h2>About the XerBlade Guide</h2>
+          <p>This comprehensive episode guide is based on the renowned XerBlade Important Episode List, widely considered the go-to resource for Detective Conan fans seeking to watch the most significant episodes.</p>
+        </div>
+      </div>
+    </section>
+    ${renderFooterHTML()}
+  `;
+  
+  app.appendChild(pg);
+  
+  // Setup new filter functionality
+  setTimeout(() => {
+    const mainFilterButtons = pg.querySelectorAll('.filter-main-btn');
+    const contentCategoryFilter = pg.getElementById('content-category-filter');
+    const factionFilter = pg.getElementById('faction-filter');
+    const episodeCards = pg.querySelectorAll('.episode-horizontal-card');
+    
+    function applyFilters() {
+      const activeMainFilter = pg.querySelector('.filter-main-btn.active').dataset.mainFilter;
+      const contentCategory = contentCategoryFilter.value;
+      const faction = factionFilter.value;
+      
+      episodeCards.forEach(card => {
+        const tags = card.dataset.tags || '';
+        const type = card.dataset.type || '';
+        const episodes = card.querySelector('.episode-horizontal-number').textContent;
+        
+        let showCard = true;
+        
+        // Main filter logic
+        if (activeMainFilter === 'important') {
+          // Show only episodes (no movies, OVAs, etc.)
+          if (type !== 'episode') showCard = false;
+        } else if (activeMainFilter === 'important-movies') {
+          // Show episodes and movies only
+          if (type !== 'episode' && type !== 'movie') showCard = false;
+        }
+        // 'complete' shows everything
+        
+        // Content category filter
+        if (contentCategory && showCard) {
+          if (!tags.includes(contentCategory)) showCard = false;
+        }
+        
+        // Faction filter
+        if (faction && showCard) {
+          if (!tags.includes(faction)) showCard = false;
+        }
+        
+        card.style.display = showCard ? 'block' : 'none';
+      });
+    }
+    
+    // Main filter buttons
+    mainFilterButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        mainFilterButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        applyFilters();
+      });
+    });
+    
+    // Dropdown filters
+    contentCategoryFilter.addEventListener('change', applyFilters);
+    factionFilter.addEventListener('change', applyFilters);
+    
+    observeAll();
+    refreshHover();
+    refreshEpisodeSeasonVisuals();
+    
+    // Make carousels draggable on desktop
+    setupDraggableCarousel(pg.querySelector('.filter-main-options'));
+    setupDraggableCarousel(pg.querySelector('.filter-dropdowns'));
+    setupDraggableCarousel(pg.querySelector('.season-nav-grid'));
+  }, 100);
+}
+
+// Setup draggable carousel functionality
+function setupDraggableCarousel(element) {
+  if (!element) return;
+  
+  let isDown = false;
+  let startX;
+  let scrollLeft;
+  
+  element.addEventListener('mousedown', (e) => {
+    // Only enable drag on desktop (not touch devices)
+    if (window.matchMedia('(pointer: fine)').matches) {
+      isDown = true;
+      element.style.cursor = 'grabbing';
+      startX = e.pageX - element.offsetLeft;
+      scrollLeft = element.scrollLeft;
+      e.preventDefault();
+    }
+  });
+  
+  element.addEventListener('mouseleave', () => {
+    isDown = false;
+    element.style.cursor = 'grab';
+  });
+  
+  element.addEventListener('mouseup', () => {
+    isDown = false;
+    element.style.cursor = 'grab';
+  });
+  
+  element.addEventListener('mousemove', (e) => {
+    if (!isDown) return;
+    e.preventDefault();
+    const x = e.pageX - element.offsetLeft;
+    const walk = (x - startX) * 2; // Scroll speed
+    element.scrollLeft = scrollLeft - walk;
+  });
+}
+
+// Season navigator function
+function scrollToSeason(season) {
+  const episodeCards = document.querySelectorAll('.episode-horizontal-card');
+  let targetCard = null;
+  
+  switch(season) {
+    case 'early':
+      // Find first episode around 1-100
+      episodeCards.forEach(card => {
+        const epNum = card.querySelector('.episode-horizontal-number').textContent;
+        const num = parseInt(epNum);
+        if (num >= 1 && num <= 100 && !targetCard) {
+          targetCard = card;
+        }
+      });
+      break;
+    case 'mid':
+      // Find first episode around 200-400
+      episodeCards.forEach(card => {
+        const epNum = card.querySelector('.episode-horizontal-number').textContent;
+        const num = parseInt(epNum);
+        if (num >= 200 && num <= 400 && !targetCard) {
+          targetCard = card;
+        }
+      });
+      break;
+    case 'late':
+      // Find first episode around 500-700
+      episodeCards.forEach(card => {
+        const epNum = card.querySelector('.episode-horizontal-number').textContent;
+        const num = parseInt(epNum);
+        if (num >= 500 && num <= 700 && !targetCard) {
+          targetCard = card;
+        }
+      });
+      break;
+    case 'current':
+      // Find first episode 800+
+      episodeCards.forEach(card => {
+        const epNum = card.querySelector('.episode-horizontal-number').textContent;
+        const num = parseInt(epNum);
+        if (num >= 800 && !targetCard) {
+          targetCard = card;
+        }
+      });
+      break;
+    case 'movies':
+      // Find first movie
+      episodeCards.forEach(card => {
+        if (card.dataset.type === 'movie' && !targetCard) {
+          targetCard = card;
+        }
+      });
+      break;
+    case 'specials':
+      // Find first special (OVA, TV Special, etc.)
+      episodeCards.forEach(card => {
+        const type = card.dataset.type;
+        if ((type === 'ova' || type === 'tv-special' || type === 'magic-file' || type === 'magic-kaito') && !targetCard) {
+          targetCard = card;
+        }
+      });
+      break;
+  }
+  
+  if (targetCard) {
+    targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Add highlight effect
+    targetCard.style.transform = 'scale(1.05)';
+    targetCard.style.boxShadow = '0 0 30px rgba(59, 130, 246, 0.5)';
+    setTimeout(() => {
+      targetCard.style.transform = '';
+      targetCard.style.boxShadow = '';
+    }, 2000);
+  }
+}
+
+// ─── NO FILLER GUIDE PAGE ───────────────────────────────
+function renderNoFillerPage(){
+  app.innerHTML='';
+  window.scrollTo({top:0,behavior:"instant"});
+  const pg=document.createElement('div');
+  pg.className='page-enter';
+
+  // Get all non-filler episodes
+  const canonEpisodes = (typeof EPISODES !== 'undefined' ? EPISODES : []).filter(ep => isCanon(ep));
+  
+  // Group by season
+  const episodesBySeason = {};
+  canonEpisodes.forEach(ep => {
+    if (!episodesBySeason[ep.season]) {
+      episodesBySeason[ep.season] = [];
+    }
+    episodesBySeason[ep.season].push(ep);
+  });
+
+  pg.innerHTML=`
+    <section class="movies-page-hero">
+      <div class="movies-page-hero-bg" style="background-image:url('https://image.tmdb.org/t/p/w1280/j2qXQ8kHpMMX6U9qkPLo0yw8fF4.jpg')"></div>
+      <div class="movies-page-hero-overlay"></div>
+      <div class="movies-page-hero-content">
+        <button class="pp-hero-back" onclick="Router.navigate('/guide')">← Watch Guides</button>
+        <div class="section-eyebrow">Canon Only · Skip All Fillers</div>
+        <h1 class="movies-page-title">No <em>Filler Guide</em></h1>
+        <p class="movies-page-sub">Watch only the story-essential episodes based on the manga. Skip all anime-original filler content.</p>
+      </div>
+    </section>
+    <section class="movies-page-body">
+      <div class="section-max">
+        <div class="no-filler-stats">
+          <div class="stat-card">
+            <div class="stat-number">${canonEpisodes.length}</div>
+            <div class="stat-label">Canon Episodes</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">${typeof EPISODES !== 'undefined' ? EPISODES.length - canonEpisodes.length : 0}</div>
+            <div class="stat-label">Filler Episodes</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">${Math.round((canonEpisodes.length / (typeof EPISODES !== 'undefined' ? EPISODES.length : 1)) * 100)}%</div>
+            <div class="stat-label">Canon Ratio</div>
+          </div>
+        </div>
+
+        <div class="episodes-list-vertical">
+          ${canonEpisodes.map((ep, index) => `
+            <div class="episode-vertical-card reveal" data-year="${ep.aired ? ep.aired.split('-')[0] : ''}">
+              <div class="episode-vertical-img" style="background-image:url('${getEpisodeStill(ep, index)}')" data-ep-num="${ep.n}"></div>
+              <div class="episode-vertical-content">
+                <div class="episode-vertical-header">
+                  <div class="episode-vertical-number">Episode ${ep.n}</div>
+                  <div class="episode-vertical-type episode">Canon Episode</div>
+                </div>
+                <h3 class="episode-vertical-title">${ep.title}</h3>
+                <div class="episode-vertical-tags">
+                  <span class="tag-badge canon">Canon</span>
+                  <span class="tag-badge season-${ep.season}">Season ${ep.season}</span>
+                </div>
+                <p class="episode-vertical-desc">This episode is based on the manga and advances the main story. Skip filler episodes and focus on the canon content.</p>
+                <div class="episode-vertical-meta">
+                  <span>📅 Aired: ${ep.aired || 'Unknown'}</span>
+                  <span>📺 Season ${ep.season}</span>
+                  ${ep.etv ? `<span>🇮🇳 ETV: ${ep.etv}</span>` : ''}
+                </div>
+                <div class="episode-vertical-actions">
+                  <button class="episode-watch-btn" onclick="goToEpisodeWatch(${ep.n})">
+                    <span>▶</span> Watch Episode ${ep.n}
+                  </button>
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="guide-footer-note reveal">
+          <div class="guide-footer-icon">💡</div>
+          <div>
+            <strong>What counts as filler?</strong> Episodes marked as "TV Original" are anime-original stories not based on Gosho Aoyama's manga. 
+            All other episodes are canon and adapt the original manga storylines.
+          </div>
+        </div>
+        
+        <!-- Floating Season Jump Button -->
+        <div class="floating-season-jump" id="nofillerSeasonJumpBtn">
+          <button class="season-jump-toggle" onclick="toggleNoFillerSeasonJump()">
+            <span>📍</span> Jump to Season
+          </button>
+          <div class="season-jump-menu" id="nofillerSeasonJumpMenu">
+            <div class="season-jump-content">
+              <h4>Jump to Season</h4>
+              <div class="season-quick-links">
+                <a href="#season-1" onclick="scrollToNoFillerSeason('1')">Season 1</a>
+                <a href="#season-2" onclick="scrollToNoFillerSeason('2')">Season 2</a>
+                <a href="#season-3" onclick="scrollToNoFillerSeason('3')">Season 3</a>
+                <a href="#season-4" onclick="scrollToNoFillerSeason('4')">Season 4</a>
+                <a href="#season-5" onclick="scrollToNoFillerSeason('5')">Season 5</a>
+                <a href="#season-6" onclick="scrollToNoFillerSeason('6')">Season 6</a>
+                <a href="#season-7" onclick="scrollToNoFillerSeason('7')">Season 7</a>
+                <a href="#season-8" onclick="scrollToNoFillerSeason('8')">Season 8</a>
+                <a href="#season-9" onclick="scrollToNoFillerSeason('9')">Season 9</a>
+                <a href="#season-10" onclick="scrollToNoFillerSeason('10')">Season 10</a>
+                <a href="#season-11" onclick="scrollToNoFillerSeason('11')">Season 11</a>
+                <a href="#season-12" onclick="scrollToNoFillerSeason('12')">Season 12</a>
+                <a href="#season-13" onclick="scrollToNoFillerSeason('13')">Season 13</a>
+                <a href="#season-14" onclick="scrollToNoFillerSeason('14')">Season 14</a>
+                <a href="#season-15" onclick="scrollToNoFillerSeason('15')">Season 15</a>
+                <a href="#season-16" onclick="scrollToNoFillerSeason('16')">Season 16</a>
+                <a href="#season-17" onclick="scrollToNoFillerSeason('17')">Season 17</a>
+                <a href="#season-18" onclick="scrollToNoFillerSeason('18')">Season 18</a>
+                <a href="#season-19" onclick="scrollToNoFillerSeason('19')">Season 19</a>
+                <a href="#season-20" onclick="scrollToNoFillerSeason('20')">Season 20</a>
+                <a href="#season-21" onclick="scrollToNoFillerSeason('21')">Season 21</a>
+                <a href="#season-22" onclick="scrollToNoFillerSeason('22')">Season 22</a>
+                <a href="#season-23" onclick="scrollToNoFillerSeason('23')">Season 23</a>
+                <a href="#season-24" onclick="scrollToNoFillerSeason('24')">Season 24</a>
+                <a href="#season-25" onclick="scrollToNoFillerSeason('25')">Season 25</a>
+                <a href="#season-26" onclick="scrollToNoFillerSeason('26')">Season 26</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    ${renderFooterHTML()}
+  `;
+  
+  app.appendChild(pg);
+  setTimeout(() => {observeAll();refreshHover();refreshEpisodeSeasonVisuals();}, 100);
+}
+
 // ─── INIT ────────────────────────────────────────────
 setupNavLinks();
 Router.resolve();
@@ -3604,41 +6312,94 @@ setTimeout(() => { fetchTMDBPosters(); fetchTMDBSpinoffPosters(); fetchTMDBPVRSp
   function setActive(tabId){
     bar.querySelectorAll('.mbb-tab').forEach(t=>t.classList.toggle('active',t.dataset.mbb===tabId));
   }
-
   function routeToTab(route){
     if(route==='/' || route==='') return 'home';
     if(route==='/browse') return 'browse';
     if(route==='/languages') return 'languages';
+    if(route==='/tvshows') return 'tvshows';
+    if(route==='/movies') return 'movies';
     return 'more';
   }
 
-  bar.querySelectorAll('.mbb-tab').forEach(tab=>{
-    tab.addEventListener('click',()=>{
-      const id = tab.dataset.mbb;
-      if(id==='more'){
-        const isOpen = moreMenu.classList.toggle('open');
-        document.body.style.overflow = isOpen ? 'hidden' : '';
-        setActive(isOpen ? 'more' : routeToTab(Router.currentRoute));
-        return;
+  // Use document-level event delegation since bar gets recreated
+  document.addEventListener('click',(e)=>{
+    const tab=e.target.closest('.mbb-tab');
+    if(!tab) return;
+
+    const page=tab.getAttribute('data-mbb');
+    if(!page) return;
+
+    // Update active state on all tabs
+    document.querySelectorAll('.mbb-tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+
+    // Navigate based on page
+    if(page==='home') Router.navigate('/');
+    else if(page==='browse') Router.navigate('/browse');
+    else if(page==='languages') Router.navigate('/languages');
+    else if(page==='tvshows') Router.navigate('/tvshows');
+    else if(page==='movies') Router.navigate('/movies');
+    else if(page==='more'){
+      const mm=document.getElementById('mbbMoreMenu');
+      if(mm){
+        mm.classList.add('open');
+        mm.style.display='block';
+        setTimeout(()=>mm.style.opacity='1',10);
       }
-      // close more menu if open
-      moreMenu.classList.remove('open');
-      document.body.style.overflow='';
-      setActive(id);
-      if(id==='home') Router.navigate('/');
-      else if(id==='browse') Router.navigate('/browse');
-      else if(id==='languages') Router.navigate('/languages');
-    });
+    }
   });
 
-  // More menu links
-  document.querySelectorAll('.mbb-more-link').forEach(link=>{
-    link.addEventListener('click',()=>{
-      const target = link.dataset.nav;
+  // Close more menu when clicking outside
+  document.addEventListener('click',(e)=>{
+    const mm=document.getElementById('mbbMoreMenu');
+    const bb=document.getElementById('mobileBottomBar');
+    if(!mm || !bb) return;
+    if(!mm.contains(e.target) && !bb.contains(e.target)){
+      mm.classList.remove('open');
+      mm.style.opacity='0';
+      setTimeout(()=>mm.style.display='none',250);
+    }
+  });
+
+  // More menu items - delegation
+  document.addEventListener('click',(e)=>{
+    const a=e.target.closest('#mbbMoreMenu a[data-nav]');
+    if(!a) return;
+    e.preventDefault();
+    const href=a.getAttribute('href');
+    const mm=document.getElementById('mbbMoreMenu');
+    if(mm){
+      mm.classList.remove('open');
+      mm.style.opacity='0';
+      setTimeout(()=>mm.style.display='none',250);
+    }
+    Router.navigate(href);
+  });
+
+  // More handle toggle - delegation
+  document.addEventListener('click',(e)=>{
+    const handle=e.target.closest('.mbb-more-handle');
+    if(!handle) return;
+    e.stopPropagation();
+    const mm=document.getElementById('mbbMoreMenu');
+    if(!mm) return;
+    mm.classList.toggle('open');
+    if(mm.classList.contains('open')){
+      mm.style.display='block';
+      setTimeout(()=>mm.style.opacity='1',10);
+    }else{
+      mm.style.opacity='0';
+      setTimeout(()=>mm.style.display='none',250);
+    }
+  });
+
+  // Tap backdrop behind more menu
+  document.addEventListener('click',e=>{
+    if(moreMenu.classList.contains('open') && !moreMenu.contains(e.target) && !bar.contains(e.target)){
       moreMenu.classList.remove('open');
-      document.body.style.overflow='';
-      if(target) Router.navigate('/'+target);
-    });
+      moreMenu.style.opacity='0';
+      setTimeout(()=>moreMenu.style.display='none',250);
+    }
   });
 
   // Swipe-down to close More menu
@@ -3647,18 +6408,11 @@ setTimeout(() => { fetchTMDBPosters(); fetchTMDBSpinoffPosters(); fetchTMDBPVRSp
   moreMenu.addEventListener('touchend',e=>{
     if(e.changedTouches[0].clientY - moreStartY > 60){
       moreMenu.classList.remove('open');
+      moreMenu.style.opacity='0';
+      setTimeout(()=>moreMenu.style.display='none',250);
       document.body.style.overflow='';
-      setActive(routeToTab(Router.currentRoute));
     }
   },{passive:true});
-
-  // Tap backdrop behind more menu
-  document.addEventListener('click',e=>{
-    if(moreMenu.classList.contains('open') && !moreMenu.contains(e.target) && !bar.contains(e.target)){
-      moreMenu.classList.remove('open');
-      document.body.style.overflow='';
-    }
-  });
 
   // Sync active tab on route change
   window.addEventListener('hashchange',()=>{
@@ -3667,6 +6421,10 @@ setTimeout(() => { fetchTMDBPosters(); fetchTMDBSpinoffPosters(); fetchTMDBPVRSp
     const route = decodeURIComponent(window.location.hash.slice(1)) || '/';
     setActive(routeToTab(route));
   });
+
+  // Set initial active state on page load using Router's current route
+  const initialRoute = Router.currentRoute || decodeURIComponent(window.location.hash.slice(1)) || '/';
+  setActive(routeToTab(initialRoute));
 })();
 
 function syncMobileContextUI(route){
@@ -3708,3 +6466,495 @@ function syncMobileContextUI(route){
     }
   }, { passive: true });
 })();
+
+// ─── OVA PAGE ───────────────────────────────────────
+function renderOVAsPage(){
+  const pg = document.getElementById('page');
+  pg.innerHTML = `
+    <section class="movies-page-hero">
+      <div class="movies-page-hero-bg" style="background-image:url('${IMG.conan3}')"></div>
+      <div class="movies-page-hero-overlay"></div>
+      <div class="movies-page-hero-content">
+        <button class="pp-hero-back" onclick="Router.navigate('/guide')">← Watch Guides</button>
+        <div class="section-eyebrow">Special Content · Original Video Animations</div>
+        <h1 class="movies-page-title">Detective Conan <em>OVAs</em></h1>
+        <p class="movies-page-sub">33 original video animations featuring special cases, character development, and unique storylines not seen in the main series.</p>
+      </div>
+    </section>
+
+    <div class="movies-page-content">
+      <div class="movies-grid">
+        ${OVAS.map((ova, index) => {
+          // Use hardcoded still if available, otherwise fallback to character images
+          const fallbackImages = [IMG.haibara, IMG.ran, IMG.heiji, IMG.kid];
+          const imageUrl = ova.still || fallbackImages[index % 4];
+          return `
+            <div class="movie-card reveal" onclick="showOVAModal('${ova.id}')">
+              <div class="movie-poster">
+                <img src="${imageUrl}" alt="${ova.title}" loading="lazy">
+                <div class="movie-overlay">
+                  <div class="movie-play-icon">▶</div>
+                </div>
+              </div>
+              <div class="movie-info">
+                <div class="movie-number">OVA ${ova.episodeNumber}</div>
+                <h3 class="movie-title">${ova.title}</h3>
+                <p class="movie-year">${ova.year}</p>
+                <div class="movie-desc">${ova.desc}</div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+  revealElements();
+}
+
+// ─── MAGIC KAITO PAGE ───────────────────────────────────
+function renderMagicKaitoPage(){
+  const pg = document.getElementById('page');
+  const amasianPlatform = PLATFORMS.find(p => p.id === 'amasiantv');
+  
+  pg.innerHTML = `
+    <section class="movies-page-hero">
+      <div class="movies-page-hero-bg" style="background-image:url('${IMG.kid}')"></div>
+      <div class="movies-page-hero-overlay"></div>
+      <div class="movies-page-hero-content">
+        <button class="pp-hero-back" onclick="Router.navigate('/guide')">← Watch Guides</button>
+        <div class="section-eyebrow">Spinoff Series · Phantom Thief Adventures</div>
+        <h1 class="movies-page-title">Magic Kaito <em>1412</em></h1>
+        <p class="movies-page-sub">Follow Kaito Kuroba as he becomes the phantom thief Kaitou Kid, seeking the mysterious Pandora Gem while outsmarting rivals.</p>
+      </div>
+    </section>
+
+    <div class="platform-section" style="margin-top: 32px;">
+      <div class="platform-card reveal" data-platform="amasiantv">
+        <div class="platform-header">
+          <div class="platform-logo">
+            <img src="${amasianPlatform.logoUrl}" alt="${amasianPlatform.name}" style="height: 40px;">
+          </div>
+          <div class="platform-info">
+            <h3>${amasianPlatform.name}</h3>
+            <p class="platform-badge">${amasianPlatform.badge}</p>
+          </div>
+        </div>
+        <div class="platform-details">
+          <p>${amasianPlatform.description}</p>
+          <div class="platform-languages">
+            <strong>Languages:</strong> ${amasianPlatform.languages.dub.join(', ')} dub
+          </div>
+          <div class="platform-note">
+            <strong>Note:</strong> ${amasianPlatform.note}
+          </div>
+          <button class="platform-watch-btn" onclick="window.open('${MAGIC_KAITO.amasianUrl}', '_blank')">
+            Watch Now →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="episodes-section" style="margin-top: 48px;">
+      <h2 class="section-title">All Episodes</h2>
+      <div class="episodes-grid">
+        ${Array.from({length: MAGIC_KAITO.episodes}, (_, i) => i + 1).map(epNum => {
+          const imageUrl = [IMG.kid, IMG.conan1, IMG.ran, IMG.heiji][epNum % 4];
+          return `
+            <div class="episode-card reveal" onclick="event.preventDefault(); event.stopPropagation(); openMagicKaitoEpisode('episode', ${epNum});">
+              <div class="episode-poster">
+                <img src="${imageUrl}" alt="Episode ${epNum}" loading="lazy">
+                <div class="episode-overlay">
+                  <div class="episode-play-icon">▶</div>
+                </div>
+              </div>
+              <div class="episode-info">
+                <div class="episode-number">Episode ${epNum}</div>
+                <h3 class="episode-title">Episode ${epNum}</h3>
+                <p class="episode-year">2014</p>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+  revealElements();
+}
+
+// ─── TMDB API INTEGRATION ───────────────────────────────
+// Using existing TMDB_KEY from line 184
+const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w780';
+
+async function fetchTMBDEpisodeData(seriesId, seasonNumber, episodeNumber) {
+  try {
+    const response = await fetch(`https://api.themoviedb.org/3/tv/${seriesId}/season/${seasonNumber}/episode/${episodeNumber}?api_key=${TMDB_KEY}`);
+    if (!response.ok) throw new Error('Episode data not found');
+    const data = await response.json();
+    return {
+      title: data.name,
+      description: data.overview,
+      image: data.still_path ? `https://image.tmdb.org/t/p/w780${data.still_path}` : null,
+      airDate: data.air_date,
+      episodeNumber: data.episode_number,
+      seasonNumber: data.season_number
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
+async function fetchTMDBOVAData(ovaId) {
+  const ova = OVAS.find(o => o.id === ovaId);
+  if (!ova || !ova.episodeNumber) {
+    return null;
+  }
+  
+  // Use hardcoded still URL if available
+  if (ova.still) {
+    return {
+      title: ova.title,
+      description: ova.desc,
+      image: ova.still,
+      year: ova.year,
+      episodeNumber: ova.episodeNumber
+    };
+  }
+  
+  try {
+    // OVAs are on TMDB as Season 0 (specials) of the main series
+    const response = await fetch(`https://api.themoviedb.org/3/tv/${TMDB_TV_ID}/season/0/episode/${ova.episodeNumber}?api_key=${TMDB_KEY}&language=en-US`);
+    if (!response.ok) return null;
+    
+    const data = await response.json();
+    return {
+      title: data.name || ova.title,
+      description: data.overview || ova.desc,
+      image: data.still_path ? (TMDB_STILL + data.still_path) : null,
+      year: ova.year,
+      episodeNumber: ova.episodeNumber
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
+// Load TMDB images for Magic Kaito episodes on platform page
+async function loadMagicKaitoTMDBImages() {
+  // TMDB API key is configured, proceed with loading images
+
+  const grid = document.getElementById('magic-kaito-episodes-grid');
+  if (!grid) return;
+
+  const episodeCards = grid.querySelectorAll('.browse-card');
+  
+  for (let card of episodeCards) {
+    const episodeNum = parseInt(card.dataset.episode);
+    if (!episodeNum) continue;
+
+    try {
+      const episodeData = await fetchTMBDEpisodeData(MAGIC_KAITO.tmdb, 1, episodeNum);
+      if (episodeData && episodeData.image) {
+        const imgElement = card.querySelector('.browse-card-img');
+        if (imgElement) {
+          imgElement.style.backgroundImage = `url('${episodeData.image}')`;
+        }
+      }
+    } catch (error) {
+      // Keep fallback image
+    }
+  }
+}
+
+// Load TMDB images for OVA cards on platform page
+async function loadOVATMDBImages(ovaIds) {
+  if (!ovaIds || !ovaIds.length) return;
+  
+  for (const ovaId of ovaIds) {
+    try {
+      const ovaData = await fetchTMDBOVAData(ovaId);
+      if (ovaData && ovaData.image) {
+        // Update any card with this OVA ID
+        document.querySelectorAll(`[data-ep-num="${ovaId}"] .browse-card-img`).forEach(img => {
+          img.style.backgroundImage = `url('${ovaData.image}')`;
+        });
+      }
+    } catch (error) {
+      // Keep fallback image
+    }
+  }
+}
+
+// ─── MODAL FUNCTIONS ─────────────────────────────────────
+// OVA modal functionality moved to unified openMagicKaitoEpisode function
+
+async function showMagicKaitoEpisodeModal(episodeNumber) {
+  const amasianPlatform = PLATFORMS.find(p => p.id === 'amasiantv');
+  
+  // Close any existing modals first
+  const existingModal = document.querySelector('.modal');
+  if (existingModal) {
+    document.body.removeChild(existingModal);
+    document.body.classList.remove('modal-open');
+  }
+  
+  // Show loading modal
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.id = 'magic-kaito-episode-modal';
+  modal.innerHTML = `
+    <div class="modal-overlay" onclick="closeMagicKaitoModal()"></div>
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeMagicKaitoModal()">×</button>
+      <div class="modal-header">
+        <h2>Episode ${episodeNumber}</h2>
+        <p class="modal-year">Magic Kaito 1412 • 2014</p>
+      </div>
+      <div class="modal-body">
+        <div class="modal-loading">Loading episode details...</div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  document.body.classList.add('modal-open');
+  setTimeout(() => modal.classList.add('show'), 10);
+  
+  // Fetch episode data from TMDB
+  const episodeData = await fetchTMBDEpisodeData(MAGIC_KAITO.tmdb, 1, episodeNumber);
+  
+  if (episodeData) {
+    // Update modal with fetched data
+    modal.querySelector('.modal-body').innerHTML = `
+      ${episodeData.image ? `<img src="${episodeData.image}" alt="Episode ${episodeNumber}" style="width: 100%; border-radius: 8px; margin-bottom: 16px;">` : ''}
+      <h3>${episodeData.title}</h3>
+      <p class="modal-description">${episodeData.description || 'No description available.'}</p>
+      ${episodeData.airDate ? `<p class="modal-airdate"><strong>Air Date:</strong> ${new Date(episodeData.airDate).toLocaleDateString()}</p>` : ''}
+      
+      <div class="platform-card" style="margin-top: 24px;">
+        <div class="platform-header">
+          <div class="platform-logo">
+            <img src="${amasianPlatform.logoUrl}" alt="${amasianPlatform.name}" style="height: 32px;">
+          </div>
+          <div class="platform-info">
+            <h4>${amasianPlatform.name}</h4>
+            <p class="platform-badge">${amasianPlatform.badge}</p>
+          </div>
+        </div>
+        <div class="platform-details">
+          <p>${amasianPlatform.description}</p>
+          <div class="platform-languages">
+            <strong>Languages:</strong> ${amasianPlatform.languages.dub.join(', ')} dub
+          </div>
+          <button class="platform-watch-btn" onclick="window.open('${MAGIC_KAITO.amasianUrl}', '_blank')">
+            Watch Now →
+          </button>
+        </div>
+      </div>
+    `;
+  } else {
+    // Fallback if TMDB fetch fails
+    modal.querySelector('.modal-body').innerHTML = `
+      <p class="modal-description">Watch this episode of Magic Kaito 1412 with English dub on Amasian TV.</p>
+      
+      <div class="platform-card" style="margin-top: 24px;">
+        <div class="platform-header">
+          <div class="platform-logo">
+            <img src="${amasianPlatform.logoUrl}" alt="${amasianPlatform.name}" style="height: 32px;">
+          </div>
+          <div class="platform-info">
+            <h4>${amasianPlatform.name}</h4>
+            <p class="platform-badge">${amasianPlatform.badge}</p>
+          </div>
+        </div>
+        <div class="platform-details">
+          <p>${amasianPlatform.description}</p>
+          <div class="platform-languages">
+            <strong>Languages:</strong> ${amasianPlatform.languages.dub.join(', ')} dub
+          </div>
+          <button class="platform-watch-btn" onclick="window.open('${MAGIC_KAITO.amasianUrl}', '_blank')">
+            Watch Now →
+          </button>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function closeMagicKaitoModal() {
+  const modal = document.getElementById('magic-kaito-episode-modal');
+  if (modal) {
+    modal.classList.remove('show');
+    setTimeout(() => {
+      if (document.body.contains(modal)) {
+        document.body.removeChild(modal);
+      }
+      document.body.classList.remove('modal-open');
+    }, 300);
+  }
+}
+
+// Test function to verify modal is working
+function testMagicKaitoModal() {
+  showMagicKaitoEpisodeModal(1);
+}
+
+// Make the function globally accessible for testing
+window.showMagicKaitoEpisodeModal = showMagicKaitoEpisodeModal;
+window.testMagicKaitoModal = testMagicKaitoModal;
+
+// ─── UNIFIED MAGIC KAITO MODAL SYSTEM ───────────────────────────────
+async function openMagicKaitoEpisode(type, number) {
+  let badge, title, desc, content;
+  
+  if (type === 'episode') {
+    badge = 'Magic Kaito 1412';
+    title = `Episode ${number}`;
+    desc = '2014 • English Dub Available';
+    content = `<div class="modal-loading">Loading episode details...</div>`;
+  } else if (type === 'ova') {
+    const ova = OVAS.find(o => o.id === number);
+    badge = 'OVA';
+    title = ova ? ova.title : `OVA ${number}`;
+    desc = ova ? `${ova.year} • Special` : 'Special';
+    content = `<div class="modal-loading">Loading OVA details...</div>`;
+  }
+  
+  // Show loading modal first
+  openModal(`
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div>
+        <div class="modal-badge">${badge}</div>
+        <div class="modal-title">${title}</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-desc">${desc}</div>
+    <div class="modal-body">
+      ${content}
+    </div>
+  `);
+  
+  // Fetch data and update modal
+  try {
+    let data, watchContent;
+    
+    if (type === 'episode') {
+      data = await fetchTMBDEpisodeData(MAGIC_KAITO.tmdb, 1, number);
+      
+      if (data) {
+        watchContent = `
+          ${data.image ? `<img src="${data.image}" alt="Episode ${number}" style="width: 100%; border-radius: 8px; margin-bottom: 16px;">` : ''}
+          <h3 style="margin: 0 0 8px 0; color: var(--text); font-size: 18px;">${data.title}</h3>
+          <p style="margin: 0 0 12px 0; color: var(--text-secondary); line-height: 1.5;">${data.description || 'No description available.'}</p>
+          ${data.airDate ? `<p style="margin: 0 0 16px 0; color: var(--muted); font-size: 14px;"><strong>Air Date:</strong> ${new Date(data.airDate).toLocaleDateString()}</p>` : ''}
+        `;
+      } else {
+        watchContent = `<p style="color: var(--text-secondary); margin-bottom: 16px;">Watch this episode of Magic Kaito 1412 with English dub on Amasian TV.</p>`;
+      }
+    } else if (type === 'ova') {
+      data = await fetchTMDBOVAData(number);
+      const ova = OVAS.find(o => o.id === number);
+      
+      if (data) {
+        watchContent = `
+          ${data.image ? `<img src="${data.image}" alt="OVA ${data.episodeNumber}" style="width: 100%; border-radius: 8px; margin-bottom: 16px;">` : ''}
+          <p style="margin: 0 0 12px 0; color: var(--text-secondary); line-height: 1.5;">${data.description}</p>
+        `;
+      } else if (ova) {
+        watchContent = `<p style="margin: 0 0 12px 0; color: var(--text-secondary); line-height: 1.5;">${ova.desc}</p>`;
+      } else {
+        watchContent = `<p style="color: var(--text-secondary); margin-bottom: 16px;">Unable to load OVA details.</p>`;
+      }
+    }
+    
+    // Add watch section - only update modal-body content, preserve header
+    const modalBody = document.querySelector('.modal-body');
+    if (modalBody) {
+      if (type === 'episode') {
+        modalBody.innerHTML = `
+          ${watchContent}
+          <div class="modal-where-title">Where to Watch in India</div>
+          <div class="watch-btns">
+            <a class="watch-btn" href="${MAGIC_KAITO.amasianUrl}" target="_blank" rel="noopener" style="--btn-color:#FF6B35;--btn-bg:#1a0f00">
+              <span class="watch-btn-name">Amasian TV</span>
+              <span class="watch-btn-detail">Free Streaming · English Dub</span>
+            </a>
+          </div>
+        `;
+      } else if (type === 'ova') {
+        modalBody.innerHTML = `
+          ${watchContent}
+          <div class="modal-note" style="background: var(--surface2); padding: 12px; border-radius: 6px; margin-top: 16px;">
+            <strong style="color: var(--text);">Note:</strong> This OVA is not currently available on Indian streaming platforms.
+          </div>
+        `;
+      }
+    }
+  } catch (error) {
+    const modalBody = document.querySelector('.modal-body');
+    if (modalBody) {
+      modalBody.innerHTML = `
+        <p style="color: var(--text-secondary); margin-bottom: 16px;">Unable to load details. Please try again.</p>
+        ${type === 'episode' ? `
+          <div class="modal-where-title">Where to Watch in India</div>
+          <div class="watch-btns">
+            <a class="watch-btn" href="${MAGIC_KAITO.amasianUrl}" target="_blank" rel="noopener" style="--btn-color:#FF6B35;--btn-bg:#1a0f00">
+              <span class="watch-btn-name">Amasian TV</span>
+              <span class="watch-btn-detail">Free Streaming · English Dub</span>
+            </a>
+          </div>
+        ` : ''}
+      `;
+    }
+  }
+}
+
+// Make function globally available
+window.openMagicKaitoEpisode = openMagicKaitoEpisode;
+
+// Test function to verify modal close works
+function testModalClose() {
+  openModal(`
+    <div class="modal-header">
+      <div>
+        <div class="modal-badge">Test</div>
+        <div class="modal-title">Test Modal</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-desc">This is a test to see if close works</div>
+    <div class="modal-body">
+      <p>Click the X button or press ESC to close.</p>
+    </div>
+  `);
+}
+
+window.testModalClose = testModalClose;
+
+// DISABLED - This function causes routing conflicts by removing onclick attributes
+// The direct onclick handlers in the HTML work correctly without this function
+// Alternative approach using event listeners after page loads
+function setupMagicKaitoEpisodeListeners() {
+  setTimeout(() => {
+    const episodeCards = document.querySelectorAll('[data-episode]');
+    
+    episodeCards.forEach(card => {
+      const episodeNum = card.dataset.episode;
+      
+      // Remove existing onclick to prevent double handling
+      if (card.onclick) {
+        card.onclick = null;
+      }
+      
+      // Add fresh click listener
+      card.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openMagicKaitoEpisode(parseInt(episodeNum));
+      });
+    });
+  }, 1000);
+}
+
+// closeModal function already exists in the main code - using that one

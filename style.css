@@ -57,7 +57,7 @@ img{display:block;max-width:100%;}
 
 /* ── PAGE TRANSITION ─────────────────────── */
 #app{min-height:100vh;overflow-x:hidden;}
-.page-enter{animation:pageEnter 0.5s var(--ease-out) both;overflow-x:hidden;width:100%;touch-action:pan-y;}
+.page-enter{animation:pageEnter 0.5s var(--ease-out) both;overflow-x:hidden;width:100%;}
 @keyframes pageEnter{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
 
 
@@ -196,7 +196,8 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
 
 /* ── HERO CAROUSEL ───────────────────────── */
 #hero{position:relative;height:100svh;min-height:620px;overflow:hidden;}
-.hero-carousel{position:relative;width:100%;height:100%;cursor:grab;}
+/* Hero carousel - allows swipe navigation and vertical page scroll */
+.hero-carousel{position:relative;width:100%;height:100%;cursor:grab;touch-action:pan-x pan-y pinch-zoom;}
 .hero-carousel:active{cursor:grabbing;}
 .hero-slide{
   position:absolute;inset:0;display:flex;align-items:center;
@@ -294,6 +295,13 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
   transition:opacity 0.55s 0.58s var(--ease-out),transform 0.55s 0.58s var(--ease-out);
 }
 .hero-slide.active .hero-quick-actions{opacity:1;transform:none;}
+
+/* Disable popup animations on mobile to prevent scroll interference */
+@media(max-width:768px){
+  .hero-tag,.hero-title,.hero-subtitle,.hero-desc,.hero-cta,.hero-quick-actions{
+    opacity:1!important;transform:none!important;transition:none!important;
+  }
+}
 .hero-quick-btn{
   border:1px solid rgba(255,255,255,0.24);
   background:rgba(255,255,255,0.08);
@@ -344,6 +352,15 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
 .latest-cinematic-card:hover .lcc-img{transform:scale(1.04);}
 .lcc-overlay{position:absolute;inset:0;background:linear-gradient(90deg,rgba(7,7,15,0.92) 0%,rgba(7,7,15,0.6) 55%,rgba(7,7,15,0.1) 100%);}
 .lcc-content{position:absolute;inset:0;padding:40px 48px;display:flex;flex-direction:column;justify-content:center;max-width:700px;}
+.lcc-new-badge{
+  position:absolute;top:16px;left:16px;z-index:15;
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(34,197,94,0.9);color:#fff;
+  padding:6px 12px;border-radius:100px;
+  font-size:11px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  box-shadow:0 4px 12px rgba(0,0,0,0.3);
+}
 .lcc-platform-badge{font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--red);margin-bottom:8px;}
 .lcc-ep-num{font-family:var(--font-display);font-size:120px;line-height:0.8;color:rgba(255,255,255,0.07);margin-bottom:-20px;letter-spacing:-4px;}
 .lcc-title{font-family:var(--font-display);font-size:clamp(28px,4vw,52px);line-height:1;color:#fff;margin-bottom:14px;position:relative;z-index:2;}
@@ -354,6 +371,7 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
 .latest-cinematic-card:hover .lcc-arrow{color:#fff;transform:translateY(-50%) translateX(6px);}
 
 /* ── PLATFORM CARDS — Disney+ style ─────── */
+/* Platforms grid - same touch behavior as lang-one-row */
 .platforms-grid{
   display:flex;
   flex:1 1 auto;
@@ -363,6 +381,7 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
   scroll-snap-type:none;
   -webkit-overflow-scrolling:touch;
   scrollbar-width:none;
+  touch-action:pan-x pan-y pinch-zoom;
   gap:12px;
   padding-bottom:8px;
 }
@@ -390,10 +409,10 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
   box-shadow:0 0 0 1px rgba(255,255,255,0.04),0 4px 32px rgba(0,0,0,0.5),0 0 40px rgba(255,80,60,0.06);
 }
 .plat-card:hover{transform:translateY(-6px) scale(1.02);box-shadow:0 28px 70px rgba(0,0,0,0.6),0 0 60px rgba(255,80,60,0.12);}
-.plat-card-bg{position:absolute;inset:0;background-size:cover;background-position:center top;transition:transform 0.6s var(--ease-out);opacity:0.55;image-rendering:auto;}
-.plat-card:hover .plat-card-bg{transform:scale(1.04);opacity:0.65;}
+.plat-card-bg{position:absolute;inset:0;background-size:cover;background-position:center top;transition:transform 0.6s var(--ease-out),filter 0.4s;opacity:0.6;image-rendering:auto;filter:blur(2px);}
+.plat-card:hover .plat-card-bg{transform:scale(1.04);opacity:0.75;filter:blur(1px);}
 .plat-card-color-layer{position:absolute;inset:0;opacity:0.7;}
-.plat-card-overlay{position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,0,0,0.08) 0%,rgba(0,0,0,0.55) 100%);}
+.plat-card-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.2) 0%,rgba(0,0,0,0.4) 50%,rgba(0,0,0,0.85) 100%);}
 .plat-card-logo{
   position:absolute;inset:0;
   display:flex;align-items:center;justify-content:center;
@@ -430,11 +449,13 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
 #languages{padding:48px 0;background:transparent;}
 .lang-section-grid{display:flex;flex-direction:column;gap:28px;margin-top:40px;}
 .lang-dubs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;}
+/* Language row - allows both horizontal scroll and vertical page scroll */
 .lang-one-row{
   display:flex;gap:12px;flex-wrap:nowrap;overflow-x:auto;
   flex:1 1 auto;width:100%;min-width:0;
   -webkit-overflow-scrolling:touch;
   scrollbar-width:none;
+  touch-action:pan-x pan-y pinch-zoom;
 }
 .lang-one-row::-webkit-scrollbar{display:none;}
 .lang-one-row-wrap{position:relative;display:flex;align-items:center;}
@@ -679,7 +700,10 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
   display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;
   scrollbar-width:thin;scrollbar-color:var(--border2) transparent;
   cursor:grab;max-width:100%;box-sizing:border-box;
-  touch-action:pan-x;
+  touch-action:pan-x pan-y pinch-zoom;
+  -webkit-overflow-scrolling:touch;
+  /* scroll-behavior intentionally omitted — JS momentum loop sets scrollLeft
+     directly in rAF; CSS smooth-scroll would fight each frame and cause drift */
 }
 .scroll-row:active,.platforms-grid:active,.lang-one-row:active{cursor:grabbing;}
 .platforms-grid,.lang-one-row{cursor:grab;}
@@ -689,7 +713,7 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
 
 /* ── TV SERIES SECTION ───────────────────── */
 #series{padding:48px 0;}
-.seasons-group{margin-bottom:32px;}
+.seasons-group{margin-bottom:32px;padding:0 8px;}
 .seasons-group-label{
   display:flex;align-items:center;gap:10px;
   font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
@@ -758,6 +782,8 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
 .content-card{
   flex:0 0 160px;height:220px;border-radius:12px;overflow:hidden;position:relative;
   cursor:pointer;transition:transform 0.35s var(--spring),box-shadow 0.3s;
+  touch-action:pan-x pan-y pinch-zoom;
+  -webkit-user-drag:none;
 }
 .content-card:hover{transform:translateY(-5px) scale(1.04);box-shadow:0 16px 40px rgba(0,0,0,0.55);}
 .content-card-bg{position:absolute;inset:0;background-size:cover;background-position:center top;}
@@ -1172,6 +1198,8 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
 }
 .modal-root.open{opacity:1;pointer-events:auto;}
 .modal-root.modal-fullpage{align-items:center;}
+/* Prevent body scroll when modal is open */
+body.modal-open{overflow:hidden;position:fixed;width:100%;height:100%;}
 /* Desktop: subtle scale behind modal */
 @media(min-width:769px){
   body.modal-open #app{transform:scale(0.965);transform-origin:top center;transition:transform 0.45s var(--ease-out);}
@@ -1184,6 +1212,7 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
   transform:translateY(100%);
   transition:transform 0.45s var(--ease-out);
   scrollbar-width:thin;scrollbar-color:var(--border2) transparent;
+  overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
 }
 .modal-root.open .modal-panel{transform:translateY(0);}
 .modal-panel.modal-panel-fullpage{
@@ -1191,7 +1220,7 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
   width:min(96vw,860px);
   max-height:92svh;
   border-radius:18px;
-  padding:12px 32px 30px;
+  padding:20px;
   margin:auto;
 }
 .modal-root.modal-fullpage .modal-handle{display:none;}
@@ -1207,8 +1236,309 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
     transform:scale(0.98);
     transition:transform 0.1s;
   }
+  /* Add padding to modals on mobile so content doesn't touch edges */
+  .modal-panel{
+    padding:12px 20px calc(24px + env(safe-area-inset-bottom,0));
+  }
+  .modal-panel.modal-panel-fullpage{
+    padding:16px;
+    width:min(94vw,860px);
+  }
 }
-.modal-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:8px;}
+
+/* ── SEASON MODAL FILTERS ─────────────── */
+.sm-filter-row{
+  display:flex;gap:10px;flex-wrap:nowrap;margin:16px 0 8px;
+  padding:12px;border-radius:12px;background:var(--surface2);
+  border:1px solid var(--border);
+  overflow-x:auto;overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.sm-filter-row::-webkit-scrollbar{display:none;}
+.sm-filter-select,.sm-filter-search{
+  background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:8px 12px;font-size:13px;color:var(--text);outline:none;
+  min-width:120px;
+}
+.sm-filter-select:focus,.sm-filter-search:focus{border-color:var(--red);}
+.sm-filter-search{flex:1;min-width:150px;}
+.sm-filter-select option{background:var(--surface);color:var(--text);}
+
+/* Filler episode badge */
+.modal-ep-filler{
+  display:inline-block;font-size:9px;font-weight:700;
+  color:var(--muted);background:var(--surface);
+  border:1px solid var(--border);border-radius:4px;
+  padding:1px 5px;margin-left:6px;vertical-align:middle;
+}
+.modal-ep--filler{opacity:0.7;}
+.modal-ep--filler .modal-ep-thumb{filter:grayscale(0.3);}
+
+/* ── TV SHOW FILTER PAGE ──────────────── */
+.tv-filter-bar{
+  background:linear-gradient(145deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01));
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:20px;
+  padding:16px 20px;margin-bottom:24px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.2),0 2px 8px rgba(0,0,0,0.1);
+}
+.tv-filter-row{
+  display:flex;gap:10px;flex-wrap:nowrap;margin-bottom:0;align-items:center;
+  overflow-x:auto;overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  padding-bottom:4px;
+}
+.tv-filter-row::-webkit-scrollbar{display:none;}
+.tv-filter-select{
+  appearance:none;-webkit-appearance:none;
+  background:rgba(255,255,255,0.03) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath fill='rgba(255,255,255,0.4)' d='M4 4L1 1h6z'/%3E%3C/svg%3E") no-repeat right 10px center;
+  border:1px solid rgba(255,255,255,0.08);border-radius:10px;
+  padding:8px 24px 8px 12px;font-size:12px;font-weight:500;
+  color:var(--text);outline:none;min-width:auto;
+  transition:border-color 0.2s,background 0.2s;
+  cursor:pointer;letter-spacing:-0.01em;
+  white-space:nowrap;flex-shrink:0;
+}
+.tv-filter-select:hover{
+  background:rgba(255,255,255,0.05);
+  border-color:rgba(255,255,255,0.12);
+}
+.tv-filter-select:focus{
+  border-color:rgba(255,255,255,0.2);
+  background:rgba(255,255,255,0.06);
+}
+.tv-filter-select option{
+  background:var(--surface);
+  color:var(--text);
+  font-size:13px;
+  padding:8px;
+}
+.tv-filter-search-row{
+  display:flex;align-items:center;gap:12px;
+  background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);
+  border-radius:16px;
+  padding:14px 18px;
+  transition:all 0.2s var(--ease-out);
+}
+.tv-filter-search-row:hover{
+  background:rgba(255,255,255,0.04);
+  border-color:rgba(255,255,255,0.12);
+}
+.tv-filter-search-row:focus-within{
+  background:rgba(255,255,255,0.05);
+  border-color:rgba(255,255,255,0.2);
+  box-shadow:0 0 0 3px rgba(255,255,255,0.05),0 4px 12px rgba(0,0,0,0.1);
+}
+.tv-filter-search-icon{font-size:18px;opacity:0.4;transition:opacity 0.2s;}
+.tv-filter-search-row:focus-within .tv-filter-search-icon{opacity:0.8;color:var(--red);}
+.tv-filter-search{
+  flex:1;background:transparent;border:none;padding:0;font-size:15px;
+  font-weight:400;color:var(--text);outline:none;letter-spacing:-0.01em;
+}
+.tv-filter-search::placeholder{color:rgba(255,255,255,0.35);}
+.tv-filter-count{font-size:12px;font-weight:500;color:var(--muted);white-space:nowrap;margin-left:auto;}
+
+/* Toggle switch for India filter - compact iOS style */
+.tv-filter-toggle{
+  display:flex;align-items:center;gap:8px;cursor:pointer;
+  font-size:13px;font-weight:500;color:var(--text);
+  user-select:none;-webkit-user-select:none;
+  flex-shrink:0;
+}
+.tv-filter-toggle input{display:none;}
+.tv-toggle-slider{
+  width:44px;height:26px;border-radius:13px;
+  background:var(--surface3);border:1px solid rgba(255,255,255,0.1);
+  position:relative;transition:background 0.3s var(--spring),border-color 0.3s;
+  box-shadow:inset 0 2px 4px rgba(0,0,0,0.2);
+  flex-shrink:0;
+}
+.tv-toggle-slider::before{
+  content:'';position:absolute;left:2px;top:2px;width:22px;height:22px;
+  border-radius:50%;background:linear-gradient(145deg,#fff,#e8e8e8);
+  box-shadow:0 2px 8px rgba(0,0,0,0.3);
+  transition:transform 0.3s var(--spring);
+}
+.tv-filter-toggle input:checked+.tv-toggle-slider{
+  background:#34C759;border-color:#34C759;
+  box-shadow:inset 0 2px 4px rgba(0,0,0,0.1);
+}
+.tv-filter-toggle input:checked+.tv-toggle-slider::before{
+  transform:translateX(18px);background:#fff;
+  box-shadow:0 2px 8px rgba(0,0,0,0.2);
+}
+.tv-toggle-label{font-weight:500;letter-spacing:-0.01em;}
+
+/* Second filter row - toggle and count inline */
+.tv-filter-row-2{
+  display:flex;align-items:center;gap:12px;
+  margin-top:12px;margin-bottom:0;
+  padding-top:0;
+}
+
+/* Season sections - non collapsible */
+.tv-season-section{
+  margin-bottom:40px;
+  padding:0 8px;
+}
+.tv-season-header-static{
+  display:flex;align-items:center;
+  padding:12px 0 16px;
+  border-bottom:2px solid var(--border);
+  margin-bottom:16px;
+}
+.tv-season-info{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.tv-season-badge{
+  background:var(--red);color:#fff;font-size:12px;font-weight:800;
+  padding:4px 10px;border-radius:6px;
+}
+.tv-season-title{font-size:18px;font-weight:700;color:var(--text);}
+.tv-season-year{font-size:14px;color:var(--muted);}
+.tv-season-count{font-size:12px;color:var(--text2);background:var(--surface2);padding:3px 10px;border-radius:100px;}
+
+/* Episode grid using modal-ep style */
+.tv-ep-grid-modal{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;
+}
+.tv-ep-grid-modal .modal-ep{
+  background:var(--surface2);border:1px solid transparent;
+}
+
+/* Platform dots for episodes */
+.tv-ep-platforms{
+  display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;
+}
+.tv-ep-plat-dot{
+  width:8px;height:8px;border-radius:50%;
+  display:inline-block;
+}
+
+.tv-no-results{text-align:center;padding:60px 20px;color:var(--muted);font-size:15px;}
+
+/* Floating Search Bar - Liquid Glass */
+.tv-search-float{
+  position:fixed;bottom:100px;right:24px;z-index:100;
+  display:flex;flex-direction:column;align-items:flex-end;
+}
+.tv-search-toggle{
+  width:56px;height:56px;border-radius:50%;
+  background:linear-gradient(135deg,rgba(255,255,255,0.15),rgba(255,255,255,0.05));
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,0.2);
+  box-shadow:0 8px 32px rgba(0,0,0,0.3),0 0 0 1px rgba(255,255,255,0.1);
+  cursor:pointer;transition:all 0.3s var(--spring);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;color:#fff;
+}
+.tv-search-toggle:hover{transform:scale(1.1);background:linear-gradient(135deg,rgba(255,255,255,0.25),rgba(255,255,255,0.1));}
+.tv-search-toggle.active{background:var(--red);transform:scale(0.95);}
+.tv-search-panel{
+  position:absolute;bottom:70px;right:0;width:320px;
+  background:linear-gradient(145deg,rgba(30,30,40,0.95),rgba(20,20,30,0.98));
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border:1px solid rgba(255,255,255,0.15);
+  border-radius:20px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.4),0 0 0 1px rgba(255,255,255,0.05);
+  padding:16px;
+  opacity:0;transform:translateY(20px) scale(0.95);pointer-events:none;
+  transition:all 0.35s var(--spring);
+}
+.tv-search-panel.open{opacity:1;transform:translateY(0) scale(1);pointer-events:auto;}
+.tv-search-inner{
+  display:flex;align-items:center;gap:12px;
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+  border-radius:14px;padding:12px 16px;
+}
+.tv-search-icon{font-size:18px;opacity:0.5;}
+.tv-search-input{
+  flex:1;background:transparent;border:none;padding:0;font-size:15px;color:var(--text);outline:none;
+}
+.tv-search-input::placeholder{color:rgba(255,255,255,0.35);}
+.tv-search-close{
+  width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;
+  color:var(--text2);font-size:14px;cursor:pointer;transition:all 0.2s;
+  display:flex;align-items:center;justify-content:center;
+}
+.tv-search-close:hover{background:rgba(255,255,255,0.2);color:#fff;}
+@media(max-width:768px){
+  .tv-search-float{bottom:90px;right:16px;}
+  .tv-search-toggle{width:48px;height:48px;font-size:20px;}
+  .tv-search-panel{width:280px;right:-8px;padding:14px;}
+  .tv-search-panel{bottom:60px;}
+}
+@media(max-width:480px){
+  .tv-search-panel{width:calc(100vw - 32px);right:-8px;}
+}
+
+/* Mobile - Modern sleek Apple-like design */
+@media(max-width:768px){
+  .tv-filter-bar{
+    border-radius:20px;
+    padding:16px;
+    margin-bottom:20px;
+    background:linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01));
+    box-shadow:0 4px 24px rgba(0,0,0,0.15),0 1px 4px rgba(0,0,0,0.1);
+  }
+  /* Single horizontal scrollable row for all filters */
+  .tv-filter-row{
+    flex-direction:row;
+    flex-wrap:nowrap;
+    gap:8px;
+    overflow-x:auto;
+    scrollbar-width:none;-webkit-overflow-scrolling:touch;
+    touch-action:pan-x pan-y pinch-zoom;
+    padding-bottom:8px;
+    margin-bottom:0;
+  }
+  .tv-filter-row::-webkit-scrollbar{display:none;}
+  .tv-filter-select{
+    min-width:fit-content;
+    flex:none;
+    white-space:nowrap;
+    padding:10px 28px 10px 12px;
+    font-size:13px;
+    border-radius:12px;
+    background-position:right 8px center;
+    background-size:10px;
+    background-color:rgba(255,255,255,0.02);
+  }
+  .tv-filter-select:hover,.tv-filter-select:focus{
+    transform:translateY(-1px);
+  }
+  /* Toggle inline with filters on mobile */
+  .tv-filter-toggle{
+    padding:8px 12px;
+    background:rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:12px;
+    font-size:12px;
+  }
+  .tv-toggle-label{display:none;}
+  .tv-filter-count{font-size:11px;margin-left:0;padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:12px;}
+  .tv-season-header-static{
+    padding:10px 0 12px;
+  }
+  .tv-season-title{font-size:16px;}
+  .tv-ep-grid-modal{grid-template-columns:1fr;gap:8px;}
+  /* Hide desktop search row on mobile - use floating instead */
+  .tv-filter-search-row{display:none;}
+}
+
+@media(max-width:480px){
+  .tv-filter-bar{padding:12px 14px;border-radius:16px;margin-bottom:16px;}
+  .tv-filter-select{padding:8px 26px 8px 10px;font-size:12px;border-radius:10px;}
+  .tv-season-badge{font-size:11px;padding:3px 8px;}
+  .tv-season-title{font-size:15px;}
+  .tv-season-year{font-size:12px;}
+  .tv-toggle-slider{width:40px;height:24px;}
+  .tv-toggle-slider::before{width:20px;height:20px;}
+  .tv-filter-toggle input:checked+.tv-toggle-slider::before{transform:translateX(14px);}
+}
+
+.modal-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:8px;padding:0 4px;}
 .modal-badge{font-size:10px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:var(--red);margin-bottom:5px;}
 .modal-title{font-family:var(--font-display);font-size:32px;line-height:1;color:var(--text);}
 .modal-close{
@@ -1249,10 +1579,11 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
 }
 .modal-ep-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .modal-ep{
-  padding:10px;border-radius:10px;background:var(--surface2);
-  display:grid;grid-template-columns:140px 1fr;gap:10px;align-items:center;
+  padding:12px;border-radius:12px;background:var(--surface2);
+  display:grid;grid-template-columns:140px 1fr;gap:12px;align-items:center;
   cursor:pointer;transition:transform .2s var(--ease-out),border-color .2s,background .2s;
   border:1px solid transparent;
+  margin-bottom:4px;
 }
 .modal-ep:hover{transform:translateY(-2px);border-color:var(--border2);background:rgba(255,255,255,0.04);}
 .modal-ep-thumb{
@@ -1644,14 +1975,17 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
   .section-eyebrow{display:none;}
   .section-sub{display:none;}
   .section-title{font-size:22px;margin-bottom:6px;letter-spacing:0.01em;}
-  .section-title-row{margin-bottom:6px;}
+  .section-title-row{margin-bottom:6px;align-items:center;}
+  .section-view-all{align-self:center;margin-top:0;}
   /* Kill all internal top margins that add space */
   .lang-section-grid{margin-top:8px !important;}
   .seasons-group{margin-bottom:8px !important;}
   .platforms-row-wrap{margin-top:6px;}
-  .scroll-row{margin-top:6px;padding-bottom:0;}
+  .scroll-row{margin-top:6px;padding-bottom:0;overflow-y:hidden !important;}
   .scroll-row::-webkit-scrollbar{display:none;}
-  .scroll-row{scrollbar-width:none;}
+  .scroll-row{scrollbar-width:none;touch-action:pan-x pan-y pinch-zoom;}
+  .platforms-grid{overflow-y:hidden !important;touch-action:pan-x pan-y pinch-zoom;}
+  .lang-one-row{overflow-y:hidden !important;touch-action:pan-x pan-y pinch-zoom;}
 
   /* ── Hero — full-cover swipeable card ── */
   #hero{
@@ -1727,9 +2061,10 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
   .plat-card-bg{opacity:0.75;backdrop-filter:blur(2px);}
 
   /* ── Season cards: bigger ── */
-  .tv-seasons-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;}
+  .tv-seasons-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;padding:0 8px;}
   #seasons-all{
-    gap:10px;
+    gap:12px;
+    padding:0 8px;
     -webkit-overflow-scrolling:touch;
   }
   .season-card{flex:0 0 150px;height:200px;}
@@ -1746,8 +2081,8 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
   .mrc-poster{flex:0 0 90px;}
 
   /* ── Episode lists: vertical stack ── */
-  .modal-ep-grid{grid-template-columns:1fr;gap:6px;}
-  .modal-ep{grid-template-columns:108px 1fr;}
+  .modal-ep-grid{grid-template-columns:1fr;gap:10px;}
+  .modal-ep{grid-template-columns:108px 1fr;padding:10px;gap:10px;}
   .modal-ep-thumb{height:66px;}
 
   /* ── Platform page ── */
@@ -1774,9 +2109,23 @@ section:not(#hero){content-visibility:auto;contain-intrinsic-size:auto 600px;}
     max-width:100%;
     max-height:100svh;
     height:100svh;
-    border-radius:0;
+    border-radius:20px 20px 0 0;
     margin:0;
-    padding:0;
+    padding:12px 20px calc(24px + env(safe-area-inset-bottom,0));
+    transform:translateY(100%);
+    transition:transform 0.3s var(--ease-out);
+  }
+  .modal-root.open .modal-panel.modal-panel-fullpage{transform:translateY(0);}
+  /* Swipe-down tracking for modals */
+  .modal-panel.modal-panel-fullpage.swipe-tracking{transition:none;}
+  /* Content padding for fullpage modals */
+  .modal-panel.modal-panel-fullpage .modal-header,
+  .modal-panel.modal-panel-fullpage .modal-desc,
+  .modal-panel.modal-panel-fullpage .modal-where-title,
+  .modal-panel.modal-panel-fullpage .watch-btns,
+  .modal-panel.modal-panel-fullpage .modal-ep-grid{
+    padding-left:4px;
+    padding-right:4px;
   }
   /* Movie modal full screen on mobile */
   .modal-panel.modal-panel-fullpage.modal-movie-panel{
@@ -2903,4 +3252,1521 @@ body::before, body::after { display: none; }
 @media (max-width:768px) {
   .hero-slide::before { display: none; }
   .hero-slide-content { padding: 18px 20px; border-radius: 16px; }
+
+  /* Platform page mobile fixes */
+  .pp-hero { height: auto; min-height: 500px; padding-top: 120px; padding-bottom: 44px; }
+  .pp-hero-back { top: 70px; left: 20px; }
+  .pp-hero-content { position: relative; bottom: auto; left: 20px; right: 20px; flex-direction: column; align-items: flex-start; gap: 20px; }
+  .pp-hero-info { max-width: 100%; }
+  .pp-hero-logo-wrap .plat-logo-svg { height: 40px; max-width: 160px; }
+  .pp-hero-desc { font-size: 13px; line-height: 1.6; }
+
+  /* Stats bar mobile */
+  .pp-stats-bar { flex-wrap: wrap; }
+  .pp-stat { padding: 16px 8px; min-width: 50%; border-right: none; border-bottom: 1px solid var(--border); }
+  .pp-stat:nth-child(2) { border-right: none; }
+  .pp-stat:nth-child(3), .pp-stat:nth-child(4) { border-bottom: none; }
+  .pp-stat-n { font-size: 24px; }
+}
+/* ── WATCH GUIDE PAGE ───────────────────────── */
+.guide-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(480px,1fr));gap:28px;margin-top:8px;}
+.guide-card{background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:16px;}
+.guide-card-header{display:flex;align-items:flex-start;gap:16px;padding-left:16px;}
+.guide-card-icon{font-size:32px;line-height:1;flex-shrink:0;margin-top:2px;}
+.guide-card-title{font-family:var(--font-display);font-size:26px;color:var(--text1);line-height:1.1;}
+.guide-card-subtitle{font-size:13px;color:var(--muted);margin-top:4px;}
+.guide-tags{display:flex;flex-wrap:wrap;gap:6px;}
+.guide-tag{font-size:11px;font-weight:600;letter-spacing:.04em;padding:3px 10px;border-radius:20px;border:1px solid;background:transparent;}
+.guide-desc{font-size:14px;color:var(--text2);line-height:1.7;margin:0;}
+.guide-steps{display:flex;flex-direction:column;gap:14px;border-top:1px solid var(--border);padding-top:16px;}
+.guide-step{display:flex;gap:14px;align-items:flex-start;}
+.guide-step-dot{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;margin-top:2px;}
+.guide-step-body{flex:1;}
+.guide-step-label{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text2);margin-bottom:3px;}
+.guide-step-text{font-size:13px;color:var(--muted);line-height:1.6;}
+.guide-card-actions{margin-top:4px;}
+.guide-action-btn{background:transparent;border:1.5px solid var(--guide-color);color:var(--guide-color);padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s,color .2s;}
+.guide-action-btn:hover{background:var(--guide-color);color:#fff;}
+.guide-footer-note{display:flex;gap:14px;align-items:flex-start;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-top:32px;font-size:14px;color:var(--text2);line-height:1.6;}
+.guide-footer-icon{font-size:24px;flex-shrink:0;}
+@media(max-width:768px){
+  .guide-grid{grid-template-columns:1fr;gap:16px;}
+  .guide-card{padding:20px;}
+  .guide-card-title{font-size:22px;}
+}
+
+/* ─── IMPORTANT EPISODES PAGE STYLES ───── */
+.important-episodes-filter{margin-bottom:32px;overflow:hidden;}
+.filter-scroll-container{display:flex;gap:12px;overflow-x:auto;padding:20px 20px 20px 20px;background:linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.2);border-radius:16px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.3) transparent;}
+.filter-scroll-container::-webkit-scrollbar{height:6px;}
+.filter-scroll-container::-webkit-scrollbar-track{background:transparent;}
+.filter-scroll-container::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.3);border-radius:3px;}
+.filter-scroll-container::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.5);}
+.important-episodes-filter .filter-pill{padding:10px 20px;border-radius:24px;border:1px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);color:var(--text2);cursor:pointer;transition:all 0.3s ease;font-size:14px;font-weight:500;white-space:nowrap;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);}
+.important-episodes-filter .filter-pill:hover{background:rgba(255,255,255,0.2);color:var(--text1);transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.1);}
+.important-episodes-filter .filter-pill.active{background:var(--red);color:white;border-color:var(--red);box-shadow:0 4px 16px rgba(220,53,69,0.3);}
+
+.episodes-grid-horizontal{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:48px;}
+.episode-horizontal-card{background:var(--surface1);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:all 0.3s ease;display:flex;flex-direction:column;cursor:pointer;}
+.episode-horizontal-card:hover{transform:translateY(-4px);box-shadow:0 12px 28px rgba(0,0,0,0.15);border-color:var(--red);}
+.episode-horizontal-img{width:100%;height:140px;background-size:cover;background-position:center;background-color:var(--surface3);}
+.episode-horizontal-content{flex:1;padding:14px;display:flex;flex-direction:column;}
+.episode-horizontal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.episode-horizontal-number{font-weight:600;color:var(--red);font-size:12px;}
+.episode-intl{font-size:10px;color:var(--text3);margin-left:4px;}
+.episode-horizontal-type{padding:2px 6px;border-radius:10px;font-size:9px;font-weight:600;text-transform:uppercase;}
+.episode-horizontal-type.episode{background:#e3f2fd;color:#1976d2;}
+.episode-horizontal-type.movie{background:#ffe4e1;color:#d32f2f;}
+.episode-horizontal-type.ova{background:#f3e5f5;color:#7b1fa2;}
+.episode-horizontal-type.magic-file{background:#fff3e0;color:#f57c00;}
+.episode-horizontal-type.tv-special{background:#e8f5e8;color:#2e7d32;}
+.episode-horizontal-type.magic-kaito{background:#fce4ec;color:#c2185b;}
+.episode-horizontal-title{font-size:14px;font-weight:600;color:var(--text1);margin-bottom:4px;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.episode-horizontal-tags{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px;}
+.tag-badge{padding:1px 5px;border-radius:8px;font-size:8px;font-weight:600;text-transform:uppercase;}
+.tag-badge.main-plot{background:#ffe4e1;color:#d32f2f;}
+.tag-badge.character{background:#e3f2fd;color:#1976d2;}
+.tag-badge.black-org{background:#f3e5f5;color:#7b1fa2;}
+.tag-badge.heiji{background:#fff3e0;color:#f57c00;}
+.tag-badge.kaito-kid{background:#fce4ec;color:#c2185b;}
+.tag-badge.romance{background:#ffebee;color:#e91e63;}
+.tag-badge.fbi{background:#e8f5e8;color:#2e7d32;}
+.tag-badge.shinichi{background:#e1f5fe;color:#0277bd;}
+.tag-badge.police{background:#f1f8e9;color:#689f38;}
+.tag-badge.setup{background:#fff8e1;color:#ffa000;}
+.tag-badge.fun{background:#fce4ec;color:#c2185b;}
+.tag-badge.movie-prequel{background:#ede7f6;color:#512da8;}
+.tag-badge.movie-sequel{background:#e0f2f1;color:#00796b;}
+.tag-badge.canon{background:#e8f5e8;color:#2e7d32;}
+.episode-horizontal-desc{font-size:11px;color:var(--text2);line-height:1.3;margin-bottom:0;flex:1;display:-webkit-box;-webkit-line-clamp:3;line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+.episode-horizontal-meta{display:flex;flex-wrap:wrap;gap:6px;font-size:10px;color:var(--text3);margin-bottom:6px;}
+
+/* ─── FLOATING SEASON JUMP BUTTON ───── */
+.floating-season-jump{position:fixed;bottom:24px;right:24px;z-index:1000;}
+.season-jump-toggle{display:flex;align-items:center;gap:8px;padding:12px 16px;background:var(--red);color:white;border:none;border-radius:24px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 12px rgba(0,0,0,0.15);}
+.season-jump-toggle:hover{background:#c41e3a;transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,0.2);}
+.floating-season-jump.open .season-jump-toggle{border-bottom-left-radius:0;border-bottom-right-radius:0;}
+.season-jump-menu{position:absolute;bottom:100%;right:0;background:var(--surface1);border:1px solid var(--border);border-radius:12px;border-bottom-right-radius:0;box-shadow:0 4px 20px rgba(0,0,0,0.15);max-height:0;overflow:hidden;opacity:0;transition:all 0.3s ease-out;min-width:280px;}
+.floating-season-jump.open .season-jump-menu{max-height:400px;opacity:1;transition:all 0.3s ease-in;}
+.season-jump-content{padding:16px;}
+.season-jump-content h4{margin:0 0 12px 0;font-size:16px;font-weight:600;color:var(--text1);}
+.season-quick-links{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;max-height:300px;overflow-y:auto;}
+.season-quick-links a{display:block;padding:8px 12px;background:var(--surface2);color:var(--text1);text-decoration:none;border-radius:6px;font-size:13px;transition:background 0.2s;}
+.season-quick-links a:hover{background:var(--surface3);color:var(--red);}
+
+/* ─── NO FILLER PAGE STYLES ───── */
+.no-filler-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:20px;margin-bottom:40px;}
+.stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:24px;text-align:center;}
+.stat-number{font-size:32px;font-weight:700;color:var(--red);margin-bottom:4px;}
+.stat-label{font-size:14px;color:var(--text2);font-weight:500;}
+
+.seasons-accordion{display:flex;flex-direction:column;gap:16px;}
+.season-accordion-item{background:var(--surface1);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.season-accordion-header{display:flex;align-items:center;gap:16px;padding:20px;cursor:pointer;transition:background 0.2s;}
+.season-accordion-header:hover{background:var(--surface2);}
+.season-accordion-img{width:60px;height:60px;border-radius:8px;background-size:cover;background-position:center;flex-shrink:0;}
+.season-accordion-info{flex:1;}
+.season-accordion-info h3{font-size:18px;font-weight:600;color:var(--text1);margin-bottom:4px;}
+.season-accordion-info p{font-size:14px;color:var(--text2);}
+.season-accordion-toggle{font-size:12px;color:var(--text2);transition:transform 0.2s;}
+.season-accordion-item.open .season-accordion-toggle{transform:rotate(180deg);}
+.season-accordion-content{max-height:0;overflow:hidden;transition:max-height 0.3s ease-out;}
+.season-accordion-item.open .season-accordion-content{max-height:2000px;transition:max-height 0.3s ease-in;}
+.season-accordion-content{border-top:1px solid var(--border);}
+
+.episodes-list{max-height:400px;overflow-y:auto;}
+.episode-list-item{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);transition:background 0.2s;}
+.episode-list-item:hover{background:var(--surface2);}
+.episode-list-item:last-child{border-bottom:none;}
+.episode-list-img{width:40px;height:40px;border-radius:6px;background-size:cover;background-position:center;flex-shrink:0;}
+.episode-list-info{flex:1;}
+.episode-list-number{font-size:12px;font-weight:600;color:var(--red);margin-bottom:2px;}
+.episode-list-title{font-size:14px;font-weight:500;color:var(--text1);margin-bottom:4px;line-height:1.3;}
+.episode-list-meta{display:flex;gap:12px;font-size:12px;color:var(--text3);}
+.episode-list-actions{display:flex;gap:8px;}
+.episode-list-watch-btn{width:32px;height:32px;background:var(--red);color:white;border:none;border-radius:6px;font-size:14px;cursor:pointer;transition:background 0.2s;display:flex;align-items:center;justify-content:center;}
+.episode-list-watch-btn:hover{background:#c41e3a;}
+
+@media(max-width:768px){
+  .episodes-grid{grid-template-columns:1fr;gap:16px;}
+  .episode-card-content{padding:16px;}
+  .no-filler-stats{grid-template-columns:repeat(3,1fr);gap:12px;}
+  .stat-card{padding:16px;}
+  .stat-number{font-size:24px;}
+  .season-accordion-header{padding:16px;}
+  .season-accordion-img{width:50px;height:50px;}
+  .episodes-list{max-height:300px;}
+  .episode-list-item{padding:10px 16px;}
+  
+  /* Horizontal card responsive styles */
+  .episodes-grid-horizontal{grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;}
+  .episode-horizontal-card{border-radius:10px;}
+  .episode-horizontal-img{height:120px;}
+  .episode-horizontal-content{padding:12px;}
+  .episode-horizontal-title{font-size:13px;-webkit-line-clamp:2;line-clamp:2;}
+  .episode-horizontal-tags{gap:2px;}
+  .tag-badge{font-size:7px;padding:1px 4px;}
+  .episode-horizontal-desc{font-size:10px;-webkit-line-clamp:2;line-clamp:2;}
+  .episode-horizontal-meta{font-size:9px;gap:4px;}
+  .episode-horizontal-number{font-size:11px;}
+  .episode-horizontal-type{font-size:8px;}
+  
+  /* Filter responsive */
+  .filter-scroll-container{padding:16px;gap:10px;}
+  .filter-pill{padding:8px 16px;font-size:13px;}
+}
+
+/* ═══════════════════════════════════════════════════════════
+   XERBLADE GUIDE FILTER SYSTEM
+═══════════════════════════════════════════════════════════ */
+
+.filter-system-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin: 20px;
+  backdrop-filter: blur(10px);
+}
+
+/* Episodes Grid Container Padding */
+.episodes-grid-horizontal {
+  padding: 0 20px;
+  margin: 20px auto 0 auto;
+  max-width: 1400px;
+}
+
+/* Add spacing between filter row and episodes */
+.filter-system-container + .episodes-grid-horizontal,
+.filter-system-container + .season-navigator-container,
+.filter-system-container + div[class*="episodes"] {
+  margin-top: 24px;
+}
+
+/* Single Row Filter Layout */
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.filter-row .filter-main-options {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+}
+
+.filter-row .filter-dropdowns {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 12px;
+  margin-bottom: 0;
+}
+
+.filter-main-options {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  cursor: grab;
+  user-select: none;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.filter-main-options:active {
+  cursor: grabbing;
+}
+
+.filter-main-options::-webkit-scrollbar {
+  height: 6px;
+}
+
+.filter-main-options::-webkit-scrollbar-track {
+  background: var(--surface2);
+  border-radius: 3px;
+}
+
+.filter-main-options::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+
+.filter-main-options::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+.filter-main-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-out);
+  font-size: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.filter-main-btn:hover {
+  background: var(--border);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.filter-main-btn.active {
+  background: var(--red);
+  color: white;
+  border-color: var(--red);
+  box-shadow: 0 0 20px var(--red-glow);
+}
+
+.filter-main-btn.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.filter-main-btn.active::before {
+  left: 100%;
+}
+
+.filter-dropdowns {
+  display: flex;
+  gap: 16px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  cursor: grab;
+  user-select: none;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.filter-dropdowns:active {
+  cursor: grabbing;
+}
+
+.filter-dropdowns::-webkit-scrollbar {
+  height: 6px;
+}
+
+.filter-dropdowns::-webkit-scrollbar-track {
+  background: var(--surface2);
+  border-radius: 3px;
+}
+
+.filter-dropdowns::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+
+.filter-dropdowns::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+.filter-dropdown {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-out);
+  min-width: 200px;
+}
+
+.filter-dropdown:focus {
+  outline: none;
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px var(--red-glow);
+}
+
+.filter-dropdown option {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+/* Season Navigator */
+.season-navigator-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.season-nav-header {
+  margin-bottom: 16px;
+}
+
+.season-nav-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+.season-nav-grid {
+  display: flex;
+  gap: 12px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  cursor: grab;
+  user-select: none;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.season-nav-grid:active {
+  cursor: grabbing;
+}
+
+.season-nav-grid::-webkit-scrollbar {
+  height: 6px;
+}
+
+.season-nav-grid::-webkit-scrollbar-track {
+  background: var(--surface2);
+  border-radius: 3px;
+}
+
+.season-nav-grid::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+
+.season-nav-grid::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+.season-nav-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-out);
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+
+.season-nav-btn:hover {
+  background: var(--border);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.season-nav-btn:active {
+  transform: translateY(0);
+}
+
+.season-nav-btn::before {
+  content: '→';
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: all 0.2s;
+}
+
+.season-nav-btn:hover::before {
+  opacity: 1;
+  right: 12px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .filter-system-container {
+    margin: 16px;
+    padding: 16px;
+  }
+  
+  .episodes-grid-horizontal {
+    padding: 0 16px;
+  }
+  
+  .filter-main-options {
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  
+  .filter-main-options::-webkit-scrollbar {
+    height: 4px;
+  }
+  
+  .filter-main-btn {
+    padding: 10px 16px;
+    font-size: 13px;
+    flex: 0 0 auto;
+    min-width: fit-content;
+    white-space: nowrap;
+  }
+  
+  .filter-dropdowns {
+    gap: 12px;
+  }
+  
+  .filter-dropdowns::-webkit-scrollbar {
+    height: 4px;
+  }
+  
+  .filter-dropdown {
+    min-width: 160px;
+    flex: 0 0 auto;
+  }
+  
+  .season-navigator-container {
+    margin: 16px;
+    padding: 16px;
+  }
+  
+  .season-nav-grid {
+    gap: 8px;
+    padding-bottom: 4px;
+  }
+  
+  .season-nav-grid::-webkit-scrollbar {
+    height: 4px;
+  }
+  
+  .season-nav-btn {
+    padding: 10px 16px;
+    font-size: 12px;
+    flex: 0 0 auto;
+    min-width: fit-content;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .episodes-grid-horizontal {
+    padding: 0 12px;
+  }
+  
+  .filter-system-container {
+    margin: 12px;
+    padding: 12px;
+  }
+  
+  .season-navigator-container {
+    margin: 12px;
+    padding: 12px;
+  }
+  
+  .filter-main-options {
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  
+  .filter-main-options::-webkit-scrollbar {
+    height: 3px;
+  }
+  
+  .filter-main-btn {
+    flex: 0 0 auto;
+    min-width: fit-content;
+    white-space: nowrap;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  .filter-dropdowns {
+    gap: 8px;
+  }
+  
+  .filter-dropdowns::-webkit-scrollbar {
+    height: 3px;
+  }
+  
+  .filter-dropdown {
+    min-width: 140px;
+    flex: 0 0 auto;
+  }
+  
+  .season-nav-grid {
+    gap: 6px;
+  }
+  
+  .season-nav-grid::-webkit-scrollbar {
+    height: 3px;
+  }
+  
+  .season-nav-btn {
+    flex: 0 0 auto;
+    min-width: fit-content;
+    white-space: nowrap;
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+}
+
+/* ─── COMPREHENSIVE WATCH GUIDE STYLES ─── */
+.guide-hero {
+  position: relative;
+  height: 60vh;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.guide-hero-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  filter: brightness(0.4);
+  transform: scale(1.1);
+}
+
+.guide-hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 100%);
+}
+
+.guide-hero-content {
+  position: relative;
+  text-align: center;
+  max-width: 800px;
+  padding: 2rem;
+  z-index: 1;
+}
+
+.guide-eyebrow {
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 1rem;
+}
+
+.guide-title {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 900;
+  color: white;
+  margin-bottom: 1rem;
+  line-height: 1.1;
+  text-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+.guide-sub {
+  font-size: 1.2rem;
+  color: rgba(255,255,255,0.9);
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.guide-meta {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.guide-meta-item {
+  color: rgba(255,255,255,0.8);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.guide-section {
+  margin-bottom: 4rem;
+  padding: 2rem 0;
+}
+
+.guide-section-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+
+.guide-section-icon {
+  font-size: 1.5rem;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.guide-section-desc {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  padding-left: 66px;
+}
+
+.guide-items {
+  display: grid;
+  gap: 1rem;
+  margin-left: 66px;
+}
+
+.guide-item {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.guide-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  border-color: var(--accent);
+}
+
+.guide-item--movie {
+  border-left: 4px solid #E50914;
+}
+
+.guide-item--kaito {
+  border-left: 4px solid #FF6B35;
+}
+
+.guide-item--episode {
+  border-left: 4px solid var(--accent);
+}
+
+.guide-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.guide-item-episodes {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--surface2);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  min-width: fit-content;
+}
+
+.guide-item-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.guide-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.guide-badge--main {
+  background: var(--accent);
+  color: white;
+}
+
+.guide-badge--special {
+  background: #FF6B35;
+  color: white;
+}
+
+.guide-badge--intl {
+  background: var(--surface2);
+  color: var(--text-secondary);
+}
+
+.guide-item-content {
+  flex: 1;
+}
+
+.guide-item-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.guide-item-desc {
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+
+.guide-item-manga {
+  font-size: 0.9rem;
+  color: var(--muted);
+  font-style: italic;
+  margin-top: 0.5rem;
+}
+
+/* ─── MODERN WATCH GUIDE STYLES ───────────────────────────── */
+
+/* Modern Hero Section */
+.modern-guide-hero {
+  position: relative;
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%);
+}
+
+.modern-hero-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  filter: brightness(0.3) saturate(1.2);
+  transform: scale(1.05);
+}
+
+.modern-hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, 
+    rgba(15, 15, 35, 0.9) 0%, 
+    rgba(26, 26, 62, 0.7) 50%,
+    rgba(59, 130, 246, 0.3) 100%
+  );
+}
+
+.modern-hero-container {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.modern-hero-content {
+  text-align: center;
+  color: white;
+}
+
+.modern-hero-badge {
+  display: inline-block;
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  color: #60a5fa;
+  padding: 0.5rem 1.5rem;
+  border-radius: 50px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 2rem;
+  backdrop-filter: blur(10px);
+}
+
+.modern-hero-title {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, #ffffff 0%, #60a5fa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 40px rgba(59, 130, 246, 0.3);
+}
+
+.modern-hero-subtitle {
+  font-size: clamp(1rem, 2vw, 1.5rem);
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 3rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+.modern-hero-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.stat-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 1.5rem;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+}
+
+.stat-number {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: #60a5fa;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.modern-hero-meta {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.meta-item {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Modern Guide Container */
+.modern-guide-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem 4rem;
+}
+
+.container .modern-guide-header {
+  margin-top: 2rem;
+}
+
+.modern-guide-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3rem;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.guide-filter-tabs {
+  display: flex;
+  gap: 0.5rem;
+  background: var(--surface);
+  padding: 0.5rem;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+}
+
+.filter-tab {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.filter-tab:hover {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+.filter-tab.active {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.guide-search-box {
+  display: flex;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  min-width: 300px;
+}
+
+.guide-search-input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.guide-search-input::placeholder {
+  color: var(--text-secondary);
+}
+
+.guide-search-btn {
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 1rem;
+  transition: color 0.3s ease;
+}
+
+.guide-search-btn:hover {
+  color: var(--accent);
+}
+
+/* Modern Watch Grid */
+.modern-watch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 2rem;
+}
+
+.modern-watch-card {
+  background: var(--surface);
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.modern-watch-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  border-color: var(--accent);
+}
+
+.modern-card-image {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+}
+
+.modern-card-img {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.6s ease;
+}
+
+.modern-watch-card:hover .modern-card-img {
+  transform: scale(1.1);
+}
+
+.modern-card-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom, 
+    transparent 0%, 
+    transparent 50%, 
+    rgba(0, 0, 0, 0.7) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modern-watch-card:hover .modern-card-overlay {
+  opacity: 1;
+}
+
+.modern-card-play {
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: var(--accent);
+  transform: scale(0);
+  transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.modern-watch-card:hover .modern-card-play {
+  transform: scale(1);
+}
+
+.modern-card-type {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  backdrop-filter: blur(10px);
+}
+
+.modern-card-type.episode {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.modern-card-type.movie {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.modern-card-type.magic-kaito {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.type-icon {
+  font-size: 1rem;
+}
+
+.modern-card-content {
+  padding: 1.5rem;
+}
+
+.modern-card-number {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.modern-card-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 1rem;
+  line-height: 1.4;
+  display: -webkit-box;
+  display: box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  box-orient: vertical;
+  overflow: hidden;
+}
+
+.modern-card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.modern-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.modern-badge--main {
+  background: linear-gradient(135deg, var(--accent), #3b82f6);
+  color: white;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.modern-badge--special {
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+  color: white;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+/* Page Hero Styles */
+.page-hero {
+  position: relative;
+  min-height: 50vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%);
+}
+
+.page-hero-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  filter: brightness(0.3) saturate(1.2);
+  transform: scale(1.05);
+}
+
+.page-hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, 
+    rgba(15, 15, 35, 0.9) 0%, 
+    rgba(26, 26, 62, 0.7) 50%,
+    rgba(59, 130, 246, 0.3) 100%
+  );
+}
+
+.page-hero-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  color: white;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.page-title {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, #ffffff 0%, #60a5fa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 40px rgba(59, 130, 246, 0.3);
+}
+
+.page-subtitle {
+  font-size: clamp(1rem, 2vw, 1.5rem);
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.page-hero-nav {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+.hero-nav-btn {
+  padding: 0.75rem 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  text-decoration: none;
+}
+
+.hero-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+.hero-nav-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+/* Episodes List Horizontal - for Watch Guide */
+.episodes-list-horizontal {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 2rem 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .guide-hero {
+    height: 50vh;
+    min-height: 300px;
+  }
+  
+  .guide-section-title {
+    font-size: 1.5rem;
+  }
+  
+  .guide-section-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+  
+  .guide-section-desc,
+  .guide-items {
+    padding-left: 0;
+    margin-left: 0;
+  }
+  
+  .guide-item-header {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .guide-item-badges {
+    align-self: flex-start;
+  }
+  
+  .guide-meta {
+    gap: 1rem;
+  }
+  
+  .episodes-list-horizontal {
+    gap: 0.75rem;
+    padding: 1rem 0;
+  }
+
+  /* Page Hero Mobile Responsive */
+  .page-hero {
+    min-height: 40vh;
+  }
+
+  .page-hero-content {
+    padding: 1rem;
+  }
+
+  .page-title {
+    font-size: clamp(2rem, 8vw, 3rem);
+  }
+
+  .page-subtitle {
+    font-size: clamp(0.9rem, 3vw, 1.2rem);
+    margin-bottom: 1.5rem;
+  }
+
+  .page-hero-nav {
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+  }
+
+  .hero-nav-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+  }
+
+  /* Modern Watch Guide Mobile Responsive */
+  .modern-guide-hero {
+    min-height: 60vh;
+  }
+
+  .modern-hero-container {
+    padding: 1rem;
+  }
+
+  .modern-hero-title {
+    font-size: clamp(2rem, 8vw, 3rem);
+  }
+
+  .modern-hero-subtitle {
+    font-size: clamp(0.9rem, 3vw, 1.2rem);
+    margin-bottom: 2rem;
+  }
+
+  .modern-hero-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    padding: 1rem;
+  }
+
+  .stat-number {
+    font-size: 2rem;
+  }
+
+  .modern-hero-meta {
+    gap: 1rem;
+    font-size: 0.75rem;
+  }
+
+  .modern-guide-container {
+    padding: 0 1rem 2rem;
+  }
+
+  .modern-guide-header {
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .guide-filter-tabs {
+    order: 2;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .guide-search-box {
+    order: 1;
+    min-width: 100%;
+  }
+
+  .filter-tab {
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+  }
+
+  .modern-watch-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+  }
+
+  .modern-card-image {
+    height: 120px;
+  }
+
+  .modern-card-content {
+    padding: 1rem;
+  }
+
+  .modern-card-title {
+    font-size: 0.9rem;
+    margin-bottom: 0.75rem;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+
+  .modern-card-number {
+    font-size: 0.75rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .modern-card-type {
+    top: 0.5rem;
+    left: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.65rem;
+  }
+
+  .type-icon {
+    font-size: 0.75rem;
+  }
+
+  .modern-badge {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
+  }
+
+  .modern-card-play {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .modern-hero-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .modern-watch-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modern-card-image {
+    height: 160px;
+  }
+
+  .guide-filter-tabs {
+    gap: 0.25rem;
+    padding: 0.25rem;
+  }
+
+  .filter-tab {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.7rem;
+  }
 }
