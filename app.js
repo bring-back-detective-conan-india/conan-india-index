@@ -3964,12 +3964,6 @@ window.showOVAModal = async function(ovaId) {
         <span class="modal-where-plat" style="color:#${isUnavailable ? '#FF6B00' : '#888'}">⬤ Availability</span>
         <span class="modal-where-detail">${isUnavailable ? 'Not Available in India' : 'Available'}</span>
       </div>
-      ${ova.wikiUrl ? `
-      <div class="modal-where-row">
-        <span class="modal-where-plat" style="color:#888">⬤ Wiki</span>
-        <span class="modal-where-detail"><a href="${ova.wikiUrl}" target="_blank" rel="noopener" style="color:#4A90E2;text-decoration:underline">Detective Conan World ↗</a></span>
-      </div>
-      ` : ''}
     </div>
   `;
 
