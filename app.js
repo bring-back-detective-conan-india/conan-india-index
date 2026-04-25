@@ -3434,16 +3434,20 @@ function renderComprehensiveGuide() {
         
         <!-- Dropdown Filters -->
         <div class="filter-dropdowns">
-          <select class="filter-dropdown" id="content-category-filter">
-            <option value="">All Content Types</option>
-            <option value="main-plot">Main Plot</option>
-            <option value="character">Character Development</option>
-            <option value="setup">Introduction & Setup</option>
-            <option value="romance">Romance</option>
-            <option value="fun">Entertainment Value</option>
-            <option value="movie-prequel">Movie Prequels</option>
-            <option value="movie-sequel">Movie Sequels</option>
-          </select>
+          <!-- Plot Tag Multi-select -->
+          <div class="multi-select-dropdown" data-filter="guide-plot">
+            <button class="multi-select-btn" onclick="toggleMultiSelect('guide-plot')">
+              <span class="multi-select-label">Plot</span>
+              <span class="multi-select-value" id="guide-plot-value">All</span>
+              <span class="multi-select-chevron">⌄</span>
+            </button>
+            <div class="multi-select-menu" id="guide-plot-menu">
+              ${(window.ALL_TAGS || []).map(tag => {
+                const def = (window.TAG_DEFINITIONS || {})[tag] || {};
+                return `<label class="multi-select-option" title="${def.desc || ''}"><input type="checkbox" value="${tag}" data-parent="guide-plot"><span>${tag}</span></label>`;
+              }).join('')}
+            </div>
+          </div>
           
           <select class="filter-dropdown" id="faction-filter">
             <option value="">All Factions & Groups</option>
@@ -4848,10 +4852,22 @@ function renderBrowsePage(){
                 <label class="multi-select-option"><input type="checkbox" value="English" data-parent="language"><span>English</span></label>
               </div>
             </div>
-          </div>
 
-          <!-- TAG FILTER CAROUSEL -->
-          <div id="browse-tag-filter" class="browse-tag-section"></div>
+            <!-- PLOT TAG FILTER DROPDOWN -->
+            <div class="multi-select-dropdown" data-filter="plot">
+              <button class="multi-select-btn" onclick="toggleMultiSelect('plot')">
+                <span class="multi-select-label">Plot</span>
+                <span class="multi-select-value" id="plot-value">All</span>
+                <span class="multi-select-chevron">⌄</span>
+              </button>
+              <div class="multi-select-menu" id="plot-menu">
+                ${(window.ALL_TAGS || []).map(tag => {
+                  const def = (window.TAG_DEFINITIONS || {})[tag] || {};
+                  return `<label class="multi-select-option" title="${def.desc || ''}"><input type="checkbox" value="${tag}" data-parent="plot"><span>${tag}</span></label>`;
+                }).join('')}
+              </div>
+            </div>
+          </div>
         </div>
         
         <div id="browse-filter-results"></div>
@@ -4864,24 +4880,8 @@ function renderBrowsePage(){
   `;
   app.appendChild(pg);
 
-  // State - supports multiple selections
-  const bs={type:[],platform:[],language:[],query:'',tags:[],tagLogic:'OR'};
-
-  // Initialize tag filter carousel
-  setTimeout(() => {
-    if (typeof renderTagFilterCarousel === 'function') {
-      renderTagFilterCarousel('browse-tag-filter', {
-        logic: 'OR',
-        showLogicToggle: true,
-        onChange: (filterState) => {
-          bs.tags = filterState.selectedTags;
-          bs.tagLogic = filterState.logic;
-          updateBrowseFilterResults(filterState);
-          runBrowse();
-        }
-      });
-    }
-  }, 50);
+  // State - supports multiple selections including plot tags
+  const bs={type:[],platform:[],language:[],plot:[],query:''};
 
   // Setup multi-select dropdowns
   setupMultiSelectListeners();
@@ -4943,13 +4943,29 @@ function renderBrowsePage(){
       if(!hasLang) return false;
     }
     
-    // tag filter
-    if (bs.tags && bs.tags.length > 0) {
-      const contentTags = getContentTags(item, type);
-      const hasTag = bs.tagLogic === 'AND'
-        ? bs.tags.every(tag => contentTags.has(tag))
-        : bs.tags.some(tag => contentTags.has(tag));
-      if (!hasTag) return false;
+    // plot tag filter for content items (movies, OVAs, Kaito) - OR logic
+    if (bs.plot.length > 0) {
+      let contentTags;
+      if (type === 'movie') contentTags = MOVIE_TAGS?.get(item.n);
+      else if (type === 'ova') contentTags = OVA_TAGS?.get(item.episodeNumber || item.id?.replace('ova', ''));
+      else if (type === 'kaito') {
+        // Aggregate all Kaito tags
+        contentTags = new Set();
+        if (typeof KAITO_TAGS !== 'undefined') {
+          for (let i = 1; i <= 24; i++) {
+            const epTags = KAITO_TAGS.get(i);
+            if (epTags) epTags.forEach(t => contentTags.add(t));
+          }
+        }
+      }
+      
+      if (contentTags) {
+        // OR logic: content has ANY of the selected plot tags
+        const hasMatch = bs.plot.some(tag => contentTags.has(tag));
+        if (!hasMatch) return false;
+      } else {
+        return false; // No tags means doesn't match
+      }
     }
     
     // text search — for seasons also match against individual episode titles/numbers
@@ -4994,7 +5010,7 @@ function renderBrowsePage(){
         if (values.length === 0) {
           displayEl.textContent = 'All';
         } else if (values.length === 1) {
-          displayEl.textContent = values[0] === 'primevideo' ? 'Prime Video' : values[0];
+          displayEl.textContent = parent === 'platform' && values[0] === 'primevideo' ? 'Prime Video' : values[0];
         } else {
           displayEl.textContent = `${values.length} selected`;
         }
@@ -5002,6 +5018,26 @@ function renderBrowsePage(){
         runBrowse();
       });
     });
+  }
+
+  // Get episodes matching selected plot tags (OR logic)
+  function getEpisodesByPlotTags(selectedTags) {
+    if (!selectedTags || selectedTags.length === 0) return [];
+    
+    const matchingEpisodes = [];
+    if (typeof EPISODES !== 'undefined' && typeof EPISODE_TAGS !== 'undefined') {
+      for (const ep of EPISODES) {
+        const epTags = EPISODE_TAGS.get(ep.n);
+        if (epTags) {
+          // OR logic: episode has ANY of the selected tags
+          const hasMatch = selectedTags.some(tag => epTags.has(tag));
+          if (hasMatch) {
+            matchingEpisodes.push(ep);
+          }
+        }
+      }
+    }
+    return matchingEpisodes;
   }
 
   // Global function for toggling dropdowns
@@ -5046,16 +5082,43 @@ function renderBrowsePage(){
     const q=bs.query;
     const num=q?parseInt(q,10):NaN;
 
-    // Episode-level results when query looks like an episode number or title fragment
-    let epResults=[];
-    if(q&&typeof EPISODES!=='undefined'&&bs.type==='all'){
+    // Get plot-tagged episodes when plot filters are selected
+    let plotEpResults=[];
+    if (bs.plot.length > 0 && typeof EPISODES !== 'undefined') {
+      const matchingEps = getEpisodesByPlotTags(bs.plot);
+      plotEpResults = matchingEps.map(e=>{
+        const s=SEASONS.find(x=>x.id===e.season)||{};
+        // Get episode tags for badges
+        const epTags = EPISODE_TAGS?.get(e.n);
+        const tagBadges = epTags ? Array.from(epTags).slice(0, 3).map(tag => {
+          const def = TAG_DEFINITIONS?.[tag] || { color: '#666' };
+          return `<span class="content-tag" style="--tag-color: ${def.color}; font-size: 8px; padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-right: 4px;">${tag}</span>`;
+        }).join('') : '';
+        
+        return`<div class="browse-card ep-result-card" data-ep-num="${e.n}" data-tags="${epTags ? Array.from(epTags).join(',') : ''}" onclick="openEpisodeModal(${e.n})">
+          <div class="browse-card-img" style="background-image:url('${getEpisodeStill(e,e.n+1)}')"></div>
+          <div class="browse-card-grad"></div>
+          <div class="browse-card-num">${e.n}</div>
+          <div class="browse-card-badges"><span class="tag tag-plex" style="font-size:8px">EP</span></div>
+          <div class="browse-card-content">
+            <div class="browse-card-type">${s.label||e.season} · ${e.etv?'ETV ·':''} ${e.special?'Special':''}</div>
+            <div class="browse-card-title">${e.title}</div>
+            ${tagBadges ? `<div class="browse-card-tags" style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px;">${tagBadges}</div>` : ''}
+          </div>
+        </div>`;
+      });
+    }
+
+    // Episode-level results from search query only (not plot tags)
+    let searchEpResults=[];
+    if(q && typeof EPISODES !== 'undefined'){
       const matched=EPISODES.filter(e=>
         typeof e.n==='number'&&(
           (!isNaN(num)&&e.n===num)||
           (e.title&&e.title.toLowerCase().includes(q))
         )
       ).slice(0,24);
-      epResults=matched.map(e=>{
+      searchEpResults=matched.map(e=>{
         const s=SEASONS.find(x=>x.id===e.season)||{};
         return`<div class="browse-card ep-result-card" onclick="openEpisodeModal(${e.n})">
           <div class="browse-card-img" style="background-image:url('${getEpisodeStill(e,e.n+1)}')"></div>
@@ -5077,61 +5140,30 @@ function renderBrowsePage(){
       ...(typeof OVAS !== 'undefined' ? OVAS.map((o,i)=>({item:o,type:'ova',idx:i})) : []),
       ...(typeof MAGIC_KAITO !== 'undefined' ? [{item:MAGIC_KAITO,type:'kaito',idx:0}] : []),
     ].filter(({item,type})=>itemVisible(item,type));
-    
-    // Update tag counts in filter carousel
-    setTimeout(() => {
-      const carousel = document.getElementById('browse-tag-filter');
-      if (carousel && typeof updateTagFilterCounts === 'function') {
-        // Calculate matches per tag across all content types
-        const allItems = [
-          ...MOVIES.map((m,i)=>({item:m,type:'movie',idx:i})),
-          ...SEASONS.map((s,i)=>({item:s,type:'season',idx:i})),
-          ...SPINOFFS.map((sp,i)=>({item:sp,type:'spinoff',idx:i})),
-          ...(typeof OVAS !== 'undefined' ? OVAS.map((o,i)=>({item:o,type:'ova',idx:i})) : []),
-          ...(typeof MAGIC_KAITO !== 'undefined' ? [{item:MAGIC_KAITO,type:'kaito',idx:0}] : []),
-        ];
-        const tagCounts = new Map();
-        allItems.forEach(({item,type}) => {
-          let tags;
-          if (type === 'movie' && typeof MOVIE_TAGS !== 'undefined') {
-            tags = MOVIE_TAGS.get(item.n);
-          } else if (type === 'ova' && typeof OVA_TAGS !== 'undefined') {
-            tags = OVA_TAGS.get(item.episodeNumber || item.id?.replace('ova', ''));
-          } else if (type === 'kaito' && typeof KAITO_TAGS !== 'undefined') {
-            // Sum all Kaito episode tags
-            tags = new Set();
-            for (let i = 1; i <= 24; i++) {
-              const epTags = KAITO_TAGS.get(i);
-              if (epTags) epTags.forEach(t => tags.add(t));
-            }
-          }
-          if (tags) {
-            tags.forEach(tag => {
-              tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
-            });
-          }
-        });
-        updateTagFilterCounts('browse-tag-filter', tagCounts);
-      }
-    }, 10);
 
-    const totalCount=epResults.length+items.length;
-    meta.textContent=`Showing ${totalCount} result${totalCount!==1?'s':''}${q?' for "'+searchEl.value+'"':''}`;
+    const totalCount=searchEpResults.length+plotEpResults.length+items.length;
+    const plotFilterText = bs.plot.length > 0 ? ` · ${bs.plot.length} plot tag${bs.plot.length!==1?'s':''}` : '';
+    meta.textContent=`Showing ${totalCount} result${totalCount!==1?'s':''}${q?' for "'+searchEl.value+'"':''}${plotFilterText}`;
 
     if(totalCount===0){
       grid.innerHTML=`<div class="no-results empty-state" style="grid-column:1/-1"><div class="empty-state-illustration">🧭</div><div class="empty-state-title">No results found</div><div class="empty-state-sub">Try a different title or episode number, or reset all filters to return to the full catalog.</div><button class="empty-state-action" onclick="Router.navigate('/browse')">Reset Browse</button></div>`;
       return;
     }
 
-    const epSection=epResults.length
-      ?`<div class="browse-ep-heading" style="grid-column:1/-1">Episodes (${epResults.length})</div>${epResults.join('')}`
+    // Build sections: search episodes first, then content items, then plot-tagged episodes at bottom
+    const searchEpSection=searchEpResults.length
+      ?`<div class="browse-ep-heading" style="grid-column:1/-1">Episodes (${searchEpResults.length})</div>${searchEpResults.join('')}`
       :'';
+    
     const cardSection=items.length
-      ?`${epResults.length?'<div class="browse-ep-heading" style="grid-column:1/-1">Series, Movies &amp; More ('+items.length+')</div>':''}`
-        +items.map(({item,type,idx})=>renderBrowseCard(item,type,idx)).join('')
+      ?`${items.map(({item,type,idx})=>renderBrowseCard(item,type,idx)).join('')}`
+      :'';
+    
+    const plotEpSection=plotEpResults.length
+      ?`<div class="browse-ep-heading" style="grid-column:1/-1;margin-top:24px;">Episodes matching plot tags (${plotEpResults.length})</div>${plotEpResults.join('')}`
       :'';
 
-    grid.innerHTML=epSection+cardSection;
+    grid.innerHTML=searchEpSection+cardSection+plotEpSection;
     setTimeout(()=>{observeAll();refreshHover();},60);
   }
 
@@ -6198,16 +6230,39 @@ function renderImportantEpisodesPage(){
   
   app.appendChild(pg);
   
+  // Setup multi-select for guide-plot
+  setTimeout(() => {
+    pg.querySelectorAll('.multi-select-menu input[data-parent="guide-plot"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const checked = pg.querySelectorAll('.multi-select-menu input[data-parent="guide-plot"]:checked');
+        const values = Array.from(checked).map(c => c.value);
+        
+        // Update display
+        const displayEl = pg.getElementById('guide-plot-value');
+        if (displayEl) {
+          if (values.length === 0) displayEl.textContent = 'All';
+          else if (values.length === 1) displayEl.textContent = values[0];
+          else displayEl.textContent = `${values.length} selected`;
+        }
+        
+        applyFilters();
+      });
+    });
+  }, 100);
+  
   // Setup new filter functionality
   setTimeout(() => {
     const mainFilterButtons = pg.querySelectorAll('.filter-main-btn');
-    const contentCategoryFilter = pg.getElementById('content-category-filter');
     const factionFilter = pg.getElementById('faction-filter');
     const episodeCards = pg.querySelectorAll('.episode-horizontal-card');
     
     function applyFilters() {
       const activeMainFilter = pg.querySelector('.filter-main-btn.active').dataset.mainFilter;
-      const contentCategory = contentCategoryFilter.value;
+      
+      // Get selected plot tags
+      const plotChecked = pg.querySelectorAll('.multi-select-menu input[data-parent="guide-plot"]:checked');
+      const selectedPlotTags = Array.from(plotChecked).map(c => c.value);
+      
       const faction = factionFilter.value;
       
       episodeCards.forEach(card => {
@@ -6227,9 +6282,10 @@ function renderImportantEpisodesPage(){
         }
         // 'complete' shows everything
         
-        // Content category filter
-        if (contentCategory && showCard) {
-          if (!tags.includes(contentCategory)) showCard = false;
+        // Plot tag filter - OR logic
+        if (selectedPlotTags.length > 0 && showCard) {
+          const hasMatch = selectedPlotTags.some(tag => tags.includes(tag));
+          if (!hasMatch) showCard = false;
         }
         
         // Faction filter
@@ -6251,7 +6307,6 @@ function renderImportantEpisodesPage(){
     });
     
     // Dropdown filters
-    contentCategoryFilter.addEventListener('change', applyFilters);
     factionFilter.addEventListener('change', applyFilters);
     
     observeAll();
