@@ -715,6 +715,18 @@ const MAGIC_KAITO = {
 
 const HERO_SLIDES = [
   {
+    title:"30th Anniversary",
+    subtitle:"Detective Conan",
+    desc:"Celebrating 30 years of mystery, deduction, and thrilling cases. The journey continues with new episodes and movies.",
+    img:"https://mysticotaku.com/wp-content/uploads/2025/12/blog_800x450_detective.webp",
+    bgColor:"#000000",
+    accent:"#CC2233",
+    tag:"30 Years · 1994–2024",
+    emoji:"🎉",
+    ctaLabel:"Explore Content →",
+    ctaAction:"Router.navigate('/browse')"
+  },
+  {
     title:"The Complete India Guide",
     subtitle:"Detective Conan",
     desc:"Every platform. Every language. Every episode and movie available in India — all in one place.",

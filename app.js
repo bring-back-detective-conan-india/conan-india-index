@@ -1024,7 +1024,7 @@ function renderHome(){
           <button class="section-view-all" onclick="Router.navigate('/guides')">View Guide →</button>
         </div>
         <div class="manga-teaser reveal" onclick="Router.navigate('/guides')" style="cursor:pointer">
-          <div class="manga-teaser-img" style="background-image:url('${IMG.conan1}')"></div>
+          <div class="manga-teaser-img" style="background-image:url('https://www.video-games-museum.com/en/screenshots/Playstation/2/37748-menu-Meitantei-Conan-Trick-Trick-Vol-1.jpg')"></div>
           <div class="manga-teaser-body">
             <div class="manga-teaser-label">Plot Tags · Canon Episodes · Filler Filter</div>
             <div class="manga-teaser-title">Find the <em>Best Episodes</em></div>
@@ -1046,7 +1046,7 @@ function renderHome(){
           <button class="section-view-all" onclick="Router.navigate('/browse')">Browse All →</button>
         </div>
         <div class="manga-teaser reveal" onclick="Router.navigate('/browse')" style="cursor:pointer">
-          <div class="manga-teaser-img" style="background-image:url('${IMG.conan2}')"></div>
+          <div class="manga-teaser-img" style="background-image:url('https://occ-0-8407-2218.1.nflxso.net/dnm/api/v6/6AYY37jfdO6hpXcMjf9Yu5cnmO0/AAAABemirHr5-iYrdm1iRdUOx3Rs7aRskVuVEi9vshoNe7M4wAM_jwCKfiz6vY-GC9_gKPY6Iz19vkBizq31-P3Dl8qqjWTEvi_2a3QwZujQrw.jpg')"></div>
           <div class="manga-teaser-body">
             <div class="manga-teaser-label">Movies · Episodes · OVAs · Spinoffs</div>
             <div class="manga-teaser-title">Browse <em>All Content</em></div>
@@ -1741,7 +1741,9 @@ function renderBrowseCard(item,type,idx){
       return `<span class="content-tag" style="--tag-color: ${def.color}; font-size: 8px; padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-right: 4px;">${tag}</span>`;
     }).join('');
     return`<div class="browse-card stagger" data-kaito-id="${k.id}" data-type="kaito" data-tags="${Array.from(tags).join(',')}" onclick="openMagicKaitoModal()">
-      <div class="browse-card-img" style="background-image:url('${posterUrl}');background-color:${k.colors[0]}"></div>
+      <div class="browse-card-img" style="background-image:url('${posterUrl}');background-color:${k.colors[0]}">
+        <div class="season-card-dots" style="position:absolute;bottom:8px;right:8px;z-index:3"><span class="plat-dot" style="--dot:#FF6B35" title="Amasian TV"></span></div>
+      </div>
       <div class="browse-card-grad"></div>
       <div class="browse-card-num">24 eps</div>
       <div class="browse-card-content">
@@ -2896,9 +2898,14 @@ const PLATFORM_ROUTE_BY_NAME = {
 };
 let scrollY=0;
 let modalScrollPos = 0;
+let modalOpenCount = 0;
 function openModal(html,opts={}){
-  scrollY = window.scrollY;
-  modalScrollPos = window.scrollY;
+  // Only save scroll position when opening the first modal (not nested)
+  if (modalOpenCount === 0) {
+    scrollY = window.scrollY;
+    modalScrollPos = window.scrollY;
+  }
+  modalOpenCount++;
   modalPanel.innerHTML=html;
   const isFullPage = Boolean(opts.fullPage);
   modal.classList.toggle('modal-fullpage', isFullPage);
@@ -2934,9 +2941,11 @@ function closeModal(){
   // Reset panel transform
   modalPanel.style.transform='';
   modal.style.background='';
-  // Restore scroll position after modal closes
-  if (modalScrollPos > 0) {
+  // Decrement counter and restore scroll position only when last modal closes
+  modalOpenCount = Math.max(0, modalOpenCount - 1);
+  if (modalOpenCount === 0 && modalScrollPos > 0) {
     window.scrollTo({top: modalScrollPos, behavior: 'instant'});
+    modalScrollPos = 0; // Reset for next time
   }
 }
 modal.addEventListener('click',e=>{if(e.target===modal)closeModal();});
@@ -4588,61 +4597,40 @@ function renderWatchGuidesIndex() {
     </section>
 
     <div class="container">
-      <div class="browse-grid">
-        <!-- Canon Episodes Guide Card -->
-        <div class="browse-card reveal" onclick="Router.navigate('/guide/canon-episodes')">
-          <div class="browse-card-img" style="background-image:url('https://image.tmdb.org/t/p/w500/y7Wr1CbEiu1Lpv7ZQmVPwKovire.jpg')"></div>
-          <div class="browse-card-grad"></div>
-          <div class="browse-card-num">01</div>
-          <div class="browse-card-content">
-            <div class="browse-card-type">Manga Canon Only</div>
-            <div class="browse-card-title">Canon Episodes Guide</div>
-            <div class="browse-card-meta">No Filler • Pure Story Experience</div>
+      <div class="guides-horizontal" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;margin-top:32px">
+        <!-- Important Episodes & Movies Guide Card (XerBlade First) -->
+        <div class="guide-card-horizontal reveal" onclick="Router.navigate('/guide')" style="background:var(--surface);border-radius:16px;overflow:hidden;cursor:pointer;transition:transform 0.3s,box-shadow 0.3s;border:1px solid var(--border)" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 40px rgba(0,0,0,0.3)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+          <div class="guide-card-img" style="height:200px;background-image:url('https://image.tmdb.org/t/p/w500/j2qXQ8kHpMMX6U9qkPLo0yw8fF4.jpg');background-size:cover;background-position:center;position:relative">
+            <div style="position:absolute;top:12px;left:12px;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);padding:6px 14px;border-radius:100px;font-size:12px;font-weight:600;color:#fff;border:1px solid rgba(255,255,255,0.2)">01</div>
           </div>
-          <div class="browse-card-hover">
-            <div class="browse-card-hover-desc">All canon episodes from the original manga by Gosho Aoyama. Filler episodes and anime-original content are excluded to provide the pure story experience.</div>
-          </div>
-        </div>
-
-        <!-- Important Episodes & Movies Guide Card -->
-        <div class="browse-card reveal" onclick="Router.navigate('/guide')">
-          <div class="browse-card-img" style="background-image:url('https://image.tmdb.org/t/p/w500/j2qXQ8kHpMMX6U9qkPLo0yw8fF4.jpg')"></div>
-          <div class="browse-card-grad"></div>
-          <div class="browse-card-num">02</div>
-          <div class="browse-card-content">
-            <div class="browse-card-type">Based on XerBlade Guide</div>
-            <div class="browse-card-title">Important Episodes & Movies</div>
-            <div class="browse-card-meta">Essential Episodes • All Movies • Tie-ins</div>
-          </div>
-          <div class="browse-card-hover">
-            <div class="browse-card-hover-desc">Essential Detective Conan episodes every fan should see, curated from the renowned XerBlade Important Episode List. Includes all movies, OVAs, and Magic Kaito 1412 with rich metadata and filtering.</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- About Section -->
-      <section class="section">
-        <div class="container">
-          <div class="content-card">
-            <h2>About Our Watch Guides</h2>
-            <p>Our comprehensive watch guides are designed to help you navigate the extensive Detective Conan universe. Whether you're a new fan looking for the essential episodes or a seasoned viewer wanting to experience the complete story, we have the perfect guide for you.</p>
-            <div style="margin-top: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
-              <div style="padding: 16px; background: var(--surface1); border-radius: 8px; border: 1px solid var(--border);">
-                <h4 style="color: var(--red); margin-bottom: 8px;">🎯 Essential Episodes</h4>
-                <p style="font-size: 14px; color: var(--text2);">Focus on the most important plot points and character developments.</p>
-              </div>
-              <div style="padding: 16px; background: var(--surface1); border-radius: 8px; border: 1px solid var(--border);">
-                <h4 style="color: var(--red); margin-bottom: 8px;">📖 Manga Canon</h4>
-                <p style="font-size: 14px; color: var(--text2);">Experience the story as intended by the original creator.</p>
-              </div>
-              <div style="padding: 16px; background: var(--surface1); border-radius: 8px; border: 1px solid var(--border);">
-                <h4 style="color: var(--red); margin-bottom: 8px;">🔍 Rich Metadata</h4>
-                <p style="font-size: 14px; color: var(--text2);">Detailed faction tags, content types, and advanced filtering.</p>
-              </div>
+          <div class="guide-card-body" style="padding:20px">
+            <div style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Based on XerBlade Guide</div>
+            <h3 style="font-size:20px;font-weight:600;margin-bottom:12px;color:var(--text)">Important Episodes & Movies</h3>
+            <p style="font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:16px">Essential Detective Conan episodes every fan should see, curated from the renowned XerBlade Important Episode List. Includes all movies, OVAs, and Magic Kaito 1412 with rich metadata and filtering.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <span style="font-size:11px;background:rgba(204,34,51,0.2);color:var(--red);padding:4px 10px;border-radius:100px">Essential Episodes</span>
+              <span style="font-size:11px;background:rgba(204,34,51,0.2);color:var(--red);padding:4px 10px;border-radius:100px">All Movies</span>
+              <span style="font-size:11px;background:rgba(204,34,51,0.2);color:var(--red);padding:4px 10px;border-radius:100px">Tie-ins</span>
             </div>
           </div>
         </div>
-      </section>
+
+        <!-- Canon Episodes Guide Card -->
+        <div class="guide-card-horizontal reveal" onclick="Router.navigate('/guide/canon-episodes')" style="background:var(--surface);border-radius:16px;overflow:hidden;cursor:pointer;transition:transform 0.3s,box-shadow 0.3s;border:1px solid var(--border)" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 40px rgba(0,0,0,0.3)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+          <div class="guide-card-img" style="height:200px;background-image:url('https://image.tmdb.org/t/p/w500/y7Wr1CbEiu1Lpv7ZQmVPwKovire.jpg');background-size:cover;background-position:center;position:relative">
+            <div style="position:absolute;top:12px;left:12px;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);padding:6px 14px;border-radius:100px;font-size:12px;font-weight:600;color:#fff;border:1px solid rgba(255,255,255,0.2)">02</div>
+          </div>
+          <div class="guide-card-body" style="padding:20px">
+            <div style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Manga Canon Only</div>
+            <h3 style="font-size:20px;font-weight:600;margin-bottom:12px;color:var(--text)">Canon Episodes Guide</h3>
+            <p style="font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:16px">All canon episodes from the original manga by Gosho Aoyama. Filler episodes and anime-original content are excluded to provide the pure story experience.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <span style="font-size:11px;background:rgba(204,34,51,0.2);color:var(--red);padding:4px 10px;border-radius:100px">No Filler</span>
+              <span style="font-size:11px;background:rgba(204,34,51,0.2);color:var(--red);padding:4px 10px;border-radius:100px">Pure Story</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     
     ${renderFooterHTML()}
