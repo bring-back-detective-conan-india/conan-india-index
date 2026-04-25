@@ -739,8 +739,33 @@ window.addEventListener('scroll',()=>{
 // ─── FILTER STATE ────────────────────────────────────
 const filterState = {type:'all', platform:'all', language:'all'};
 
-function getMovieLangs(m){
+function getMovieLangs(m, platformFilter){
   const langs = new Set();
+  
+  // If filtering by specific platform, only return languages for that platform
+  if (platformFilter && platformFilter !== 'all') {
+    if (platformFilter === 'netflix') {
+      if (m.netflix) langs.add('English Sub');
+    } else if (platformFilter === 'primevideo' || platformFilter === 'appletv') {
+      // Anime Times only has English Sub and Hindi
+      if (m.animetimes) {
+        langs.add('English Sub');
+        langs.add('Hindi');
+      }
+    } else if (platformFilter === 'etvbalb') {
+      // ETV Bal Bharat has all regional dubs
+      if (m.etv) {
+        ['Hindi','Tamil','Telugu','Malayalam','Kannada','Bengali','Marathi','Gujarati','Odia','Punjabi','Assamese'].forEach(l=>langs.add(l));
+      }
+    } else if (platformFilter === 'etvwin') {
+      if (m.etvwin) {
+        ['Hindi','Tamil','Telugu','Malayalam','Kannada','Bengali','Marathi','Gujarati','Odia','Punjabi','Assamese'].forEach(l=>langs.add(l));
+      }
+    }
+    return langs;
+  }
+  
+  // No platform filter - return all languages from all platforms (original behavior)
   if(m.netflix||m.animetimes) langs.add('English Sub');
   if(m.animetimes) langs.add('Hindi');
   if(m.etv||m.etvwin){
@@ -748,9 +773,33 @@ function getMovieLangs(m){
   }
   return langs;
 }
-function getSeasonLangs(s){
+function getSeasonLangs(s, platformFilter){
   const langs = new Set();
   const pids = s.platforms||[];
+  
+  // If filtering by specific platform, only return languages for that platform
+  if (platformFilter && platformFilter !== 'all') {
+    if (platformFilter === 'netflix') {
+      if (pids.includes('netflix')) langs.add('English Sub');
+    } else if (platformFilter === 'primevideo' || platformFilter === 'appletv') {
+      // Anime Times only has English Sub and Hindi
+      if (pids.includes('primevideo') || pids.includes('appletv')) {
+        langs.add('English Sub');
+        langs.add('Hindi');
+      }
+    } else if (platformFilter === 'etvbalb') {
+      if (pids.includes('etvbalb')) {
+        ['Hindi','Tamil','Telugu','Malayalam','Kannada','Bengali','Marathi','Gujarati','Odia','Punjabi','Assamese'].forEach(l=>langs.add(l));
+      }
+    } else if (platformFilter === 'etvwin') {
+      if (pids.includes('etvwin')) {
+        ['Hindi','Tamil','Telugu','Malayalam','Kannada','Bengali','Marathi','Gujarati','Odia','Punjabi','Assamese'].forEach(l=>langs.add(l));
+      }
+    }
+    return langs;
+  }
+  
+  // No platform filter - return all languages from all platforms
   if(pids.some(p=>['netflix','primevideo','appletv'].includes(p))) langs.add('English Sub');
   if(pids.includes('primevideo')||pids.includes('appletv')) langs.add('Hindi');
   if(pids.includes('etvbalb')){
@@ -4916,13 +4965,6 @@ function renderBrowsePage(){
   }
 
   function itemVisible(item,type){
-    // Debug logging
-    if (type === 'movie' && bs.platform !== 'all' && bs.language !== 'all') {
-      console.log('Filtering movie:', item.title, 'n:', item.n);
-      console.log('  Platform filter:', bs.platform);
-      console.log('  Language filter:', bs.language);
-    }
-    
     // type filter - single select
     if(bs.type !== 'all' && bs.type !== type) return false;
     
@@ -4934,23 +4976,17 @@ function renderBrowsePage(){
         : type==='kaito' ? ['amasian']
         : type==='spinoff' ? ['netflix']
         : [];
-      if (type === 'movie') {
-        console.log('  Movie platforms:', itemPlatforms, 'has', bs.platform, '?', itemPlatforms.includes(bs.platform));
-      }
       if (!itemPlatforms.includes(bs.platform)) return false;
     }
     
     // language filter - single select (AND logic)
     if(bs.language !== 'all'){
       let langs;
-      if(type==='movie') langs=getMovieLangs(item);
-      else if(type==='season') langs=getSeasonLangs(item);
+      if(type==='movie') langs=getMovieLangs(item, bs.platform);
+      else if(type==='season') langs=getSeasonLangs(item, bs.platform);
       else if(type==='ova') langs=new Set(['English Sub','Hindi','Tamil','Telugu']);
       else if(type==='kaito') langs=new Set(['English']);
       else langs=new Set(['English Sub','Hindi','English']);
-      if (type === 'movie') {
-        console.log('  Movie languages:', Array.from(langs), 'has', bs.language, '?', langs.has(bs.language));
-      }
       if (!langs.has(bs.language)) return false;
     }
     
