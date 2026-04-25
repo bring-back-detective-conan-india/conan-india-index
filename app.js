@@ -1682,6 +1682,8 @@ function renderBrowseCard(item,type,idx){
   }
   if(type==='kaito'){
     const k=item;
+    // Use Magic Kaito TMDB poster
+    const posterUrl = k.tmdb ? `https://image.tmdb.org/t/p/w500/fjAS5f29mqEshLNzj761d4VkfRe.jpg` : '';
     // Add tag badges - aggregate all Kaito episode tags
     let tags = new Set();
     if (typeof KAITO_TAGS !== 'undefined') {
@@ -1695,7 +1697,7 @@ function renderBrowseCard(item,type,idx){
       return `<span class="content-tag" style="--tag-color: ${def.color}; font-size: 8px; padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-right: 4px;">${tag}</span>`;
     }).join('');
     return`<div class="browse-card stagger" data-kaito-id="${k.id}" data-type="kaito" data-tags="${Array.from(tags).join(',')}" onclick="Router.navigate('/magic-kaito')">
-      <div class="browse-card-img" style="background-image:url('${getSeasonStillByLocalSeasonId('S1', 30)}');background-color:${k.colors[0]}"></div>
+      <div class="browse-card-img" style="background-image:url('${posterUrl}');background-color:${k.colors[0]}"></div>
       <div class="browse-card-grad"></div>
       <div class="browse-card-num">24 eps</div>
       <div class="browse-card-content">
