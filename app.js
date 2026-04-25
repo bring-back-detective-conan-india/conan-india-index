@@ -1696,7 +1696,7 @@ function renderBrowseCard(item,type,idx){
       const def = (typeof TAG_DEFINITIONS !== 'undefined' ? TAG_DEFINITIONS[tag] : null) || { color: '#666' };
       return `<span class="content-tag" style="--tag-color: ${def.color}; font-size: 8px; padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-right: 4px;">${tag}</span>`;
     }).join('');
-    return`<div class="browse-card stagger" data-kaito-id="${k.id}" data-type="kaito" data-tags="${Array.from(tags).join(',')}" onclick="Router.navigate('/magic-kaito')">
+    return`<div class="browse-card stagger" data-kaito-id="${k.id}" data-type="kaito" data-tags="${Array.from(tags).join(',')}" onclick="openMagicKaitoModal()">
       <div class="browse-card-img" style="background-image:url('${posterUrl}');background-color:${k.colors[0]}"></div>
       <div class="browse-card-grad"></div>
       <div class="browse-card-num">24 eps</div>
@@ -7175,6 +7175,56 @@ async function openMagicKaitoEpisode(type, number) {
 
 // Make function globally available
 window.openMagicKaitoEpisode = openMagicKaitoEpisode;
+
+// ─── MAGIC KAITO SERIES MODAL ───────────────────────────
+window.openMagicKaitoModal = function() {
+  if (typeof MAGIC_KAITO === 'undefined') return;
+  const k = MAGIC_KAITO;
+  
+  // TMDB poster for Magic Kaito 1412
+  const posterUrl = 'https://image.tmdb.org/t/p/w500/fjAS5f29mqEshLNzj761d4VkfRe.jpg';
+  
+  // Generate episode grid (similar to season modal)
+  const episodeGrid = Array.from({length: k.episodes}, (_, i) => i + 1).map(epNum => {
+    const fallbackImages = [IMG.kid, IMG.conan1, IMG.ran, IMG.heiji];
+    const imageUrl = fallbackImages[epNum % 4];
+    return `
+      <div class="browse-card" style="cursor:pointer" onclick="event.stopPropagation(); openMagicKaitoEpisode('episode', ${epNum}); closeModal();">
+        <div class="browse-card-img" style="background-image:url('${imageUrl}')"></div>
+        <div class="browse-card-grad"></div>
+        <div class="browse-card-num">${epNum}</div>
+        <div class="browse-card-content">
+          <div class="browse-card-type">Episode ${epNum}</div>
+          <div class="browse-card-title">Click to watch</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  openModal(`
+    <div class="modal-handle"></div>
+    <div class="modal-season-thumb" style="background-image:url('${posterUrl}')">
+      <div class="modal-season-thumb-overlay"></div>
+      <div class="modal-season-thumb-num">24</div>
+      <div class="modal-season-thumb-label">${k.title}</div>
+      <div class="modal-season-thumb-eps">${k.year} • ${k.episodes} Episodes • English Dub</div>
+    </div>
+    <div class="modal-header">
+      <div><div class="modal-badge">🎩 Magic Kaito</div><div class="modal-title">${k.title}</div></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-desc">${k.desc}</div>
+    <div class="modal-where-title">Where to Watch in India</div>
+    <div class="watch-btns">
+      <a class="watch-btn" href="${k.amasianUrl}" target="_blank" rel="noopener" style="--btn-color:#FF6B35;--btn-bg:#1a0f00">
+        <span class="watch-btn-name">Amasian TV</span>
+        <span class="watch-btn-detail">Free Streaming • English Dub • All 24 Episodes</span>
+      </a>
+    </div>
+    <div class="modal-where-title" style="margin-top:24px">Episodes</div>
+    <div class="browse-grid">${episodeGrid}</div>
+  `, { fullPage: true });
+};
 
 // Test function to verify modal close works
 function testModalClose() {
