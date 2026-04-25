@@ -1518,7 +1518,13 @@ function renderBrowseCard(item,type,idx){
   if(type==='movie'){
     const m=item;
     const noAnnounce=m.noIndiaAnnouncement?`<span class="tag" style="font-size:7px;background:rgba(100,100,100,0.4);color:#aaa">No India Announcement</span>`:`<div class="season-card-dots">${movieDots(m)}</div>`;
-    return`<div class="browse-card stagger" data-movie-id="${m.id}" onclick="openMovieModal('${m.id}')">
+    // Add tag badges
+    const tags = (typeof MOVIE_TAGS !== 'undefined' ? MOVIE_TAGS.get(m.n) : null) || new Set();
+    const tagBadges = Array.from(tags).slice(0, 3).map(tag => {
+      const def = (typeof TAG_DEFINITIONS !== 'undefined' ? TAG_DEFINITIONS[tag] : null) || { color: '#666' };
+      return `<span class="content-tag" style="--tag-color: ${def.color}; font-size: 8px; padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-right: 4px;">${tag}</span>`;
+    }).join('');
+    return`<div class="browse-card stagger" data-movie-id="${m.id}" data-type="movie" data-tags="${Array.from(tags).join(',')}" onclick="openMovieModal('${m.id}')">
       <div class="browse-card-img" style="background-image:url('${getMoviePoster(m,idx+1)}');background-color:${m.colors[0]}"></div>
       <div class="browse-card-grad"></div>
       <div class="browse-card-num">${m.n}</div>
@@ -1526,6 +1532,7 @@ function renderBrowseCard(item,type,idx){
         <div class="browse-card-type">Movie · ${m.year}</div>
         <div class="browse-card-title">${m.title}</div>
         <div class="browse-card-meta">${noAnnounce}</div>
+        ${tagBadges ? `<div class="browse-card-tags" style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px;">${tagBadges}</div>` : ''}
       </div>
     </div>`;
   }
@@ -4761,6 +4768,10 @@ function renderBrowsePage(){
           </div>
         </div>
 
+        <!-- TAG FILTER CAROUSEL -->
+        <div id="browse-tag-filter"></div>
+        <div id="browse-filter-results"></div>
+
         <div class="browse-page-meta" id="browse-page-meta"></div>
         <div class="browse-grid" id="browse-page-grid"></div>
       </div>
@@ -4770,7 +4781,23 @@ function renderBrowsePage(){
   app.appendChild(pg);
 
   // State
-  const bs={type:'all',platform:'all',language:'all',query:''};
+  const bs={type:'all',platform:'all',language:'all',query:'',tags:[],tagLogic:'OR'};
+
+  // Initialize tag filter carousel
+  setTimeout(() => {
+    if (typeof renderTagFilterCarousel === 'function') {
+      renderTagFilterCarousel('browse-tag-filter', {
+        logic: 'OR',
+        showLogicToggle: true,
+        onChange: (filterState) => {
+          bs.tags = filterState.selectedTags;
+          bs.tagLogic = filterState.logic;
+          updateBrowseFilterResults(filterState);
+          runBrowse();
+        }
+      });
+    }
+  }, 50);
 
   // Filter state - will be initialized after DOM elements exist
 
@@ -4804,6 +4831,14 @@ function renderBrowsePage(){
     searchEl.focus();runBrowse();
   });
 
+  function getContentTags(item, type) {
+    // Get tags for content item based on type
+    if (type === 'movie' && typeof MOVIE_TAGS !== 'undefined') {
+      return MOVIE_TAGS.get(item.n) || new Set();
+    }
+    return new Set();
+  }
+
   function itemVisible(item,type){
     // type filter
     if(bs.type!=='all'&&bs.type!==type) return false;
@@ -4820,6 +4855,14 @@ function renderBrowsePage(){
       else if(type==='season') langs=getSeasonLangs(item);
       else langs=new Set(['English Sub','Hindi','English']);
       if(!langs.has(bs.language)) return false;
+    }
+    // tag filter
+    if (bs.tags && bs.tags.length > 0) {
+      const contentTags = getContentTags(item, type);
+      const hasTag = bs.tagLogic === 'AND'
+        ? bs.tags.every(tag => contentTags.has(tag))
+        : bs.tags.some(tag => contentTags.has(tag));
+      if (!hasTag) return false;
     }
     // text search — for seasons also match against individual episode titles/numbers
     if(bs.query){
@@ -4844,6 +4887,26 @@ function renderBrowsePage(){
       if(!hay.includes(bs.query)&&!epMatch) return false;
     }
     return true;
+  }
+
+  function updateBrowseFilterResults(filterState) {
+    const resultsInfo = document.getElementById('browse-filter-results');
+    if (!resultsInfo) return;
+    
+    const { selectedTags, logic } = filterState;
+    if (selectedTags.length === 0) {
+      resultsInfo.innerHTML = '';
+    } else {
+      resultsInfo.innerHTML = `
+        <div class="filter-results" style="margin-bottom: 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <span class="filter-results-count" style="font-weight: 600; color: var(--accent);">${selectedTags.length} tag${selectedTags.length !== 1 ? 's' : ''}</span>
+          <span style="color: var(--text2);">match (${logic === 'AND' ? 'ALL' : 'ANY'})</span>
+          <div class="filter-results-tags" style="display: flex; gap: 6px; flex-wrap: wrap;">
+            ${selectedTags.map(tag => `<span class="tag" style="font-size: 10px; background: rgba(204,34,51,0.2); color: var(--accent);">${tag}</span>`).join('')}
+          </div>
+        </div>
+      `;
+    }
   }
 
   function runBrowse(){
@@ -4883,6 +4946,29 @@ function renderBrowsePage(){
       ...SEASONS.map((s,i)=>({item:s,type:'season',idx:i})),
       ...SPINOFFS.map((sp,i)=>({item:sp,type:'spinoff',idx:i})),
     ].filter(({item,type})=>itemVisible(item,type));
+    
+    // Update tag counts in filter carousel
+    setTimeout(() => {
+      const carousel = document.getElementById('browse-tag-filter');
+      if (carousel && typeof updateTagFilterCounts === 'function') {
+        // Calculate matches per tag
+        const allItems = [
+          ...MOVIES.map((m,i)=>({item:m,type:'movie',idx:i})),
+          ...SEASONS.map((s,i)=>({item:s,type:'season',idx:i})),
+          ...SPINOFFS.map((sp,i)=>({item:sp,type:'spinoff',idx:i})),
+        ];
+        const tagCounts = new Map();
+        allItems.forEach(({item,type}) => {
+          if (type === 'movie') {
+            const tags = (typeof MOVIE_TAGS !== 'undefined' ? MOVIE_TAGS.get(item.n) : null) || new Set();
+            tags.forEach(tag => {
+              tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+            });
+          }
+        });
+        updateTagFilterCounts('browse-tag-filter', tagCounts);
+      }
+    }, 10);
 
     const totalCount=epResults.length+items.length;
     meta.textContent=`Showing ${totalCount} result${totalCount!==1?'s':''}${q?' for "'+searchEl.value+'"':''}`;

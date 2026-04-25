@@ -1,0 +1,10 @@
+{
+  "description": "Fallback images for when TMDB is unavailable",
+  "images": {
+    "conan-default.jpg": "Generic Conan character image",
+    "ran-default.jpg": "Ran character image",
+    "heiji-default.jpg": "Heiji character image",
+    "haibara-default.jpg": "Haibara character image",
+    "kid-default.jpg": "Kaito Kid character image"
+  }
+}
