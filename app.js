@@ -1668,7 +1668,7 @@ function renderBrowseCard(item,type,idx){
       const def = (typeof TAG_DEFINITIONS !== 'undefined' ? TAG_DEFINITIONS[tag] : null) || { color: '#666' };
       return `<span class="content-tag" style="--tag-color: ${def.color}; font-size: 8px; padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-right: 4px;">${tag}</span>`;
     }).join('');
-    return`<div class="browse-card stagger" data-ova-id="${o.id}" data-type="${o.type || 'ova'}" data-tags="${Array.from(tags).join(',')}" onclick="openOVAModal('${o.id}')">
+    return`<div class="browse-card stagger" data-ova-id="${o.id}" data-type="${o.type || 'ova'}" data-tags="${Array.from(tags).join(',')}" onclick="showOVAModal('${o.id}')">
       <div class="browse-card-img" style="background-image:url('${o.still || getMoviePoster({colors:o.colors}, idx+1)}');background-color:${o.colors[0]}"></div>
       <div class="browse-card-grad"></div>
       <div class="browse-card-num">${displayNum}</div>
