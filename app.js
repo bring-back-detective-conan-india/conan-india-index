@@ -485,10 +485,22 @@ async function fetchMagicKaitoTMDBMeta(){
 function markOVAsAsUnavailable(){
   if(typeof OVAS === 'undefined' || !Array.isArray(OVAS) || !OVAS.length) return;
   
-  // Mark all OVAs as unavailable in India
-  OVAS.forEach(ova => {
-    ova.available = false;
-    ova.unavailableNote = 'OVAs are not available for streaming in India';
+  // Mark all OVAs and Specials as unavailable in India
+  OVAS.forEach(item => {
+    item.available = false;
+    
+    // Set appropriate unavailable note based on type
+    const typeLabels = {
+      'ova': 'OVAs are not available for streaming in India',
+      'magic-file': 'Magic Files are not available for streaming in India',
+      'tv-special': 'TV Specials are not available for streaming in India',
+      'drama-special': 'Drama Specials are not available for streaming in India',
+      'wooo-ova': 'Wooo OVAs are not available for streaming in India',
+      'police-academy': 'Police Academy specials are not available for streaming in India',
+      'recap-special': 'Recap specials are not available for streaming in India'
+    };
+    
+    item.unavailableNote = typeLabels[item.type] || 'This content is not available for streaming in India';
   });
 }
 
@@ -3903,17 +3915,35 @@ window.showOVAModal = async function(ovaId) {
   // Use hardcoded still, cached still, or fall back to a character image
   const fallbackUrl = ova.still || window.OVA_STILLS?.get(ovaId) || IMG.kid;
   const isUnavailable = ova.available === false;
+  
+  // Get type label for modal
+  const typeLabels = {
+    'ova': 'Original Video Animation (OVA)',
+    'magic-file': 'Magic File',
+    'tv-special': 'TV Special',
+    'drama-special': 'Drama Special',
+    'wooo-ova': 'Wooo OVA',
+    'police-academy': 'Police Academy Arc',
+    'recap-special': 'Recap Special'
+  };
+  const typeLabel = typeLabels[ova.type] || 'Special';
+  const badgeLabel = ova.type === 'ova' ? 'OVA' : 
+                     ova.type === 'magic-file' ? 'MF' :
+                     ova.type === 'tv-special' ? 'TVS' :
+                     ova.type === 'drama-special' ? 'DS' :
+                     ova.type === 'wooo-ova' ? 'WOOO' :
+                     ova.type === 'police-academy' ? 'PA' : 'SP';
 
   const buildModalHtml = (imageUrl) => `
     <div class="modal-handle"></div>
     <div class="modal-season-thumb" id="ova-modal-thumb" style="background-image:url('${imageUrl}')">
       <div class="modal-season-thumb-overlay"></div>
-      <div class="modal-season-thumb-num">OVA</div>
+      <div class="modal-season-thumb-num">${badgeLabel}</div>
       <div class="modal-season-thumb-label">${ova.title}</div>
-      <div class="modal-season-thumb-eps">${ova.year} • Special</div>
+      <div class="modal-season-thumb-eps">${ova.year} • ${typeLabel}</div>
     </div>
     <div class="modal-header">
-      <div><div class="modal-badge">OVA</div><div class="modal-title">${ova.title}</div></div>
+      <div><div class="modal-badge">${badgeLabel}</div><div class="modal-title">${ova.title}</div></div>
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
     <div class="modal-desc">${ova.desc || ova.title}</div>
@@ -3928,12 +3958,18 @@ window.showOVAModal = async function(ovaId) {
       </div>
       <div class="modal-where-row">
         <span class="modal-where-plat" style="color:#888">⬤ Type</span>
-        <span class="modal-where-detail">Original Video Animation</span>
+        <span class="modal-where-detail">${typeLabel}</span>
       </div>
       <div class="modal-where-row">
         <span class="modal-where-plat" style="color:#${isUnavailable ? '#FF6B00' : '#888'}">⬤ Availability</span>
         <span class="modal-where-detail">${isUnavailable ? 'Not Available in India' : 'Available'}</span>
       </div>
+      ${ova.wikiUrl ? `
+      <div class="modal-where-row">
+        <span class="modal-where-plat" style="color:#888">⬤ Wiki</span>
+        <span class="modal-where-detail"><a href="${ova.wikiUrl}" target="_blank" rel="noopener" style="color:#4A90E2;text-decoration:underline">Detective Conan World ↗</a></span>
+      </div>
+      ` : ''}
     </div>
   `;
 
