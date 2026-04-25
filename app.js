@@ -495,7 +495,13 @@ function refreshEpisodeSeasonVisuals(){
     if(!sid) return;
     const url = getSeasonStillByLocalSeasonId(sid, 0);
     const bg = el.querySelector('.season-card-bg,.browse-card-img,.content-card-bg,.lm-season-bg');
-    if(bg) bg.style.backgroundImage = `url('${url}')`;
+    if(bg) {
+      // Try to use fallback if image fails
+      const fallbackUrl = typeof FALLBACK_IMAGES !== 'undefined' ? getFallbackUrl(url) : url;
+      bg.style.backgroundImage = `url('${fallbackUrl}')`;
+      // Add gradient backup in case image fails
+      bg.style.backgroundColor = '#1a1a1a';
+    }
   });
 
   document.querySelectorAll('[data-ep-num]').forEach(el=>{
