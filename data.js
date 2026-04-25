@@ -441,128 +441,254 @@ const SPINOFFS = [
   }
 ];
 
-// ─── DETECTIVE CONAN OVAs ───────────────────────────────
-// Based on official Detective Conan World Wiki numbering
+// ─── DETECTIVE CONAN SPECIALS ───────────────────────────
+// TMDB Season 0 mixed content mapped to correct Wiki numbering
 // See: https://www.detectiveconanworld.com/wiki/OVAs
+// See: https://www.detectiveconanworld.com/wiki/Specials
 const OVAS = [
-  // OVA 1-9: Original Video Animations
+  // ═══════════════════════════════════════════════════════
+  // OVA SERIES (1-12) - Original Video Animations
+  // ═══════════════════════════════════════════════════════
   {
-    id:"ova1", tmdb:0, title:"Conan vs. Kid vs. Yaiba - The Grand Battle for the Treasure Sword!!", year:2000, type:"ova",
+    id:"ova1", tmdbEp:1, title:"OVA 1: Conan vs. Kid vs. Yaiba - The Grand Battle for the Treasure Sword!!", year:2000, type:"ova",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/OVAs",
     colors:["#1A2A4A","#4A90E2"], episodeNumber:1,
     still: "https://image.tmdb.org/t/p/w500/133XH39X32Htq5CAsAMztzsn2p7.jpg",
-    desc:"Conan borrows a large amount of manga from Mitsuhiko and crazy things begin to happen around Beika City. A family asks Kogoro to help them protect a special sword in their dojo since Kaitou KID has sent word he's going to steal it."
+    desc:"Conan, Kaito Kid, and Yaiba clash in a battle over a legendary treasure sword."
   },
   {
-    id:"ova2", tmdb:0, title:"16 Suspects!?", year:2002, type:"ova",
+    id:"ova2", tmdbEp:2, title:"OVA 2: 16 Suspects!?", year:2002, type:"ova",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/OVAs",
     colors:["#2A1A3A","#6A4C93"], episodeNumber:2,
     still: "https://image.tmdb.org/t/p/w500/9GD5K65E3VkKB9O44xg5qpKae54.jpg",
-    desc:"The whole gang gets invited to Inspector Shiratori's villa, where he keeps his wine collection, to celebrate the completion of it."
+    desc:"The gang gathers at Inspector Shiratori's villa for a murder mystery with 16 suspects."
   },
   {
-    id:"ova3", tmdb:0, title:"Conan, Heiji, and the Vanished Boy", year:2003, type:"ova",
+    id:"ova3", tmdbEp:3, title:"OVA 3: Conan, Heiji, and the Vanished Boy", year:2003, type:"ova",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/OVAs",
     colors:["#1A3A2A","#27AE60"], episodeNumber:3,
     still: "https://image.tmdb.org/t/p/w500/6Jy2IaUtbVrbR43GycVms6oVIhj.jpg",
-    desc:"Conan and Ran are visiting Heiji and Kazuha in Osaka but while they are touring around they come across a group of three kids that look like Ayumi, Mitsuhiko, and Genta."
+    desc:"Conan and Ran visit Heiji in Osaka and encounter lookalikes of the Detective Boys."
   },
   {
-    id:"ova4", tmdb:0, title:"Conan, Kid, and the Crystal Mother", year:2004, type:"ova",
+    id:"ova4", tmdbEp:4, title:"OVA 4: Conan, Kid, and the Crystal Mother", year:2004, type:"ova",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/OVAs",
     colors:["#3A1A1A","#C0392B"], episodeNumber:4,
     still: "https://image.tmdb.org/t/p/w500/425liZqczC5PtEaCKF1TQ4PEt9Z.jpg",
-    desc:"Kaitou Kid targets the Crystal Mother, a precious jewel, leading to another confrontation with Conan."
+    desc:"Kaito Kid targets the Crystal Mother jewel, leading to another showdown with Conan."
   },
   {
-    id:"ova5", tmdb:0, title:"The Target Is Kogoro!! The Detective Boys' Secret Investigation", year:2005, type:"ova",
+    id:"ova5", tmdbEp:6, title:"OVA 5: The Target is Kogoro!! The Detective Boys' Secret Report", year:2005, type:"ova",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/OVAs",
     colors:["#2A2A1A","#F39C12"], episodeNumber:5,
     still: "https://image.tmdb.org/t/p/w500/1Osjk2CU8m9zj3l071HyyYRO7WZ.jpg",
-    desc:"The Detective Boys investigate when Kogoro becomes the target of mysterious activities."
+    desc:"The Detective Boys investigate mysterious activities targeting Kogoro."
   },
   {
-    id:"ova6", tmdb:0, title:"Pursuit of the Vanished Diamond! Conan & Heiji vs. Kid!", year:2006, type:"ova",
+    id:"ova6", tmdbEp:7, title:"OVA 6: Follow the Vanished Diamond! Conan & Heiji vs. Kid!", year:2006, type:"ova",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/OVAs",
     colors:["#1A2A2A","#16A085"], episodeNumber:6,
     still: "https://image.tmdb.org/t/p/w500/11BOUmixdkdoUOOn3vi8fTPRfkY.jpg",
-    desc:"A valuable diamond disappears, leading to a three-way confrontation between Conan, Heiji, and Kaitou Kid."
+    desc:"A vanished diamond sparks a three-way confrontation between Conan, Heiji, and Kid."
   },
   {
-    id:"ova7", tmdb:0, title:"A Written Challenge from the Detective Boys! ~The Mystery of the Perplexing Police Car~", year:2007, type:"ova",
+    id:"ova7", tmdbEp:9, title:"OVA 7: A Challenge from Agasa! Agasa vs. Conan and the Detective Boys", year:2007, type:"ova",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/OVAs",
     colors:["#3A2A1A","#D35400"], episodeNumber:7,
     still: "https://image.tmdb.org/t/p/w500/tsaj9FMNdPnS0pbpOzuAEfeuXgV.jpg",
-    desc:"Shinichi faces a written challenge that tests his detective skills."
+    desc:"Professor Agasa challenges Conan and the Detective Boys to solve his mystery."
   },
   {
-    id:"ova8", tmdb:0, title:"High School Girl Detective Sonoko Suzuki's Case Files", year:2008, type:"ova",
+    id:"ova8", tmdbEp:14, title:"OVA 8: High School Girl Detective Sonoko Suzuki's Case Files", year:2008, type:"ova",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/OVAs",
     colors:["#2A1A1A","#E74C3C"], episodeNumber:8,
     still: "https://image.tmdb.org/t/p/w500/jMrBNxGt3GAD7ZTM7aoXbc7JA2S.jpg",
-    desc:"Professor Agasa challenges Conan and the Detective Boys to solve a mystery."
+    desc:"Sonoko Suzuki takes the lead as a high school detective in her own case."
   },
   {
-    id:"ova9", tmdb:0, title:"Stranger in 10 Years", year:2009, type:"ova",
+    id:"ova9", tmdbEp:17, title:"OVA 9: The Stranger from Ten Years Later", year:2009, type:"ova",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/OVAs",
     colors:["#2A1A3A","#9B59B6"], episodeNumber:9,
     still: "https://image.tmdb.org/t/p/w500/4494r2R0sahWgkscC1NhEsK7aHD.jpg",
-    desc:"A mysterious stranger appears from ten years in the future."
+    desc:"A mysterious stranger from ten years in the future appears with a message."
   },
-  // Magic Files (separate series that aired with movies)
   {
-    id:"mf1", tmdb:0, title:"Magic File 1: Shinichi Kudo, The Case of the Mysterious Wall and the Black Lab", year:2007, type:"magic-file",
+    id:"ova10", tmdbEp:18, title:"OVA 10: Kid in Trap Island", year:2010, type:"ova",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/OVAs",
+    colors:["#1A3A1A","#16A085"], episodeNumber:10,
+    still: "https://image.tmdb.org/t/p/w500/vowq6vWhBaCBan8UT6hPGXj9Frk.jpg",
+    desc:"Kaito Kid finds himself trapped on a mysterious island."
+  },
+  {
+    id:"ova11", tmdbEp:23, title:"OVA 11: A Secret Order from London", year:2011, type:"ova",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/OVAs",
+    colors:["#1A1A3A","#5C6BC0"], episodeNumber:11,
+    still: "https://image.tmdb.org/t/p/w500/uaZP0DU0ysEXIn9YvX7YCa37vZX.jpg",
+    desc:"A secret order from London draws Conan into an international case."
+  },
+  {
+    id:"ova12", tmdbEp:27, title:"OVA 12: The Miracle of Excalibur", year:2012, type:"ova",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/OVAs",
+    colors:["#3A2A1A","#E67E22"], episodeNumber:12,
+    still: "https://image.tmdb.org/t/p/w500/1I5tlyhOIBp9yZgqSufACU5rpGk.jpg",
+    desc:"A case involving the legendary sword Excalibur and its miraculous powers."
+  },
+
+  // ═══════════════════════════════════════════════════════
+  // MAGIC FILES (MF 1-6) - Movie companion specials
+  // ═══════════════════════════════════════════════════════
+  {
+    id:"mf1", tmdbEp:10, title:"Magic File 1: Magic File", year:2007, type:"magic-file",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/Magic_File",
+    note:"Compilation only, no new content",
     colors:["#1A2A3A","#2980B9"], episodeNumber:1,
+    still: "https://image.tmdb.org/t/p/w500/7cln5D2sxflrhgK3ADVZxolwIY3.jpg",
+    desc:"Compilation of previously aired content accompanying Movie 11."
+  },
+  {
+    id:"mf2", tmdbEp:15, title:"Magic File 2: Shinichi Kudo, The Case of the Mysterious Wall and the Black Lab", year:2008, type:"magic-file",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/Magic_File",
+    colors:["#2A1A2A","#C0392B"], episodeNumber:2,
     still: "https://image.tmdb.org/t/p/w500/iz0CLEAUGEx642NccmpCtGGCQ8t.jpg",
     desc:"Shinichi investigates a mysterious wall and a black laboratory."
   },
   {
-    id:"mf2", tmdb:0, title:"Magic File 2: Shinichi Kudo and the Kyoto Shinsengumi Murder Case", year:2008, type:"magic-file",
-    colors:["#2A1A2A","#C0392B"], episodeNumber:2,
-    still: "https://image.tmdb.org/t/p/w500/nbhbFYOp6VYdVnTXKXG7OLLzn0e.jpg",
-    desc:"Shinichi investigates a murder case in Kyoto involving the Shinsengumi."
-  },
-  {
-    id:"mf3", tmdb:0, title:"Magic File 3: Shinichi and Ran, Memories of Mahjong Tiles and Tanabata", year:2009, type:"magic-file",
+    id:"mf3", tmdbEp:16, title:"Magic File 3: Shinichi and Ran, Memories of Mahjong Tiles and Tanabata", year:2009, type:"magic-file",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/Magic_File",
     colors:["#3A2A2A","#E67E22"], episodeNumber:3,
     still: "https://image.tmdb.org/t/p/w500/gV1QnIUsexlOLrzLyEqcpxX0l07.jpg",
-    desc:"A nostalgic story involving Shinichi, Ran, mahjong tiles, and the Tanabata festival."
+    desc:"A nostalgic story of Shinichi and Ran with mahjong tiles and Tanabata festival."
   },
   {
-    id:"mf4", tmdb:0, title:"Magic File 4: The Osaka Okonomiyaki Odyssey", year:2010, type:"magic-file",
+    id:"mf4", tmdbEp:19, title:"Magic File 4: The Osaka Okonomiyaki Odyssey", year:2010, type:"magic-file",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/Magic_File",
     colors:["#3A1A1A","#D35400"], episodeNumber:4,
     still: "https://image.tmdb.org/t/p/w500/9oMLpkIsmZIL9KEr0KIg8jSpSzh.jpg",
-    desc:"A culinary adventure in Osaka featuring okonomiyaki."
+    desc:"An Osaka culinary adventure featuring okonomiyaki and mystery."
   },
   {
-    id:"mf5", tmdb:0, title:"Magic File 5: Niigata~Tokyo Souvenir Capriccio", year:2011, type:"magic-file",
+    id:"mf5", tmdbEp:21, title:"Magic File 5: Niigata~Tokyo Souvenir Capriccio", year:2011, type:"magic-file",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/Magic_File",
     colors:["#1A1A2A","#34495E"], episodeNumber:5,
     still: "https://image.tmdb.org/t/p/w500/nLr33bW9mEmFVXg64xxFH1riy2n.jpg",
-    desc:"A journey from Niigata to Tokyo involving mysterious souvenirs."
+    desc:"A journey from Niigata to Tokyo with mysterious souvenirs."
   },
   {
-    id:"mf6", tmdb:0, title:"Magic File 6: Flower of Fantasista", year:2012, type:"magic-file",
+    id:"mf6", tmdbEp:26, title:"Magic File 6: Flower of Fantasista", year:2012, type:"magic-file",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/Magic_File",
+    note:"Also known as Bonus File 1",
     colors:["#1A3A2A","#2980B9"], episodeNumber:6,
     still: "https://image.tmdb.org/t/p/w500/dpaXRE08yRCSDDNiQQp6Ll3ppJ5.jpg",
-    desc:"A case involving the mysterious Flower of Fantasista."
+    desc:"A case centered around the mysterious Flower of Fantasista."
   },
-  // OVA 10+ (newer OVAs after Magic Files)
+
+  // ═══════════════════════════════════════════════════════
+  // TV SPECIALS - Television broadcast specials
+  // ═══════════════════════════════════════════════════════
   {
-    id:"ova10", tmdb:0, title:"Kid in Trap Island", year:2010, type:"ova",
-    colors:["#1A3A1A","#16A085"], episodeNumber:10,
-    still: "https://image.tmdb.org/t/p/w500/vowq6vWhBaCBan8UT6hPGXj9Frk.jpg",
-    desc:"Kaitou Kid finds himself trapped on an island."
+    id:"tvs1", tmdbEp:5, title:"TV Special 1: Time Travel of the Silver Sky", year:2004, type:"tv-special",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/Specials",
+    colors:["#1A1A3A","#5C6BC0"], episodeNumber:1,
+    still: "https://image.tmdb.org/t/p/w500/9rH1zBx1Rl4YL5aTKk91jwYUTL7.jpg",
+    desc:"A time-travel adventure involving the Silver Sky gemstone."
   },
   {
-    id:"ova11", tmdb:0, title:"Fugitive: Kogoro Mouri", year:2014, type:"ova",
-    colors:["#1A1A3A","#5C6BC0"], episodeNumber:11,
+    id:"tvs2", tmdbEp:12, title:"TV Special 2: Black History", year:2009, type:"tv-special",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/Specials",
+    colors:["#2A1A2A","#8E44AD"], episodeNumber:2,
+    still: "https://image.tmdb.org/t/p/w500/oleyBnHXzusIQKbqRWBgty7ANmn.jpg",
+    desc:"A look into the dark history surrounding the Black Organization."
+  },
+  {
+    id:"tvs4", tmdbEp:29, title:"TV Special 4: Fugitive: Kogoro Mouri", year:2014, type:"tv-special",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/Fugitive:_Kogoro_Mouri",
+    note:"TMDB Ep 29-30 are the same special (continued broadcast)",
+    colors:["#3A2A1A","#E67E22"], episodeNumber:4,
     still: "https://image.tmdb.org/t/p/w500/x5IgkiahZYjpTKpLcll8KPeZCIe.jpg",
-    desc:"Kogoro Mouri finds himself as a fugitive on the run."
+    desc:"Kogoro Mouri becomes a fugitive on the run from the law."
+  },
+
+  // ═══════════════════════════════════════════════════════
+  // DRAMA SPECIALS - Live-action TV dramas
+  // ═══════════════════════════════════════════════════════
+  {
+    id:"ds1", tmdbEp:8, title:"Drama Special 1: A Challenge Letter to Shinichi Kudo ~Prologue Until Goodbye~", year:2006, type:"drama-special",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/Specials#Drama_Specials",
+    colors:["#2A3A1A","#27AE60"], episodeNumber:1,
+    still: "https://image.tmdb.org/t/p/w500/scgrZFlZ0pkCokAhyZd4Sgfc4UG.jpg",
+    desc:"Live-action drama: Shinichi receives a challenge letter in this prologue story."
   },
   {
-    id:"ova12", tmdb:0, title:"Amuro's Mission: Zero the Tea Time", year:2018, type:"ova",
-    colors:["#3A2A1A","#E67E22"], episodeNumber:12,
-    still: "https://image.tmdb.org/t/p/w500/zz1UkI8JpFqw5QxtkSyT6n7UQ1U.jpg",
-    desc:"A New Year's special featuring Kogoro Mouri."
+    id:"ds2", tmdbEp:11, title:"Drama Special 2: Shinichi Kudo Returns! Confrontation with the Black Organization", year:2007, type:"drama-special",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/Specials#Drama_Specials",
+    colors:["#3A1A2A","#C0392B"], episodeNumber:2,
+    still: "https://image.tmdb.org/t/p/w500/sf0fDsUo1KOstXnIYCp7o5qHjcN.jpg",
+    desc:"Live-action drama: Shinichi temporarily returns to confront the Black Organization."
   },
   {
-    id:"ova13", tmdb:0, title:"The Mystery of the Vanished Black Belt", year:2022, type:"ova",
-    colors:["#2A1A1A","#E74C3C"], episodeNumber:13,
-    still: "https://image.tmdb.org/t/p/w500/7i8moWE9iX4Frnpja1NnJf2QLhl.jpg",
-    desc:"The 31st OVA episode in the series."
+    id:"ds3", tmdbEp:20, title:"Drama Special 3: A Challenge Letter to Shinichi Kudo ~The Mystery of the Legendary Bird~", year:2011, type:"drama-special",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/Specials#Drama_Specials",
+    colors:["#2A2A1A","#F39C12"], episodeNumber:3,
+    still: "https://image.tmdb.org/t/p/w500/dGOYJvK5E2d2ixQlFHYZg83HVOy.jpg",
+    desc:"Live-action drama: Shinichi faces a challenge involving a legendary mysterious bird."
+  },
+  {
+    id:"ds4", tmdbEp:25, title:"Drama Special 4: Shinichi Kudo and the Kyoto Shinsengumi Murder Case", year:2012, type:"drama-special",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/Specials#Drama_Specials",
+    colors:["#2A1A1A","#E74C3C"], episodeNumber:4,
+    still: "https://image.tmdb.org/t/p/w500/nbhbFYOp6VYdVnTXKXG7OLLzn0e.jpg",
+    desc:"Live-action drama: Shinichi investigates a murder in Kyoto tied to the Shinsengumi."
+  },
+
+  // ═══════════════════════════════════════════════════════
+  // WOOO OVAs - Special collaboration episodes
+  // ═══════════════════════════════════════════════════════
+  {
+    id:"wooo1", tmdbEp:22, title:"Wooo OVA 1: Fatuous Detective!? Kogoro Mouri", year:2011, type:"wooo-ova",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/OVAs",
+    colors:["#1A2A3A","#2980B9"], episodeNumber:1,
+    still: "https://image.tmdb.org/t/p/w500/wsc27OXYgzJyfH0TBqdRCL92B7I.jpg",
+    desc:"Kogoro Mouri finds himself in a seemingly foolish detective situation."
+  },
+  {
+    id:"wooo2", tmdbEp:24, title:"Wooo OVA 2: Television Personality Maomi Yuki's Worries", year:2012, type:"wooo-ova",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/OVAs",
+    colors:["#3A2A3A","#8E44AD"], episodeNumber:2,
+    still: "https://image.tmdb.org/t/p/w500/scgrZFlZ0pkCokAhyZd4Sgfc4UG.jpg",
+    desc:"TV personality Maomi Yuki seeks help with her worries from Conan."
+  },
+
+  // ═══════════════════════════════════════════════════════
+  // POLICE ACADEMY ARC - Wild Police Story
+  // ═══════════════════════════════════════════════════════
+  {
+    id:"police1", tmdbEp:31, title:"Police Academy Arc: Wild Police Story CASE. Rei Furuya", year:2020, type:"police-academy",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/Police_Academy_Arc_Wild_Police_Story_CASE._Rei_Furuya",
+    note:"TMDB Ep 31-32 are the same (deduplicated)",
+    colors:["#2A1A3A","#9B59B6"], episodeNumber:1,
+    still: "https://image.tmdb.org/t/p/w500/eXPBajtrI00td7hy5ZO83ea4Juv.jpg",
+    desc:"Focuses on Furuya Rei's police academy days in the Wild Police Story arc."
+  },
+
+  // ═══════════════════════════════════════════════════════
+  // OTHER SPECIALS
+  // ═══════════════════════════════════════════════════════
+  {
+    id:"komei", tmdbEp:33, title:"Kid vs. Komei: The Targeted Lips", year:2016, type:"recap-special",
+    wikiUrl:"https://www.detectiveconanworld.com/wiki/Specials",
+    note:"Recap special - uses Episode 983 image from main series",
+    useEpisodeStill: 983,
+    colors:["#3A1A2A","#9B59B6"], episodeNumber:1,
+    still: "https://image.tmdb.org/t/p/w500/9PYBb4JU60g0ewJcLZP1ipV9QdU.jpg",
+    desc:"Recap special featuring Kaito Kid vs. Komei with targeted lips."
   }
 ];
+
+// TMDB episodes to SKIP (not shown as cards):
+// TMDB Ep 13: Skip (use Episode 311 image if needed)
+// TMDB Ep 28: Remove - do not show
+// TMDB Ep 30: Same as Ep 29 (Fugitive continuation)
+// TMDB Ep 32: Same as Ep 31 (Police Academy duplicate)
 
 // ─── MAGIC KAITO 1412 ───────────────────────────────────
 const MAGIC_KAITO = {
