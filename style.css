@@ -2402,6 +2402,8 @@ body.modal-open{overflow:hidden;position:fixed;width:100%;height:100%;}
   cursor:pointer;
   transition:all 0.2s;
   white-space:nowrap;
+  height:38px;
+  box-sizing:border-box;
 }
 .multi-select-btn:hover{
   border-color:var(--border);

@@ -758,8 +758,9 @@ function getMovieLangs(m, platformFilter){
         ['Hindi','Tamil','Telugu','Malayalam','Kannada','Bengali','Marathi','Gujarati','Odia','Punjabi','Assamese'].forEach(l=>langs.add(l));
       }
     } else if (platformFilter === 'etvwin') {
+      // ETV Win only has Telugu
       if (m.etvwin) {
-        ['Hindi','Tamil','Telugu','Malayalam','Kannada','Bengali','Marathi','Gujarati','Odia','Punjabi','Assamese'].forEach(l=>langs.add(l));
+        langs.add('Telugu');
       }
     }
     return langs;
@@ -792,8 +793,9 @@ function getSeasonLangs(s, platformFilter){
         ['Hindi','Tamil','Telugu','Malayalam','Kannada','Bengali','Marathi','Gujarati','Odia','Punjabi','Assamese'].forEach(l=>langs.add(l));
       }
     } else if (platformFilter === 'etvwin') {
+      // ETV Win only has Telugu
       if (pids.includes('etvwin')) {
-        ['Hindi','Tamil','Telugu','Malayalam','Kannada','Bengali','Marathi','Gujarati','Odia','Punjabi','Assamese'].forEach(l=>langs.add(l));
+        langs.add('Telugu');
       }
     }
     return langs;
@@ -3474,50 +3476,28 @@ function renderComprehensiveGuide() {
     <div class="filter-system-container">
       <!-- Single Row Filter Layout -->
       <div class="filter-row">
-        <!-- Main Filter Options -->
-        <div class="filter-main-options">
-          <button class="filter-main-btn active" data-main-filter="all">All</button>
-          <button class="filter-main-btn" data-main-filter="important-movies">Only Important & Movies</button>
-          <button class="filter-main-btn" data-main-filter="movies-tieins">Only Movies & Tie-ins</button>
+        <!-- Plot Tag Multi-select -->
+        <div class="multi-select-dropdown" data-filter="guide-plot">
+          <button class="multi-select-btn" onclick="toggleMultiSelect('guide-plot')">
+            <span class="multi-select-value" id="guide-plot-value">Plot</span>
+            <span class="multi-select-chevron">⌄</span>
+          </button>
+          <div class="multi-select-menu" id="guide-plot-menu">
+            ${(window.ALL_TAGS || []).map(tag => {
+              const def = (window.TAG_DEFINITIONS || {})[tag] || {};
+              return `<label class="multi-select-option" title="${def.desc || ''}"><input type="checkbox" value="${tag}" data-parent="guide-plot"><span>${tag}</span></label>`;
+            }).join('')}
+          </div>
         </div>
         
-        <!-- Dropdown Filters -->
-        <div class="filter-dropdowns">
-          <!-- Plot Tag Multi-select -->
-          <div class="multi-select-dropdown" data-filter="guide-plot">
-            <button class="multi-select-btn" onclick="toggleMultiSelect('guide-plot')">
-              <span class="multi-select-label">Plot</span>
-              <span class="multi-select-value" id="guide-plot-value">All</span>
-              <span class="multi-select-chevron">⌄</span>
-            </button>
-            <div class="multi-select-menu" id="guide-plot-menu">
-              ${(window.ALL_TAGS || []).map(tag => {
-                const def = (window.TAG_DEFINITIONS || {})[tag] || {};
-                return `<label class="multi-select-option" title="${def.desc || ''}"><input type="checkbox" value="${tag}" data-parent="guide-plot"><span>${tag}</span></label>`;
-              }).join('')}
-            </div>
-          </div>
-          
-          <select class="filter-dropdown" id="faction-filter">
-            <option value="">All Factions & Groups</option>
-            <option value="black-org">Black Organization</option>
-            <option value="fbi">FBI</option>
-            <option value="heiji">Heiji & Osaka</option>
-            <option value="kaito-kid">Kaitou Kid</option>
-            <option value="police">Metropolitan Police</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <!-- Quick Navigation -->
-    <div class="quick-nav-container" style="margin: 20px 0; padding: 0 20px;">
-      <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
-        <span style="color: var(--text2); font-size: 14px; font-weight: 500;">Quick Jump:</span>
-        <button class="quick-nav-btn" onclick="scrollToEpisode(1)" style="padding: 8px 16px; background: var(--surface1); border: 1px solid var(--border); border-radius: 20px; color: var(--text); cursor: pointer; font-size: 13px; transition: all 0.2s;">Episodes 1-100</button>
-        <button class="quick-nav-btn" onclick="scrollToEpisode(200)" style="padding: 8px 16px; background: var(--surface1); border: 1px solid var(--border); border-radius: 20px; color: var(--text); cursor: pointer; font-size: 13px; transition: all 0.2s;">Episodes 200-400</button>
-        <button class="quick-nav-btn" onclick="scrollToEpisode(500)" style="padding: 8px 16px; background: var(--surface1); border: 1px solid var(--border); border-radius: 20px; color: var(--text); cursor: pointer; font-size: 13px; transition: all 0.2s;">Episodes 500-700</button>
-        <button class="quick-nav-btn" onclick="scrollToEpisode(800)" style="padding: 8px 16px; background: var(--surface1); border: 1px solid var(--border); border-radius: 20px; color: var(--text); cursor: pointer; font-size: 13px; transition: all 0.2s;">Episodes 800+</button>
+        <!-- Quick Nav Dropdown -->
+        <select class="filter-select" id="guide-quick-nav" onchange="if(this.value)scrollToEpisode(parseInt(this.value))">
+          <option value="">Quick Nav</option>
+          <option value="1">Episodes 1-100</option>
+          <option value="200">Episodes 200-400</option>
+          <option value="500">Episodes 500-700</option>
+          <option value="800">Episodes 800+</option>
+        </select>
       </div>
     </div>
 
@@ -4850,7 +4830,6 @@ function renderBrowsePage(){
           <!-- Single-select Dropdowns -->
           <div class="browse-multi-filters">
             <label class="filter-dropdown-group">
-              <span class="filter-row-label">Type</span>
               <select class="filter-select" data-bselect="type">
                 <option value="all">All Content</option>
                 <option value="movie">Movies</option>
@@ -4862,7 +4841,6 @@ function renderBrowsePage(){
             </label>
 
             <label class="filter-dropdown-group">
-              <span class="filter-row-label">Platform</span>
               <select class="filter-select" data-bselect="platform">
                 <option value="all">All Platforms</option>
                 <option value="netflix">Netflix</option>
@@ -4874,7 +4852,6 @@ function renderBrowsePage(){
             </label>
 
             <label class="filter-dropdown-group">
-              <span class="filter-row-label">Language</span>
               <select class="filter-select" data-bselect="language">
                 <option value="all">All Languages</option>
                 <option value="English Sub">English Sub</option>
@@ -4896,8 +4873,7 @@ function renderBrowsePage(){
             <!-- PLOT TAG MULTI-SELECT DROPDOWN -->
             <div class="multi-select-dropdown" data-filter="plot">
               <button class="multi-select-btn" onclick="toggleMultiSelect('plot')">
-                <span class="multi-select-label">Plot</span>
-                <span class="multi-select-value" id="plot-value">All</span>
+                <span class="multi-select-value" id="plot-value">Plot</span>
                 <span class="multi-select-chevron">⌄</span>
               </button>
               <div class="multi-select-menu" id="plot-menu">
@@ -6277,93 +6253,47 @@ function renderImportantEpisodesPage(){
   
   app.appendChild(pg);
   
-  // Setup multi-select for guide-plot
+  // Setup plot filter for watch guide
   setTimeout(() => {
-    pg.querySelectorAll('.multi-select-menu input[data-parent="guide-plot"]').forEach(cb => {
-      cb.addEventListener('change', () => {
-        const checked = pg.querySelectorAll('.multi-select-menu input[data-parent="guide-plot"]:checked');
-        const values = Array.from(checked).map(c => c.value);
-        
-        // Update display
-        const displayEl = pg.getElementById('guide-plot-value');
-        if (displayEl) {
-          if (values.length === 0) displayEl.textContent = 'All';
-          else if (values.length === 1) displayEl.textContent = values[0];
-          else displayEl.textContent = `${values.length} selected`;
-        }
-        
-        applyFilters();
-      });
-    });
-  }, 100);
-  
-  // Setup new filter functionality
-  setTimeout(() => {
-    const mainFilterButtons = pg.querySelectorAll('.filter-main-btn');
-    const factionFilter = pg.getElementById('faction-filter');
+    const plotCheckboxes = pg.querySelectorAll('.multi-select-menu input[data-parent="guide-plot"]');
     const episodeCards = pg.querySelectorAll('.episode-horizontal-card');
     
-    function applyFilters() {
-      const activeMainFilter = pg.querySelector('.filter-main-btn.active').dataset.mainFilter;
+    function applyPlotFilter() {
+      const checked = pg.querySelectorAll('.multi-select-menu input[data-parent="guide-plot"]:checked');
+      const selectedPlotTags = Array.from(checked).map(c => c.value);
       
-      // Get selected plot tags
-      const plotChecked = pg.querySelectorAll('.multi-select-menu input[data-parent="guide-plot"]:checked');
-      const selectedPlotTags = Array.from(plotChecked).map(c => c.value);
+      // Update display
+      const displayEl = document.getElementById('guide-plot-value');
+      if (displayEl) {
+        if (selectedPlotTags.length === 0) displayEl.textContent = 'Plot';
+        else if (selectedPlotTags.length === 1) displayEl.textContent = selectedPlotTags[0];
+        else displayEl.textContent = `${selectedPlotTags.length} selected`;
+      }
       
-      const faction = factionFilter.value;
-      
+      // Filter cards
       episodeCards.forEach(card => {
         const tags = card.dataset.tags || '';
-        const type = card.dataset.type || '';
-        const episodes = card.querySelector('.episode-horizontal-number').textContent;
         
         let showCard = true;
         
-        // Main filter logic
-        if (activeMainFilter === 'important') {
-          // Show only episodes (no movies, OVAs, etc.)
-          if (type !== 'episode') showCard = false;
-        } else if (activeMainFilter === 'important-movies') {
-          // Show episodes and movies only
-          if (type !== 'episode' && type !== 'movie') showCard = false;
-        }
-        // 'complete' shows everything
-        
         // Plot tag filter - OR logic
-        if (selectedPlotTags.length > 0 && showCard) {
+        if (selectedPlotTags.length > 0) {
           const hasMatch = selectedPlotTags.some(tag => tags.includes(tag));
           if (!hasMatch) showCard = false;
-        }
-        
-        // Faction filter
-        if (faction && showCard) {
-          if (!tags.includes(faction)) showCard = false;
         }
         
         card.style.display = showCard ? 'block' : 'none';
       });
     }
     
-    // Main filter buttons
-    mainFilterButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        mainFilterButtons.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        applyFilters();
-      });
+    // Setup checkbox listeners
+    plotCheckboxes.forEach(cb => {
+      cb.addEventListener('change', applyPlotFilter);
     });
-    
-    // Dropdown filters
-    factionFilter.addEventListener('change', applyFilters);
     
     observeAll();
     refreshHover();
     refreshEpisodeSeasonVisuals();
-    
-    // Make carousels draggable on desktop
-    setupDraggableCarousel(pg.querySelector('.filter-main-options'));
-    setupDraggableCarousel(pg.querySelector('.filter-dropdowns'));
-    setupDraggableCarousel(pg.querySelector('.season-nav-grid'));
   }, 100);
 }
 
