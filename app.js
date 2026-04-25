@@ -7177,25 +7177,25 @@ async function openMagicKaitoEpisode(type, number) {
 window.openMagicKaitoEpisode = openMagicKaitoEpisode;
 
 // ─── MAGIC KAITO SERIES MODAL ───────────────────────────
-window.openMagicKaitoModal = function() {
+window.openMagicKaitoModal = async function() {
   if (typeof MAGIC_KAITO === 'undefined') return;
   const k = MAGIC_KAITO;
   
   // TMDB poster for Magic Kaito 1412
   const posterUrl = 'https://image.tmdb.org/t/p/w500/yFAqxNPOK5JkWKLSSB65gK59W8Q.jpg';
   
-  // Generate episode grid (similar to season modal)
+  // Generate initial episode grid with fallback images
   const episodeGrid = Array.from({length: k.episodes}, (_, i) => i + 1).map(epNum => {
     const fallbackImages = [IMG.kid, IMG.conan1, IMG.ran, IMG.heiji];
     const imageUrl = fallbackImages[epNum % 4];
     return `
-      <div class="browse-card" style="cursor:pointer" onclick="event.stopPropagation(); openMagicKaitoEpisode('episode', ${epNum}); closeModal();">
-        <div class="browse-card-img" style="background-image:url('${imageUrl}')"></div>
+      <div class="browse-card magic-kaito-ep-card" style="cursor:pointer" data-episode="${epNum}" onclick="event.stopPropagation(); openMagicKaitoEpisode('episode', ${epNum});">
+        <div class="browse-card-img" style="background-image:url('${imageUrl}')" data-fallback="${imageUrl}"></div>
         <div class="browse-card-grad"></div>
         <div class="browse-card-num">${epNum}</div>
         <div class="browse-card-content">
           <div class="browse-card-type">Episode ${epNum}</div>
-          <div class="browse-card-title">Click to watch</div>
+          <div class="browse-card-title mk-ep-title-${epNum}">Loading...</div>
         </div>
       </div>
     `;
@@ -7222,8 +7222,39 @@ window.openMagicKaitoModal = function() {
       </a>
     </div>
     <div class="modal-where-title" style="margin-top:24px">Episodes</div>
-    <div class="browse-grid">${episodeGrid}</div>
+    <div class="browse-grid" id="magic-kaito-modal-grid">${episodeGrid}</div>
   `, { fullPage: true });
+  
+  // Load TMDB episode data after modal opens
+  setTimeout(async () => {
+    const grid = document.getElementById('magic-kaito-modal-grid');
+    if (!grid) return;
+    
+    const episodeCards = grid.querySelectorAll('.magic-kaito-ep-card');
+    
+    for (let card of episodeCards) {
+      const epNum = parseInt(card.dataset.episode);
+      if (!epNum) continue;
+      
+      try {
+        const epData = await fetchTMBDEpisodeData(MAGIC_KAITO.tmdb, 1, epNum);
+        if (epData) {
+          // Update image
+          if (epData.image) {
+            const imgEl = card.querySelector('.browse-card-img');
+            if (imgEl) imgEl.style.backgroundImage = `url('${epData.image}')`;
+          }
+          // Update title
+          if (epData.title) {
+            const titleEl = card.querySelector(`.mk-ep-title-${epNum}`);
+            if (titleEl) titleEl.textContent = epData.title;
+          }
+        }
+      } catch (e) {
+        // Keep fallback
+      }
+    }
+  }, 100);
 };
 
 // Test function to verify modal close works
