@@ -495,7 +495,7 @@ const OVAS = [
     id:"ova7", tmdbEp:9, title:"OVA 7: A Challenge from Agasa! Agasa vs. Conan and the Detective Boys", year:2007, type:"ova",
     wikiUrl:"https://www.detectiveconanworld.com/wiki/OVAs",
     colors:["#3A2A1A","#D35400"], episodeNumber:7,
-    still: "https://image.tmdb.org/t/p/w500/tsaj9FMNdPnS0pbpOzuAEfeuXgV.jpg",
+    still: "fallback-images/tmdb/ova7.jpg",
     desc:"Professor Agasa challenges Conan and the Detective Boys to solve his mystery."
   },
   {
