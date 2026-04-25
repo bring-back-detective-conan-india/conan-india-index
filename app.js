@@ -1565,6 +1565,53 @@ function renderBrowseCard(item,type,idx){
       </div>
     </div>`;
   }
+  if(type==='ova'){
+    const o=item;
+    // Add tag badges
+    const ovaNum = o.episodeNumber || (o.id ? parseInt(o.id.replace('ova', '')) : idx + 1);
+    const tags = (typeof OVA_TAGS !== 'undefined' ? OVA_TAGS.get(ovaNum) : null) || new Set();
+    const tagBadges = Array.from(tags).slice(0, 3).map(tag => {
+      const def = (typeof TAG_DEFINITIONS !== 'undefined' ? TAG_DEFINITIONS[tag] : null) || { color: '#666' };
+      return `<span class="content-tag" style="--tag-color: ${def.color}; font-size: 8px; padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-right: 4px;">${tag}</span>`;
+    }).join('');
+    return`<div class="browse-card stagger" data-ova-id="${o.id}" data-type="ova" data-tags="${Array.from(tags).join(',')}" onclick="openOVAModal('${o.id}')">
+      <div class="browse-card-img" style="background-image:url('${o.still || getMoviePoster({colors:o.colors}, idx+1)}');background-color:${o.colors[0]}"></div>
+      <div class="browse-card-grad"></div>
+      <div class="browse-card-num">OVA ${ovaNum}</div>
+      <div class="browse-card-content">
+        <div class="browse-card-type">OVA · ${o.year}</div>
+        <div class="browse-card-title">${o.title}</div>
+        <div class="browse-card-meta"><span class="tag tag-netflix" style="font-size:7px">Netflix</span></div>
+        ${tagBadges ? `<div class="browse-card-tags" style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px;">${tagBadges}</div>` : ''}
+      </div>
+    </div>`;
+  }
+  if(type==='kaito'){
+    const k=item;
+    // Add tag badges - aggregate all Kaito episode tags
+    let tags = new Set();
+    if (typeof KAITO_TAGS !== 'undefined') {
+      for (let i = 1; i <= 24; i++) {
+        const epTags = KAITO_TAGS.get(i);
+        if (epTags) epTags.forEach(t => tags.add(t));
+      }
+    }
+    const tagBadges = Array.from(tags).slice(0, 3).map(tag => {
+      const def = (typeof TAG_DEFINITIONS !== 'undefined' ? TAG_DEFINITIONS[tag] : null) || { color: '#666' };
+      return `<span class="content-tag" style="--tag-color: ${def.color}; font-size: 8px; padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-right: 4px;">${tag}</span>`;
+    }).join('');
+    return`<div class="browse-card stagger" data-kaito-id="${k.id}" data-type="kaito" data-tags="${Array.from(tags).join(',')}" onclick="Router.navigate('/magic-kaito')">
+      <div class="browse-card-img" style="background-image:url('${getSeasonStillByLocalSeasonId('S1', 30)}');background-color:${k.colors[0]}"></div>
+      <div class="browse-card-grad"></div>
+      <div class="browse-card-num">24 eps</div>
+      <div class="browse-card-content">
+        <div class="browse-card-type">Series · ${k.year}</div>
+        <div class="browse-card-title">${k.title}</div>
+        <div class="browse-card-meta"><span class="tag" style="font-size:7px;background:#FF6B35">Amasian TV</span> English Dub</div>
+        ${tagBadges ? `<div class="browse-card-tags" style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px;">${tagBadges}</div>` : ''}
+      </div>
+    </div>`;
+  }
   return'';
 }
 
@@ -4736,40 +4783,77 @@ function renderBrowsePage(){
     <section class="movies-page-body">
       <div class="section-max">
 
-        <!-- SEARCH BAR -->
-        <div class="browse-search-wrap">
-          <span class="browse-search-icon">🔍</span>
-          <input class="browse-search-input" id="browseSearch" type="search" placeholder="Search titles, descriptions…" autocomplete="off" spellcheck="false">
-          <button class="browse-search-clear" id="browseSearchClear" title="Clear">✕</button>
-        </div>
-
-        <!-- FILTERS -->
-        <div class="browse-page-filters" id="browse-page-filters">
-          <div class="filter-dropdowns" style="margin-bottom:14px">
-            <label class="filter-dropdown-group">
-              <span class="filter-row-label">Type</span>
-              <select class="filter-select" data-bselect="type">
-                ${['all','movie','season','spinoff'].map(v=>`<option value="${v}">${v==='all'?'All Content':v==='movie'?'Movies':v==='season'?'Seasons':'Spinoffs'}</option>`).join('')}
-              </select>
-            </label>
-            <label class="filter-dropdown-group">
-              <span class="filter-row-label">Platform</span>
-              <select class="filter-select" data-bselect="platform">
-                ${['all','netflix','primevideo','appletv','etvbalb','etvwin'].map(v=>`<option value="${v}">${v==='all'?'All Platforms':(PLAT_META[v]?.name||v)}</option>`).join('')}
-              </select>
-            </label>
-            <label class="filter-dropdown-group">
-              <span class="filter-row-label">Language</span>
-              <select class="filter-select" data-bselect="language">
-                <option value="all">All Languages</option>
-                ${allLanguages.map(l=>`<option value="${l}">${LANG_NATIVE[l]||l}</option>`).join('')}
-              </select>
-            </label>
+        <!-- SEARCH BAR - Row 1 -->
+        <div class="browse-search-row">
+          <div class="browse-search-wrap">
+            <span class="browse-search-icon">🔍</span>
+            <input class="browse-search-input" id="browseSearch" type="search" placeholder="Search titles, descriptions…" autocomplete="off" spellcheck="false">
+            <button class="browse-search-clear" id="browseSearchClear" title="Clear">✕</button>
           </div>
         </div>
 
-        <!-- TAG FILTER CAROUSEL -->
-        <div id="browse-tag-filter"></div>
+        <!-- FILTERS - Row 2 -->
+        <div class="browse-filters-row">
+          <!-- Apple-style Multi-select Dropdowns -->
+          <div class="browse-multi-filters">
+            <div class="multi-select-dropdown" data-filter="type">
+              <button class="multi-select-btn" onclick="toggleMultiSelect('type')">
+                <span class="multi-select-label">Type</span>
+                <span class="multi-select-value" id="type-value">All</span>
+                <span class="multi-select-chevron">⌄</span>
+              </button>
+              <div class="multi-select-menu" id="type-menu">
+                <label class="multi-select-option"><input type="checkbox" value="movie" data-parent="type"><span>Movies</span></label>
+                <label class="multi-select-option"><input type="checkbox" value="season" data-parent="type"><span>Seasons</span></label>
+                <label class="multi-select-option"><input type="checkbox" value="ova" data-parent="type"><span>OVAs</span></label>
+                <label class="multi-select-option"><input type="checkbox" value="kaito" data-parent="type"><span>Magic Kaito</span></label>
+                <label class="multi-select-option"><input type="checkbox" value="spinoff" data-parent="type"><span>Spinoffs</span></label>
+              </div>
+            </div>
+
+            <div class="multi-select-dropdown" data-filter="platform">
+              <button class="multi-select-btn" onclick="toggleMultiSelect('platform')">
+                <span class="multi-select-label">Platform</span>
+                <span class="multi-select-value" id="platform-value">All</span>
+                <span class="multi-select-chevron">⌄</span>
+              </button>
+              <div class="multi-select-menu" id="platform-menu">
+                <label class="multi-select-option"><input type="checkbox" value="netflix" data-parent="platform"><span>Netflix</span></label>
+                <label class="multi-select-option"><input type="checkbox" value="primevideo" data-parent="platform"><span>Prime Video</span></label>
+                <label class="multi-select-option"><input type="checkbox" value="appletv" data-parent="platform"><span>Apple TV</span></label>
+                <label class="multi-select-option"><input type="checkbox" value="etvbalb" data-parent="platform"><span>ETV Bal Bharat</span></label>
+                <label class="multi-select-option"><input type="checkbox" value="etvwin" data-parent="platform"><span>ETV Win</span></label>
+              </div>
+            </div>
+
+            <div class="multi-select-dropdown" data-filter="language">
+              <button class="multi-select-btn" onclick="toggleMultiSelect('language')">
+                <span class="multi-select-label">Language</span>
+                <span class="multi-select-value" id="language-value">All</span>
+                <span class="multi-select-chevron">⌄</span>
+              </button>
+              <div class="multi-select-menu" id="language-menu">
+                <label class="multi-select-option"><input type="checkbox" value="English Sub" data-parent="language"><span>English Sub</span></label>
+                <label class="multi-select-option"><input type="checkbox" value="Hindi" data-parent="language"><span>Hindi</span></label>
+                <label class="multi-select-option"><input type="checkbox" value="Tamil" data-parent="language"><span>Tamil</span></label>
+                <label class="multi-select-option"><input type="checkbox" value="Telugu" data-parent="language"><span>Telugu</span></label>
+                <label class="multi-select-option"><input type="checkbox" value="Malayalam" data-parent="language"><span>Malayalam</span></label>
+                <label class="multi-select-option"><input type="checkbox" value="Kannada" data-parent="language"><span>Kannada</span></label>
+                <label class="multi-select-option"><input type="checkbox" value="Bengali" data-parent="language"><span>Bengali</span></label>
+                <label class="multi-select-option"><input type="checkbox" value="Marathi" data-parent="language"><span>Marathi</span></label>
+                <label class="multi-select-option"><input type="checkbox" value="Gujarati" data-parent="language"><span>Gujarati</span></label>
+                <label class="multi-select-option"><input type="checkbox" value="Odia" data-parent="language"><span>Odia</span></label>
+                <label class="multi-select-option"><input type="checkbox" value="Punjabi" data-parent="language"><span>Punjabi</span></label>
+                <label class="multi-select-option"><input type="checkbox" value="Assamese" data-parent="language"><span>Assamese</span></label>
+                <label class="multi-select-option"><input type="checkbox" value="English" data-parent="language"><span>English</span></label>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAG FILTER CAROUSEL -->
+          <div id="browse-tag-filter" class="browse-tag-section"></div>
+        </div>
+        
         <div id="browse-filter-results"></div>
 
         <div class="browse-page-meta" id="browse-page-meta"></div>
@@ -4780,8 +4864,8 @@ function renderBrowsePage(){
   `;
   app.appendChild(pg);
 
-  // State
-  const bs={type:'all',platform:'all',language:'all',query:'',tags:[],tagLogic:'OR'};
+  // State - supports multiple selections
+  const bs={type:[],platform:[],language:[],query:'',tags:[],tagLogic:'OR'};
 
   // Initialize tag filter carousel
   setTimeout(() => {
@@ -4799,22 +4883,14 @@ function renderBrowsePage(){
     }
   }, 50);
 
-  // Filter state - will be initialized after DOM elements exist
+  // Setup multi-select dropdowns
+  setupMultiSelectListeners();
 
-  function syncBrowseFilterControls(){
-    pg.querySelectorAll('[data-bselect]').forEach(sel=>{
-      const g = sel.dataset.bselect;
-      sel.value = bs[g];
-    });
-  }
-  syncBrowseFilterControls();
-
-  pg.querySelectorAll('[data-bselect]').forEach(sel=>{
-    sel.addEventListener('change',()=>{
-      const g = sel.dataset.bselect;
-      bs[g] = sel.value;
-      runBrowse();
-    });
+  // Close dropdowns when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.multi-select-dropdown')) {
+      document.querySelectorAll('.multi-select-menu.active').forEach(menu => menu.classList.remove('active'));
+    }
   });
 
   // Search input
@@ -4840,22 +4916,33 @@ function renderBrowsePage(){
   }
 
   function itemVisible(item,type){
-    // type filter
-    if(bs.type!=='all'&&bs.type!==type) return false;
-    // platform filter
-    if(bs.platform!=='all'){
-      if(type==='movie'){if(!getMoviePlatforms(item).includes(bs.platform)) return false;}
-      else if(type==='season'){if(!(item.platforms||[]).includes(bs.platform)) return false;}
-      else if(type==='spinoff'){if(bs.platform!=='netflix') return false;}
+    // type filter - if any types selected, item must match one
+    if(bs.type.length > 0 && !bs.type.includes(type)) return false;
+    
+    // platform filter - if any platforms selected, item must match one
+    if(bs.platform.length > 0){
+      const itemPlatforms = type==='movie' ? getMoviePlatforms(item) 
+        : type==='season' ? (item.platforms||[])
+        : type==='ova' ? ['netflix', 'etvwin']
+        : type==='kaito' ? ['amasian']
+        : type==='spinoff' ? ['netflix']
+        : [];
+      const hasPlatform = bs.platform.some(p => itemPlatforms.includes(p));
+      if (!hasPlatform) return false;
     }
-    // language filter
-    if(bs.language!=='all'){
+    
+    // language filter - if any languages selected, item must match one
+    if(bs.language.length > 0){
       let langs;
       if(type==='movie') langs=getMovieLangs(item);
       else if(type==='season') langs=getSeasonLangs(item);
+      else if(type==='ova') langs=new Set(['English Sub','Hindi','Tamil','Telugu']);
+      else if(type==='kaito') langs=new Set(['English']);
       else langs=new Set(['English Sub','Hindi','English']);
-      if(!langs.has(bs.language)) return false;
+      const hasLang = bs.language.some(l => langs.has(l));
+      if(!hasLang) return false;
     }
+    
     // tag filter
     if (bs.tags && bs.tags.length > 0) {
       const contentTags = getContentTags(item, type);
@@ -4864,12 +4951,17 @@ function renderBrowsePage(){
         : bs.tags.some(tag => contentTags.has(tag));
       if (!hasTag) return false;
     }
+    
     // text search — for seasons also match against individual episode titles/numbers
     if(bs.query){
       const hay=[
         type==='movie'?item.title:'',
         type==='movie'?item.desc:'',
         type==='season'?item.label:'',
+        type==='ova'?item.title:'',
+        type==='ova'?item.desc:'',
+        type==='kaito'?item.title:'',
+        type==='kaito'?item.desc:'',
         type==='spinoff'?item.title:'',
         type==='spinoff'?item.desc:'',
       ].join(' ').toLowerCase();
@@ -4888,6 +4980,43 @@ function renderBrowsePage(){
     }
     return true;
   }
+
+  function setupMultiSelectListeners() {
+    document.querySelectorAll('.multi-select-menu input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const parent = cb.dataset.parent;
+        const checked = document.querySelectorAll(`.multi-select-menu input[data-parent="${parent}"]:checked`);
+        const values = Array.from(checked).map(c => c.value);
+        bs[parent] = values;
+        
+        // Update display
+        const displayEl = document.getElementById(`${parent}-value`);
+        if (values.length === 0) {
+          displayEl.textContent = 'All';
+        } else if (values.length === 1) {
+          displayEl.textContent = values[0] === 'primevideo' ? 'Prime Video' : values[0];
+        } else {
+          displayEl.textContent = `${values.length} selected`;
+        }
+        
+        runBrowse();
+      });
+    });
+  }
+
+  // Global function for toggling dropdowns
+  window.toggleMultiSelect = function(filter) {
+    const menu = document.getElementById(`${filter}-menu`);
+    const isActive = menu.classList.contains('active');
+    
+    // Close all menus
+    document.querySelectorAll('.multi-select-menu').forEach(m => m.classList.remove('active'));
+    
+    // Toggle current
+    if (!isActive) {
+      menu.classList.add('active');
+    }
+  };
 
   function updateBrowseFilterResults(filterState) {
     const resultsInfo = document.getElementById('browse-filter-results');
@@ -4945,22 +5074,38 @@ function renderBrowsePage(){
       ...MOVIES.map((m,i)=>({item:m,type:'movie',idx:i})),
       ...SEASONS.map((s,i)=>({item:s,type:'season',idx:i})),
       ...SPINOFFS.map((sp,i)=>({item:sp,type:'spinoff',idx:i})),
+      ...(typeof OVAS !== 'undefined' ? OVAS.map((o,i)=>({item:o,type:'ova',idx:i})) : []),
+      ...(typeof MAGIC_KAITO !== 'undefined' ? [{item:MAGIC_KAITO,type:'kaito',idx:0}] : []),
     ].filter(({item,type})=>itemVisible(item,type));
     
     // Update tag counts in filter carousel
     setTimeout(() => {
       const carousel = document.getElementById('browse-tag-filter');
       if (carousel && typeof updateTagFilterCounts === 'function') {
-        // Calculate matches per tag
+        // Calculate matches per tag across all content types
         const allItems = [
           ...MOVIES.map((m,i)=>({item:m,type:'movie',idx:i})),
           ...SEASONS.map((s,i)=>({item:s,type:'season',idx:i})),
           ...SPINOFFS.map((sp,i)=>({item:sp,type:'spinoff',idx:i})),
+          ...(typeof OVAS !== 'undefined' ? OVAS.map((o,i)=>({item:o,type:'ova',idx:i})) : []),
+          ...(typeof MAGIC_KAITO !== 'undefined' ? [{item:MAGIC_KAITO,type:'kaito',idx:0}] : []),
         ];
         const tagCounts = new Map();
         allItems.forEach(({item,type}) => {
-          if (type === 'movie') {
-            const tags = (typeof MOVIE_TAGS !== 'undefined' ? MOVIE_TAGS.get(item.n) : null) || new Set();
+          let tags;
+          if (type === 'movie' && typeof MOVIE_TAGS !== 'undefined') {
+            tags = MOVIE_TAGS.get(item.n);
+          } else if (type === 'ova' && typeof OVA_TAGS !== 'undefined') {
+            tags = OVA_TAGS.get(item.episodeNumber || item.id?.replace('ova', ''));
+          } else if (type === 'kaito' && typeof KAITO_TAGS !== 'undefined') {
+            // Sum all Kaito episode tags
+            tags = new Set();
+            for (let i = 1; i <= 24; i++) {
+              const epTags = KAITO_TAGS.get(i);
+              if (epTags) epTags.forEach(t => tags.add(t));
+            }
+          }
+          if (tags) {
             tags.forEach(tag => {
               tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
             });
