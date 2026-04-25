@@ -1627,21 +1627,43 @@ function renderBrowseCard(item,type,idx){
   }
   if(type==='ova'){
     const o=item;
+    // Map content types to display labels
+    const typeLabels = {
+      'ova': 'OVA',
+      'magic-file': 'Magic File',
+      'tv-special': 'TV Special',
+      'drama-special': 'Drama Special',
+      'wooo-ova': 'Wooo OVA',
+      'police-academy': 'Police Academy',
+      'recap-special': 'Recap Special'
+    };
+    const typeLabel = typeLabels[o.type] || 'Special';
+    
+    // Get display number based on type
+    let displayNum = '';
+    if (o.type === 'ova') displayNum = `OVA ${o.episodeNumber}`;
+    else if (o.type === 'magic-file') displayNum = `MF ${o.episodeNumber}`;
+    else if (o.type === 'tv-special') displayNum = `TVS ${o.episodeNumber}`;
+    else if (o.type === 'drama-special') displayNum = `DS ${o.episodeNumber}`;
+    else if (o.type === 'wooo-ova') displayNum = `WOOO ${o.episodeNumber}`;
+    else if (o.type === 'police-academy') displayNum = `PA ${o.episodeNumber}`;
+    else displayNum = typeLabel;
+    
     // Add tag badges
-    const ovaNum = o.episodeNumber || (o.id ? parseInt(o.id.replace('ova', '')) : idx + 1);
+    const ovaNum = o.episodeNumber || (o.id ? parseInt(o.id.replace(/\D/g, '')) : idx + 1);
     const tags = (typeof OVA_TAGS !== 'undefined' ? OVA_TAGS.get(ovaNum) : null) || new Set();
     const tagBadges = Array.from(tags).slice(0, 3).map(tag => {
       const def = (typeof TAG_DEFINITIONS !== 'undefined' ? TAG_DEFINITIONS[tag] : null) || { color: '#666' };
       return `<span class="content-tag" style="--tag-color: ${def.color}; font-size: 8px; padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-right: 4px;">${tag}</span>`;
     }).join('');
-    return`<div class="browse-card stagger" data-ova-id="${o.id}" data-type="ova" data-tags="${Array.from(tags).join(',')}" onclick="openOVAModal('${o.id}')">
+    return`<div class="browse-card stagger" data-ova-id="${o.id}" data-type="${o.type || 'ova'}" data-tags="${Array.from(tags).join(',')}" onclick="openOVAModal('${o.id}')">
       <div class="browse-card-img" style="background-image:url('${o.still || getMoviePoster({colors:o.colors}, idx+1)}');background-color:${o.colors[0]}"></div>
       <div class="browse-card-grad"></div>
-      <div class="browse-card-num">OVA ${ovaNum}</div>
+      <div class="browse-card-num">${displayNum}</div>
       <div class="browse-card-content">
-        <div class="browse-card-type">OVA · ${o.year}</div>
+        <div class="browse-card-type">${typeLabel} · ${o.year}</div>
         <div class="browse-card-title">${o.title}</div>
-        <div class="browse-card-meta"><span class="tag tag-netflix" style="font-size:7px">Netflix</span></div>
+        <div class="browse-card-meta"><span class="tag tag-soon" style="font-size:7px">Special</span></div>
         ${tagBadges ? `<div class="browse-card-tags" style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px;">${tagBadges}</div>` : ''}
       </div>
     </div>`;
