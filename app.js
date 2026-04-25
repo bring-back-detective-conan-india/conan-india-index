@@ -4798,62 +4798,53 @@ function renderBrowsePage(){
 
         <!-- FILTERS - Row 2 -->
         <div class="browse-filters-row">
-          <!-- Apple-style Multi-select Dropdowns -->
+          <!-- Single-select Dropdowns -->
           <div class="browse-multi-filters">
-            <div class="multi-select-dropdown" data-filter="type">
-              <button class="multi-select-btn" onclick="toggleMultiSelect('type')">
-                <span class="multi-select-label">Type</span>
-                <span class="multi-select-value" id="type-value">All</span>
-                <span class="multi-select-chevron">⌄</span>
-              </button>
-              <div class="multi-select-menu" id="type-menu">
-                <label class="multi-select-option"><input type="checkbox" value="movie" data-parent="type"><span>Movies</span></label>
-                <label class="multi-select-option"><input type="checkbox" value="season" data-parent="type"><span>Seasons</span></label>
-                <label class="multi-select-option"><input type="checkbox" value="ova" data-parent="type"><span>OVAs</span></label>
-                <label class="multi-select-option"><input type="checkbox" value="kaito" data-parent="type"><span>Magic Kaito</span></label>
-                <label class="multi-select-option"><input type="checkbox" value="spinoff" data-parent="type"><span>Spinoffs</span></label>
-              </div>
-            </div>
+            <label class="filter-dropdown-group">
+              <span class="filter-row-label">Type</span>
+              <select class="filter-select" data-bselect="type">
+                <option value="all">All Content</option>
+                <option value="movie">Movies</option>
+                <option value="season">Seasons</option>
+                <option value="ova">OVAs</option>
+                <option value="kaito">Magic Kaito</option>
+                <option value="spinoff">Spinoffs</option>
+              </select>
+            </label>
 
-            <div class="multi-select-dropdown" data-filter="platform">
-              <button class="multi-select-btn" onclick="toggleMultiSelect('platform')">
-                <span class="multi-select-label">Platform</span>
-                <span class="multi-select-value" id="platform-value">All</span>
-                <span class="multi-select-chevron">⌄</span>
-              </button>
-              <div class="multi-select-menu" id="platform-menu">
-                <label class="multi-select-option"><input type="checkbox" value="netflix" data-parent="platform"><span>Netflix</span></label>
-                <label class="multi-select-option"><input type="checkbox" value="primevideo" data-parent="platform"><span>Prime Video</span></label>
-                <label class="multi-select-option"><input type="checkbox" value="appletv" data-parent="platform"><span>Apple TV</span></label>
-                <label class="multi-select-option"><input type="checkbox" value="etvbalb" data-parent="platform"><span>ETV Bal Bharat</span></label>
-                <label class="multi-select-option"><input type="checkbox" value="etvwin" data-parent="platform"><span>ETV Win</span></label>
-              </div>
-            </div>
+            <label class="filter-dropdown-group">
+              <span class="filter-row-label">Platform</span>
+              <select class="filter-select" data-bselect="platform">
+                <option value="all">All Platforms</option>
+                <option value="netflix">Netflix</option>
+                <option value="primevideo">Prime Video</option>
+                <option value="appletv">Apple TV</option>
+                <option value="etvbalb">ETV Bal Bharat</option>
+                <option value="etvwin">ETV Win</option>
+              </select>
+            </label>
 
-            <div class="multi-select-dropdown" data-filter="language">
-              <button class="multi-select-btn" onclick="toggleMultiSelect('language')">
-                <span class="multi-select-label">Language</span>
-                <span class="multi-select-value" id="language-value">All</span>
-                <span class="multi-select-chevron">⌄</span>
-              </button>
-              <div class="multi-select-menu" id="language-menu">
-                <label class="multi-select-option"><input type="checkbox" value="English Sub" data-parent="language"><span>English Sub</span></label>
-                <label class="multi-select-option"><input type="checkbox" value="Hindi" data-parent="language"><span>Hindi</span></label>
-                <label class="multi-select-option"><input type="checkbox" value="Tamil" data-parent="language"><span>Tamil</span></label>
-                <label class="multi-select-option"><input type="checkbox" value="Telugu" data-parent="language"><span>Telugu</span></label>
-                <label class="multi-select-option"><input type="checkbox" value="Malayalam" data-parent="language"><span>Malayalam</span></label>
-                <label class="multi-select-option"><input type="checkbox" value="Kannada" data-parent="language"><span>Kannada</span></label>
-                <label class="multi-select-option"><input type="checkbox" value="Bengali" data-parent="language"><span>Bengali</span></label>
-                <label class="multi-select-option"><input type="checkbox" value="Marathi" data-parent="language"><span>Marathi</span></label>
-                <label class="multi-select-option"><input type="checkbox" value="Gujarati" data-parent="language"><span>Gujarati</span></label>
-                <label class="multi-select-option"><input type="checkbox" value="Odia" data-parent="language"><span>Odia</span></label>
-                <label class="multi-select-option"><input type="checkbox" value="Punjabi" data-parent="language"><span>Punjabi</span></label>
-                <label class="multi-select-option"><input type="checkbox" value="Assamese" data-parent="language"><span>Assamese</span></label>
-                <label class="multi-select-option"><input type="checkbox" value="English" data-parent="language"><span>English</span></label>
-              </div>
-            </div>
+            <label class="filter-dropdown-group">
+              <span class="filter-row-label">Language</span>
+              <select class="filter-select" data-bselect="language">
+                <option value="all">All Languages</option>
+                <option value="English Sub">English Sub</option>
+                <option value="Hindi">Hindi</option>
+                <option value="Tamil">Tamil</option>
+                <option value="Telugu">Telugu</option>
+                <option value="Malayalam">Malayalam</option>
+                <option value="Kannada">Kannada</option>
+                <option value="Bengali">Bengali</option>
+                <option value="Marathi">Marathi</option>
+                <option value="Gujarati">Gujarati</option>
+                <option value="Odia">Odia</option>
+                <option value="Punjabi">Punjabi</option>
+                <option value="Assamese">Assamese</option>
+                <option value="English">English</option>
+              </select>
+            </label>
 
-            <!-- PLOT TAG FILTER DROPDOWN -->
+            <!-- PLOT TAG MULTI-SELECT DROPDOWN -->
             <div class="multi-select-dropdown" data-filter="plot">
               <button class="multi-select-btn" onclick="toggleMultiSelect('plot')">
                 <span class="multi-select-label">Plot</span>
@@ -4880,11 +4871,20 @@ function renderBrowsePage(){
   `;
   app.appendChild(pg);
 
-  // State - supports multiple selections including plot tags
-  const bs={type:[],platform:[],language:[],plot:[],query:''};
+  // State - single select for type/platform/language, multi for plot
+  const bs={type:'all',platform:'all',language:'all',plot:[],query:''};
 
-  // Setup multi-select dropdowns
+  // Setup multi-select dropdowns (only for plot)
   setupMultiSelectListeners();
+  
+  // Setup single-select dropdowns
+  pg.querySelectorAll('[data-bselect]').forEach(sel=>{
+    sel.addEventListener('change',()=>{
+      const g = sel.dataset.bselect;
+      bs[g] = sel.value;
+      runBrowse();
+    });
+  });
 
   // Close dropdowns when clicking outside
   document.addEventListener('click', (e) => {
@@ -4916,31 +4916,29 @@ function renderBrowsePage(){
   }
 
   function itemVisible(item,type){
-    // type filter - if any types selected, item must match one
-    if(bs.type.length > 0 && !bs.type.includes(type)) return false;
+    // type filter - single select
+    if(bs.type !== 'all' && bs.type !== type) return false;
     
-    // platform filter - if any platforms selected, item must match one
-    if(bs.platform.length > 0){
+    // platform filter - single select (AND logic)
+    if(bs.platform !== 'all'){
       const itemPlatforms = type==='movie' ? getMoviePlatforms(item) 
         : type==='season' ? (item.platforms||[])
         : type==='ova' ? ['netflix', 'etvwin']
         : type==='kaito' ? ['amasian']
         : type==='spinoff' ? ['netflix']
         : [];
-      const hasPlatform = bs.platform.some(p => itemPlatforms.includes(p));
-      if (!hasPlatform) return false;
+      if (!itemPlatforms.includes(bs.platform)) return false;
     }
     
-    // language filter - if any languages selected, item must match one
-    if(bs.language.length > 0){
+    // language filter - single select (AND logic)
+    if(bs.language !== 'all'){
       let langs;
       if(type==='movie') langs=getMovieLangs(item);
       else if(type==='season') langs=getSeasonLangs(item);
       else if(type==='ova') langs=new Set(['English Sub','Hindi','Tamil','Telugu']);
       else if(type==='kaito') langs=new Set(['English']);
       else langs=new Set(['English Sub','Hindi','English']);
-      const hasLang = bs.language.some(l => langs.has(l));
-      if(!hasLang) return false;
+      if (!langs.has(bs.language)) return false;
     }
     
     // plot tag filter for content items (movies, OVAs, Kaito) - OR logic
@@ -4998,19 +4996,19 @@ function renderBrowsePage(){
   }
 
   function setupMultiSelectListeners() {
-    document.querySelectorAll('.multi-select-menu input[type="checkbox"]').forEach(cb => {
+    // Only handle plot filter (multi-select)
+    document.querySelectorAll('.multi-select-menu input[data-parent="plot"]').forEach(cb => {
       cb.addEventListener('change', () => {
-        const parent = cb.dataset.parent;
-        const checked = document.querySelectorAll(`.multi-select-menu input[data-parent="${parent}"]:checked`);
+        const checked = document.querySelectorAll('.multi-select-menu input[data-parent="plot"]:checked');
         const values = Array.from(checked).map(c => c.value);
-        bs[parent] = values;
+        bs.plot = values;
         
         // Update display
-        const displayEl = document.getElementById(`${parent}-value`);
+        const displayEl = document.getElementById('plot-value');
         if (values.length === 0) {
           displayEl.textContent = 'All';
         } else if (values.length === 1) {
-          displayEl.textContent = parent === 'platform' && values[0] === 'primevideo' ? 'Prime Video' : values[0];
+          displayEl.textContent = values[0];
         } else {
           displayEl.textContent = `${values.length} selected`;
         }
