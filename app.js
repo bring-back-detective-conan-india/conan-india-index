@@ -1683,7 +1683,7 @@ function renderBrowseCard(item,type,idx){
   if(type==='kaito'){
     const k=item;
     // Use Magic Kaito TMDB poster
-    const posterUrl = k.tmdb ? `https://image.tmdb.org/t/p/w500/fjAS5f29mqEshLNzj761d4VkfRe.jpg` : '';
+    const posterUrl = k.tmdb ? `https://image.tmdb.org/t/p/w500/yFAqxNPOK5JkWKLSSB65gK59W8Q.jpg` : '';
     // Add tag badges - aggregate all Kaito episode tags
     let tags = new Set();
     if (typeof KAITO_TAGS !== 'undefined') {
@@ -7182,7 +7182,7 @@ window.openMagicKaitoModal = function() {
   const k = MAGIC_KAITO;
   
   // TMDB poster for Magic Kaito 1412
-  const posterUrl = 'https://image.tmdb.org/t/p/w500/fjAS5f29mqEshLNzj761d4VkfRe.jpg';
+  const posterUrl = 'https://image.tmdb.org/t/p/w500/yFAqxNPOK5JkWKLSSB65gK59W8Q.jpg';
   
   // Generate episode grid (similar to season modal)
   const episodeGrid = Array.from({length: k.episodes}, (_, i) => i + 1).map(epNum => {
