@@ -33,12 +33,15 @@ const IMG = {
   heroLangs:    'https://is1-ssl.mzstatic.com/image/thumb/oFKRXsuS0ySwLn1gh6rTkw/1200x675.jpg',
   heroMerch:    'https://i.postimg.cc/8N8S6MCw/DSC00664.webp',
 };
-const CONAN_IMG_LIST = [
-  IMG.conan1, IMG.conan2, IMG.conan3, IMG.conan4, IMG.conan5,
-  IMG.conan6, IMG.conan7, IMG.conan8, IMG.conan9, IMG.conan10,
-  IMG.ran, IMG.heiji, IMG.haibara, IMG.kid, IMG.org, IMG.group
+// Local fallback images for seasons/cards (from fallback-images folder)
+const LOCAL_FALLBACK_IMAGES = [
+  'fallback-images/heroes/hero-browse.jpg',
+  'fallback-images/heroes/hero-tvshows.jpg',
+  'fallback-images/heroes/hero-spinoffs.jpg',
+  'fallback-images/heroes/hero-langs.jpg',
+  'fallback-images/heroes/hero-merch.webp'
 ];
-function getImg(i){ return CONAN_IMG_LIST[i % CONAN_IMG_LIST.length]; }
+function getImg(i){ return LOCAL_FALLBACK_IMAGES[i % LOCAL_FALLBACK_IMAGES.length]; }
 
 const PLAT_BG = {
   netflix:    'https://i.postimg.cc/kqnpLV3d/Screenshot-2026-04-23-141153.png',
@@ -495,13 +498,7 @@ function refreshEpisodeSeasonVisuals(){
     if(!sid) return;
     const url = getSeasonStillByLocalSeasonId(sid, 0);
     const bg = el.querySelector('.season-card-bg,.browse-card-img,.content-card-bg,.lm-season-bg');
-    if(bg) {
-      // Try to use fallback if image fails
-      const fallbackUrl = typeof FALLBACK_IMAGES !== 'undefined' ? getFallbackUrl(url) : url;
-      bg.style.backgroundImage = `url('${fallbackUrl}')`;
-      // Add gradient backup in case image fails
-      bg.style.backgroundColor = '#1a1a1a';
-    }
+    if(bg) bg.style.backgroundImage = `url('${url}')`;
   });
 
   document.querySelectorAll('[data-ep-num]').forEach(el=>{
