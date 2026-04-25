@@ -4916,6 +4916,13 @@ function renderBrowsePage(){
   }
 
   function itemVisible(item,type){
+    // Debug logging
+    if (type === 'movie' && bs.platform !== 'all' && bs.language !== 'all') {
+      console.log('Filtering movie:', item.title, 'n:', item.n);
+      console.log('  Platform filter:', bs.platform);
+      console.log('  Language filter:', bs.language);
+    }
+    
     // type filter - single select
     if(bs.type !== 'all' && bs.type !== type) return false;
     
@@ -4927,6 +4934,9 @@ function renderBrowsePage(){
         : type==='kaito' ? ['amasian']
         : type==='spinoff' ? ['netflix']
         : [];
+      if (type === 'movie') {
+        console.log('  Movie platforms:', itemPlatforms, 'has', bs.platform, '?', itemPlatforms.includes(bs.platform));
+      }
       if (!itemPlatforms.includes(bs.platform)) return false;
     }
     
@@ -4938,6 +4948,9 @@ function renderBrowsePage(){
       else if(type==='ova') langs=new Set(['English Sub','Hindi','Tamil','Telugu']);
       else if(type==='kaito') langs=new Set(['English']);
       else langs=new Set(['English Sub','Hindi','English']);
+      if (type === 'movie') {
+        console.log('  Movie languages:', Array.from(langs), 'has', bs.language, '?', langs.has(bs.language));
+      }
       if (!langs.has(bs.language)) return false;
     }
     
