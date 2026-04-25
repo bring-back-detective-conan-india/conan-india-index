@@ -4802,7 +4802,7 @@ function renderBrowsePage(){
                 <option value="all">All Content</option>
                 <option value="movie">Movies</option>
                 <option value="season">Seasons</option>
-                <option value="ova">OVAs</option>
+                <option value="ova">OVA &amp; Specials</option>
                 <option value="kaito">Magic Kaito</option>
                 <option value="spinoff">Spinoffs</option>
               </select>

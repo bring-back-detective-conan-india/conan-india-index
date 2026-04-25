@@ -495,14 +495,14 @@ const OVAS = [
     id:"ova7", tmdbEp:9, title:"OVA 7: A Challenge from Agasa! Agasa vs. Conan and the Detective Boys", year:2007, type:"ova",
     wikiUrl:"https://www.detectiveconanworld.com/wiki/OVAs",
     colors:["#3A2A1A","#D35400"], episodeNumber:7,
-    still: "fallback-images/tmdb/ova7.jpg",
+    still: "https://image.tmdb.org/t/p/w500/jMrBNxGt3GAD7ZTM7aoXbc7JA2S.jpg",
     desc:"Professor Agasa challenges Conan and the Detective Boys to solve his mystery."
   },
   {
     id:"ova8", tmdbEp:14, title:"OVA 8: High School Girl Detective Sonoko Suzuki's Case Files", year:2008, type:"ova",
     wikiUrl:"https://www.detectiveconanworld.com/wiki/OVAs",
     colors:["#2A1A1A","#E74C3C"], episodeNumber:8,
-    still: "https://image.tmdb.org/t/p/w500/jMrBNxGt3GAD7ZTM7aoXbc7JA2S.jpg",
+    still: "https://image.tmdb.org/t/p/w500/s0HCyegKgbV5MFo43w3cPaRh79j.jpg",
     desc:"Sonoko Suzuki takes the lead as a high school detective in her own case."
   },
   {
