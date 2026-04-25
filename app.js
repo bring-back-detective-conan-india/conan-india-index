@@ -3974,105 +3974,42 @@ function setupWatchGuideFilters() {
     });
   }, 1000);
   
-  const mainFilterButtons = document.querySelectorAll('.filter-main-btn');
-  const contentCategoryFilter = document.getElementById('content-category-filter');
-  const factionFilter = document.getElementById('faction-filter');
+  // Setup plot filter
+  const plotCheckboxes = document.querySelectorAll('.multi-select-menu input[data-parent="guide-plot"]');
   const episodeCards = document.querySelectorAll('.episode-horizontal-card');
   
-  function applyFilters() {
-    const activeMainFilter = document.querySelector('.filter-main-btn.active').dataset.mainFilter;
-    const contentCategory = contentCategoryFilter.value;
-    const faction = factionFilter.value;
+  function applyPlotFilter() {
+    const checked = document.querySelectorAll('.multi-select-menu input[data-parent="guide-plot"]:checked');
+    const selectedPlotTags = Array.from(checked).map(c => c.value);
     
-    // Movie tie-in identifiers based on user's list
-    const movieTieInOVAs = ['ova2', 'ova3', 'ova4', 'ova7'];
-    const movieTieInMagicFiles = ['mf2', 'mf3', 'mf4', 'mf5']; // Magic File data-ep-num values
-    const movieTieInEpisodes = [694, 735, 742, 774, 813, 855, 898, 907, 936, 1002, 1039, 1080, 1083, 1120, 1161, 1197];
-    const movieTieInTVSpecials = ['lupin', 'bonus']; // Partial matches for TV special IDs
+    // Update display
+    const displayEl = document.getElementById('guide-plot-value');
+    if (displayEl) {
+      if (selectedPlotTags.length === 0) displayEl.textContent = 'Plot';
+      else if (selectedPlotTags.length === 1) displayEl.textContent = selectedPlotTags[0];
+      else displayEl.textContent = `${selectedPlotTags.length} selected`;
+    }
     
+    // Filter cards
     episodeCards.forEach(card => {
-      const type = card.dataset.type || '';
       const tags = card.dataset.tags || '';
-      const epNum = card.dataset.epNum || '';
-      const episodeNumberEl = card.querySelector('.episode-horizontal-number');
-      const episodeNumText = episodeNumberEl ? episodeNumberEl.textContent : '';
-      const episodeNum = parseInt(episodeNumText);
       
       let showCard = true;
       
-      // Determine content type
-      const isMovie = type === 'movie';
-      const isOVA = type === 'ova';
-      const isMagicFile = type === 'magic-file';
-      const isTVSpecial = type === 'tv-special';
-      const isMagicKaito = type === 'magic-kaito';
-      const isRegularEpisode = type === 'episode';
-      
-      // Check if this is a movie tie-in
-      let isMovieTieIn = false;
-      
-      if (isOVA && movieTieInOVAs.includes(epNum)) {
-        isMovieTieIn = true;
-      } else if (isMagicFile && movieTieInMagicFiles.includes(epNum)) {
-        isMovieTieIn = true;
-      } else if (isTVSpecial) {
-        // Check by title for TV specials
-        const titleEl = card.querySelector('.episode-horizontal-title');
-        const title = titleEl ? titleEl.textContent.toLowerCase() : '';
-        if (title.includes('lupin') || title.includes('bonus')) {
-          isMovieTieIn = true;
-        }
-      } else if (isRegularEpisode && !isNaN(episodeNum) && movieTieInEpisodes.includes(episodeNum)) {
-        isMovieTieIn = true;
-      }
-      
-      // Any non-episode, non-movie content (OVA, Magic File, TV Special, Magic Kaito) is considered a tie-in
-      const isTieInContent = isOVA || isMagicFile || isTVSpecial || isMagicKaito;
-      
-      // Main filter logic
-      // 'all' - show everything (default)
-      // 'important-movies' - important episodes and movies (no tie-in OVAs, Magic Files, TV specials)
-      // 'movies-tieins' - only movies and movie tie-ins (no regular important episodes, no non-tie-in content)
-      
-      if (activeMainFilter === 'important-movies') {
-        // Show: movies, regular episodes (non-tie-in), Magic Kaito
-        // Hide: all tie-in content (OVAs, Magic Files that are movie prequels, TV specials)
-        if (isMovieTieIn || (isTieInContent && !isMagicKaito)) {
-          showCard = false;
-        }
-      } else if (activeMainFilter === 'movies-tieins') {
-        // Show: only movies and movie tie-ins
-        // Hide: regular episodes, Magic Kaito, and any non-movie-tie-in content
-        if (!isMovie && !isMovieTieIn) {
-          showCard = false;
-        }
-      }
-      
-      // Content category filter
-      if (contentCategory && !tags.includes(contentCategory)) {
-        showCard = false;
-      }
-      
-      // Faction filter
-      if (faction && !tags.includes(faction)) {
-        showCard = false;
+      // Plot tag filter - OR logic
+      if (selectedPlotTags.length > 0) {
+        const hasMatch = selectedPlotTags.some(tag => tags.includes(tag));
+        if (!hasMatch) showCard = false;
       }
       
       card.style.display = showCard ? 'block' : 'none';
     });
   }
   
-  // Setup event listeners
-  mainFilterButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      mainFilterButtons.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      applyFilters();
-    });
+  // Setup checkbox listeners
+  plotCheckboxes.forEach(cb => {
+    cb.addEventListener('change', applyPlotFilter);
   });
-  
-  contentCategoryFilter.addEventListener('change', applyFilters);
-  factionFilter.addEventListener('change', applyFilters);
 }
 
 function renderModernWatchCard(item, index) {
