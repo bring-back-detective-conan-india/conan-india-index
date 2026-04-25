@@ -1015,6 +1015,50 @@ function renderHome(){
       </div>
     </section>
 
+    <!-- WATCH GUIDE TEASER -->
+    <section id="watch-guide" style="background:var(--surface);">
+      <div class="section-max">
+        <div class="section-eyebrow">Episode Guide</div>
+        <div class="section-title-row">
+          <h2 class="section-title">Watch <em>Guide</em></h2>
+          <button class="section-view-all" onclick="Router.navigate('/guides')">View Guide →</button>
+        </div>
+        <div class="manga-teaser reveal" onclick="Router.navigate('/guides')" style="cursor:pointer">
+          <div class="manga-teaser-img" style="background-image:url('${IMG.conan1}')"></div>
+          <div class="manga-teaser-body">
+            <div class="manga-teaser-label">Plot Tags · Canon Episodes · Filler Filter</div>
+            <div class="manga-teaser-title">Find the <em>Best Episodes</em></div>
+            <p class="manga-teaser-desc">Navigate all 1000+ episodes with our interactive watch guide. Filter by plot tags, canon vs filler, character appearances, and availability in India.</p>
+            <div class="manga-teaser-btns">
+              <button class="manga-feature-btn" style="font-size:12px;padding:10px 20px" onclick="event.stopPropagation();Router.navigate('/guides')">Open Watch Guide →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BROWSE TEASER -->
+    <section id="browse-teaser" style="background:var(--surface2);">
+      <div class="section-max">
+        <div class="section-eyebrow">Browse & Filter</div>
+        <div class="section-title-row">
+          <h2 class="section-title">Explore <em>Everything</em></h2>
+          <button class="section-view-all" onclick="Router.navigate('/browse')">Browse All →</button>
+        </div>
+        <div class="manga-teaser reveal" onclick="Router.navigate('/browse')" style="cursor:pointer">
+          <div class="manga-teaser-img" style="background-image:url('${IMG.conan2}')"></div>
+          <div class="manga-teaser-body">
+            <div class="manga-teaser-label">Movies · Episodes · OVAs · Spinoffs</div>
+            <div class="manga-teaser-title">Browse <em>All Content</em></div>
+            <p class="manga-teaser-desc">Filter through all Detective Conan content in one place. Find movies, episodes, OVAs, and specials available in India with advanced filters.</p>
+            <div class="manga-teaser-btns">
+              <button class="manga-feature-btn" style="font-size:12px;padding:10px 20px" onclick="event.stopPropagation();Router.navigate('/browse')">Browse Now →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- MERCH -->
     <section id="merch" style="background:var(--surface);">
       <div class="section-max">
@@ -2850,7 +2894,11 @@ const PLATFORM_ROUTE_BY_NAME = {
   'PVR Cinemas': null,
   'Coming Soon to India': null,
 };
+let scrollY=0;
+let modalScrollPos = 0;
 function openModal(html,opts={}){
+  scrollY = window.scrollY;
+  modalScrollPos = window.scrollY;
   modalPanel.innerHTML=html;
   const isFullPage = Boolean(opts.fullPage);
   modal.classList.toggle('modal-fullpage', isFullPage);
@@ -2886,9 +2934,28 @@ function closeModal(){
   // Reset panel transform
   modalPanel.style.transform='';
   modal.style.background='';
+  // Restore scroll position after modal closes
+  if (modalScrollPos > 0) {
+    window.scrollTo({top: modalScrollPos, behavior: 'instant'});
+  }
 }
 modal.addEventListener('click',e=>{if(e.target===modal)closeModal();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+// Global function for toggling dropdowns - used by browse page and watch guide
+window.toggleMultiSelect = function(filter) {
+  const menu = document.getElementById(`${filter}-menu`);
+  if (!menu) return;
+  const isActive = menu.classList.contains('active');
+  
+  // Close all menus
+  document.querySelectorAll('.multi-select-menu').forEach(m => m.classList.remove('active'));
+  
+  // Toggle current
+  if (!isActive) {
+    menu.classList.add('active');
+  }
+};
 
 function renderWherePlatformLabel(name, color){
   const platform = PLATFORMS.find(p=>p.name===name);
@@ -5063,19 +5130,7 @@ function renderBrowsePage(){
     return matchingEpisodes;
   }
 
-  // Global function for toggling dropdowns
-  window.toggleMultiSelect = function(filter) {
-    const menu = document.getElementById(`${filter}-menu`);
-    const isActive = menu.classList.contains('active');
-    
-    // Close all menus
-    document.querySelectorAll('.multi-select-menu').forEach(m => m.classList.remove('active'));
-    
-    // Toggle current
-    if (!isActive) {
-      menu.classList.add('active');
-    }
-  };
+  // Function moved to global scope below
 
   function updateBrowseFilterResults(filterState) {
     const resultsInfo = document.getElementById('browse-filter-results');
