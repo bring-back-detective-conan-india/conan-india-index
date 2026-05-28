@@ -1,4 +1,4 @@
-﻿/* ══════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════════════
    APP.JS — Detective Conan India Watch Guide v2
    Multi-page router · Filter system · Language section
 ══════════════════════════════════════════════════════ */
@@ -161,7 +161,7 @@ function getPlatformLogoMarkup(p) {
   const logoUrl = PLATFORM_LOGOS[p.id];
   if (logoUrl) {
     const extraClass = p.id === 'appletv' ? ' logo-appletv' : '';
-    return `<img class="plat-logo-img${extraClass}" src="${logoUrl}" alt="${p.name} logo" loading="lazy" decoding="async">`;
+    return `<img class="plat-logo-img${extraClass}" src="${logoUrl}" width="200" height="50" alt="${p.name} logo" loading="lazy" decoding="async">`;
   }
   return `<span style="font-size:22px;font-weight:900;color:${p.color}">${p.name}</span>`;
 }
@@ -170,7 +170,7 @@ function getPlatformHeroLogoMarkup(p) {
   const logoUrl = PLATFORM_LOGOS[p.id];
   if (logoUrl) {
     const extraClass = p.id === 'appletv' ? ' logo-appletv' : '';
-    return `<img class="plat-logo-img plat-logo-hero${extraClass}" src="${logoUrl}" alt="${p.name} logo" loading="lazy" decoding="async">`;
+    return `<img class="plat-logo-img plat-logo-hero${extraClass}" src="${logoUrl}" width="200" height="50" alt="${p.name} logo" loading="lazy" decoding="async">`;
   }
   return `<span style="font-family:var(--font-display);font-size:52px;color:${p.color}">${p.name}</span>`;
 }
@@ -1716,7 +1716,7 @@ function initMarquee() {
   ];
   // One set = logos joined by separator dots
   const logoHTML = logos.map(l =>
-    `<img class="marquee-logo ${l.cls}" src="${l.src}" alt="${l.alt}" loading="lazy" decoding="async">`
+    `<img class="marquee-logo ${l.cls}" src="${l.src}" width="200" height="50" alt="${l.alt}" loading="lazy" decoding="async">`
   ).join('<span class="marquee-sep">·</span>');
   const oneSet = logoHTML + '<span class="marquee-sep">·</span>';
   // 4 copies → animation scrolls -50% (= 2 sets) → seamlessly loops
