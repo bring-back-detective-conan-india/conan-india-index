@@ -31,6 +31,7 @@ const FALLBACK_IMAGES = {
   'https://preview.redd.it/2016-was-a-great-year-for-detective-conans-manga-v0-hq8cenzuiodg1.jpeg': 'fallback-images/heroes/hero-manga.jpg',
   'https://image.tmdb.org/t/p/w500/vowq6vWhBaCBan8UT6hPGXj9Frk.jpg': 'fallback-images/tmdb/ova18.jpg',
   'https://upload.wikimedia.org/wikipedia/en/thumb/b/b8/Japan_Film_Festival_logo.svg/320px-Japan_Film_Festival_logo.svg.png': 'fallback-images/misc/japan-film-festival.png',
+  'https://japanesefilmfestph.jfmo.org.ph/wp-content/uploads/elementor/thumbs/JFF_Logo-01-rmpqv0et7y7xp0ozq5gbfi8b94c81gnuntmh3js2jq.png': 'fallback-images/misc/japan-film-festival.png',
   'https://image.tmdb.org/t/p/w500/jMrBNxGt3GAD7ZTM7aoXbc7JA2S.jpg': 'fallback-images/tmdb/ova9.jpg',
   'https://image.tmdb.org/t/p/w500/s0HCyegKgbV5MFo43w3cPaRh79j.jpg': 'fallback-images/tmdb/ova14.jpg',
   'https://images5.alphacoders.com/135/1352645.jpg': 'fallback-images/alphacoders/conan2.jpg',
