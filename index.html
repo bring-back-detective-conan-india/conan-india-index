@@ -432,5 +432,20 @@
 <script src="watch-guide.js?v=2" defer></script>
 <script src="watch-guide-v2.js?v=12" defer></script>
 <script src="app.js?v=91" defer></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      // Register with the repo name as scope if hosted on GitHub Pages, otherwise root
+      const scope = window.location.pathname.startsWith('/conan-india-index/') ? '/conan-india-index/' : '/';
+      navigator.serviceWorker.register(scope + 'sw.js', { scope: scope })
+        .then(registration => {
+          console.log('ServiceWorker registration successful with scope: ', registration.scope);
+        })
+        .catch(err => {
+          console.log('ServiceWorker registration failed: ', err);
+        });
+    });
+  }
+</script>
 </body>
 </html>
