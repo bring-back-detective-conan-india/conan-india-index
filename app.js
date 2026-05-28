@@ -5948,7 +5948,12 @@ async function renderMangaPage() {
   app.innerHTML = '';
   const pg = document.createElement('div');
   pg.className = 'page-enter';
-  const VOLUMES = Array.from({ length: LATEST_VOL }, (_, i) => i + 1);
+  
+  let MAX_VOL = typeof MANGADEX_COVERS !== 'undefined' 
+    ? Math.max(LATEST_VOL, ...Object.keys(MANGADEX_COVERS).map(k => parseFloat(k)).filter(n => !isNaN(n)))
+    : LATEST_VOL;
+    
+  const VOLUMES = Array.from({ length: MAX_VOL }, (_, i) => i + 1);
   pg.innerHTML = `
     <section class="movies-page-hero">
       <div class="movies-page-hero-bg" style="background-image:url('${heroCover}')"></div>
@@ -6014,15 +6019,24 @@ async function renderMangaPage() {
     const grid = document.getElementById('manga-vol-grid');
     if (!grid) return;
     const vols = ascending ? [...VOLUMES] : [...VOLUMES].reverse();
-    grid.innerHTML = vols.map(n => `
-      <a href="https://www.amazon.in/s?k=case+closed+detective+conan+volume+${n}+viz+media" target="_blank" rel="noopener" class="manga-vol-card reveal" data-manga-vol="${n}">
+    grid.innerHTML = vols.map(n => {
+      const isUnavailable = n > LATEST_VOL;
+      const cardHref = isUnavailable ? '#' : `https://www.amazon.in/s?k=case+closed+detective+conan+volume+${n}+viz+media`;
+      const clickAttr = isUnavailable ? `onclick="return false;" style="cursor:default;"` : `target="_blank" rel="noopener"`;
+      
+      return `
+      <a href="${cardHref}" ${clickAttr} class="manga-vol-card reveal" data-manga-vol="${n}">
         <div class="manga-vol-num">${n}</div>
         <div class="manga-vol-img-wrap">
-          <div class="manga-vol-img" style="background-image:url('${getMangaCover(n)}')"></div>
+          <div class="manga-vol-img" style="background-image:url('${getMangaCover(n)}'); ${isUnavailable ? 'filter: grayscale(100%) opacity(0.5);' : ''}"></div>
         </div>
         <div class="manga-vol-label">Vol. ${n}${n === LATEST_VOL ? ' <span class="manga-latest-badge">Latest</span>' : ''}</div>
-        <div class="manga-vol-buy">Buy &nearr;</div>
-      </a>`).join('');
+        ${isUnavailable 
+          ? '<div class="manga-vol-buy" style="background:var(--surface3);color:var(--text2);font-size:10px;">Unavailable</div>'
+          : '<div class="manga-vol-buy">Buy &nearr;</div>'
+        }
+      </a>`;
+    }).join('');
     setTimeout(() => { observeAll(); refreshHover(); }, 80);
   }
 
