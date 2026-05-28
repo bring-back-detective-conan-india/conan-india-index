@@ -21,7 +21,7 @@ const IMG = {
   kid: 'https://image.tmdb.org/t/p/w780/vF1tMdq8dZa7gGGiayEj9mJTDl7.jpg',
   org: 'https://image.tmdb.org/t/p/w780/xKY5CuL6msHwyWIxX7MKppckxL0.jpg',
   group: 'https://image.tmdb.org/t/p/w780/tCn2416CQcLHvDkAL7II20v5YO3.jpg',
-  ep96: 'https://image.tmdb.org/t/p/w780/1SN22bZuwUtFARFxw8BRraTcBuy.jpg',
+  ep96: 'https://image.tmdb.org/t/p/w780/136XvDGQfZRIzjiabq4MlTUFFoT.jpg',
   etvHero: 'https://image.tmdb.org/t/p/w780/1ryO1EoR3FEX9DrEqDis67Q6C7q.jpg',
   manga96: 'https://m.media-amazon.com/images/I/81LCAzGSjHL._SL500_.jpg',
   photosig: 'fallback-images/misc/photosig.jpg',
@@ -1420,7 +1420,7 @@ function renderHome() {
               <div class="lcc-logo-badge">
                 <img src="${PLATFORM_LOGOS.netflix}" alt="Netflix" class="lcc-logo-img">
               </div>
-              <span class="lcc-status-tag lcc-status-tag--netflix"><span class="lcc-pulse-dot"></span>Simulcast</span>
+              <span class="lcc-status-tag lcc-status-tag--netflix">Simulcast</span>
             </div>
 
             <!-- Hover Play Button -->
@@ -1434,8 +1434,8 @@ function renderHome() {
             <div class="lcc-content">
               <div class="lcc-info-left">
                 <span id="netflix-latest-ep-badge" style="display:none;">1201</span>
-                <h3 class="lcc-card-title">Season 31 Simulcast</h3>
-                <div class="lcc-meta-line">Ep <span id="netflix-latest-title-ep">1201</span>: "<span id="netflix-latest-title-text">I'm the Culprit</span>"</div>
+                <h3 class="lcc-card-title">Ep <span id="netflix-latest-title-ep">1201</span>: "<span id="netflix-latest-title-text">I'm the Culprit</span>"</h3>
+                <div class="lcc-meta-line" style="margin-top:4px;font-weight:700;color:var(--text);">Season 31 Simulcast</div>
                 <div class="lcc-meta-line" style="margin-top:2px;opacity:0.8;">Japanese Audio · English Subtitles</div>
               </div>
               <div class="lcc-info-right">
@@ -1457,7 +1457,7 @@ function renderHome() {
               <div class="lcc-logo-badge">
                 <img src="${PLATFORM_LOGOS.primevideo}" alt="Prime Video" class="lcc-logo-img">
               </div>
-              <span class="lcc-status-tag lcc-status-tag--prime"><span class="lcc-pulse-dot"></span>New Dub</span>
+              <span class="lcc-status-tag lcc-status-tag--prime">New Hindi Dub</span>
             </div>
 
             <!-- Hover Play Button -->
@@ -1470,8 +1470,8 @@ function renderHome() {
             <!-- Sleek Bottom Info Bar -->
             <div class="lcc-content">
               <div class="lcc-info-left">
-                <h3 class="lcc-card-title">Hindi Dub</h3>
-                <div class="lcc-meta-line">Ep ${(typeof PLATFORMS !== 'undefined') ? (PLATFORMS.find(x => x.id === 'primevideo')?.seriesRange[1] || 96) : 96}: "${(typeof EPISODES !== 'undefined') ? (EPISODES.find(x => x.n === ((typeof PLATFORMS !== 'undefined') ? (PLATFORMS.find(y => y.id === 'primevideo')?.seriesRange[1] || 96) : 96))?.title || "Metropolitan Police Detective Love Story (Part 2)") : "Metropolitan Police Detective Love Story (Part 2)"}"</div>
+                <h3 class="lcc-card-title">Ep ${(typeof PLATFORMS !== 'undefined') ? (PLATFORMS.find(x => x.id === 'primevideo')?.seriesRange[1] || 96) : 96}: "${(typeof EPISODES !== 'undefined') ? (EPISODES.find(x => x.n === ((typeof PLATFORMS !== 'undefined') ? (PLATFORMS.find(y => y.id === 'primevideo')?.seriesRange[1] || 96) : 96))?.title || "The Cornered Famous Detective! Two Big Murder Cases ★★") : "The Cornered Famous Detective! Two Big Murder Cases ★★"}"</h3>
+                <div class="lcc-meta-line" style="margin-top:4px;font-weight:700;color:var(--text);">Hindi Dub</div>
                 <div class="lcc-meta-line" style="margin-top:2px;opacity:0.8;">Hindi Audio · English Subtitles</div>
               </div>
               <div class="lcc-info-right">
