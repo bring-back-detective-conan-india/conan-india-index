@@ -606,9 +606,11 @@ async function updateNetflixLatestCard() {
   const badge = document.getElementById('netflix-latest-ep-badge');
   const titleEp = document.getElementById('netflix-latest-title-ep');
   const cardImg = document.getElementById('netflix-latest-img');
+  const titleText = document.getElementById('netflix-latest-title-text');
 
   if (badge) badge.textContent = latestEpNum;
   if (titleEp) titleEp.textContent = latestEpNum;
+  if (titleText && latestEpTitle) titleText.textContent = latestEpTitle;
   if (cardImg && latestEpStill) {
     cardImg.style.backgroundImage = `url('https://image.tmdb.org/t/p/w780${latestEpStill}')`;
   }
@@ -1415,8 +1417,10 @@ function renderHome() {
             
             <!-- Badges at the top -->
             <div class="lcc-top-bar">
-              <span class="lcc-badge lcc-badge--platform">Netflix India</span>
-              <span class="lcc-badge lcc-badge--status">⚡ Simulcast</span>
+              <div class="lcc-logo-badge">
+                <img src="${PLATFORM_LOGOS.netflix}" alt="Netflix" class="lcc-logo-img">
+              </div>
+              <span class="lcc-status-tag lcc-status-tag--netflix"><span class="lcc-pulse-dot"></span>Simulcast</span>
             </div>
 
             <!-- Hover Play Button -->
@@ -1430,12 +1434,13 @@ function renderHome() {
             <div class="lcc-content">
               <div class="lcc-info-left">
                 <span id="netflix-latest-ep-badge" style="display:none;">1201</span>
-                <h3 class="lcc-card-title">Season 31 Simulcast (Ep <span id="netflix-latest-title-ep">1201</span>)</h3>
-                <div class="lcc-meta-line">Japanese Audio · English Subtitles</div>
+                <h3 class="lcc-card-title">Season 31 Simulcast</h3>
+                <div class="lcc-meta-line">Ep <span id="netflix-latest-title-ep">1201</span>: "<span id="netflix-latest-title-text">I'm the Culprit</span>"</div>
+                <div class="lcc-meta-line" style="margin-top:2px;opacity:0.8;">Japanese Audio · English Subtitles</div>
               </div>
               <div class="lcc-info-right">
-                <button class="lcc-action-btn" aria-label="Stream Now">
-                  <span>Stream</span>
+                <button class="lcc-action-btn" aria-label="Watch on Netflix">
+                  <span>Watch on Netflix</span>
                   <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </button>
               </div>
@@ -1449,8 +1454,10 @@ function renderHome() {
             
             <!-- Badges at the top -->
             <div class="lcc-top-bar">
-              <span class="lcc-badge lcc-badge--platform">Anime Times &amp; Apple TV</span>
-              <span class="lcc-badge lcc-badge--status">🆕 New Dub</span>
+              <div class="lcc-logo-badge">
+                <img src="${PLATFORM_LOGOS.primevideo}" alt="Prime Video" class="lcc-logo-img">
+              </div>
+              <span class="lcc-status-tag lcc-status-tag--prime"><span class="lcc-pulse-dot"></span>New Dub</span>
             </div>
 
             <!-- Hover Play Button -->
@@ -1463,12 +1470,13 @@ function renderHome() {
             <!-- Sleek Bottom Info Bar -->
             <div class="lcc-content">
               <div class="lcc-info-left">
-                <h3 class="lcc-card-title">Hindi Dub (Eps 1–<span id="prime-latest-title-ep">${(typeof PLATFORMS !== 'undefined') ? (PLATFORMS.find(x => x.id === 'primevideo')?.seriesRange[1] || 96) : 96}</span>)</h3>
-                <div class="lcc-meta-line">Hindi &amp; Regional Dubs · English Subtitles</div>
+                <h3 class="lcc-card-title">Hindi Dub</h3>
+                <div class="lcc-meta-line">Ep ${(typeof PLATFORMS !== 'undefined') ? (PLATFORMS.find(x => x.id === 'primevideo')?.seriesRange[1] || 96) : 96}: "${(typeof EPISODES !== 'undefined') ? (EPISODES.find(x => x.n === ((typeof PLATFORMS !== 'undefined') ? (PLATFORMS.find(y => y.id === 'primevideo')?.seriesRange[1] || 96) : 96))?.title || "Metropolitan Police Detective Love Story (Part 2)") : "Metropolitan Police Detective Love Story (Part 2)"}"</div>
+                <div class="lcc-meta-line" style="margin-top:2px;opacity:0.8;">Hindi Audio · English Subtitles</div>
               </div>
               <div class="lcc-info-right">
-                <button class="lcc-action-btn" aria-label="Stream Now">
-                  <span>Stream</span>
+                <button class="lcc-action-btn" aria-label="Watch on Prime Video">
+                  <span>Watch on Prime Video</span>
                   <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </button>
               </div>

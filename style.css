@@ -66,34 +66,78 @@
   width: 100%;
 }
 
-.lcc-badge {
+.lcc-logo-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(7, 7, 15, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0 12px;
+}
+
+.lcc-logo-img {
+  max-height: 16px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+/* Glowing Neon Status Tags */
+.lcc-status-tag {
   font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  font-weight: 900;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  padding: 5px 12px;
-  border-radius: 100px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: transparent;
+  border: none;
 }
 
-.lcc-badge--platform {
-  background: rgba(12, 12, 22, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #fff;
+.lcc-status-tag--netflix {
+  color: #FF3B30;
+  text-shadow: 0 0 10px rgba(255, 59, 48, 0.45);
 }
 
-.lcc-badge--status {
-  background: var(--red);
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(204, 34, 51, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+.lcc-status-tag--prime {
+  color: #00D2FF;
+  text-shadow: 0 0 10px rgba(0, 210, 255, 0.45);
 }
 
-.latest-cinematic-card[data-platform="primevideo"] .lcc-badge--status {
-  background: #1A98FF !important;
-  box-shadow: 0 4px 12px rgba(26, 152, 255, 0.35) !important;
-  border-color: rgba(255, 255, 255, 0.2) !important;
+.lcc-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.lcc-status-tag--netflix .lcc-pulse-dot {
+  background: #FF3B30;
+  box-shadow: 0 0 8px #FF3B30;
+  animation: lcc-pulse-red 2s infinite;
+}
+
+.lcc-status-tag--prime .lcc-pulse-dot {
+  background: #00D2FF;
+  box-shadow: 0 0 8px #00D2FF;
+  animation: lcc-pulse-blue 2s infinite;
+}
+
+@keyframes lcc-pulse-red {
+  0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.6); }
+  70% { transform: scale(1.1); box-shadow: 0 0 0 8px rgba(255, 59, 48, 0); }
+  100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); }
+}
+
+@keyframes lcc-pulse-blue {
+  0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(0, 210, 255, 0.6); }
+  70% { transform: scale(1.1); box-shadow: 0 0 0 8px rgba(0, 210, 255, 0); }
+  100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(0, 210, 255, 0); }
 }
 
 /* Play Overlay */
