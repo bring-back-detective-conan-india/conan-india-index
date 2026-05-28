@@ -8239,6 +8239,14 @@ body.modal-open {
   padding: 0 40px 48px;
 }
 
+.tv-season-watch-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+  align-items: center;
+}
+
 .movies-page-title {
   font-family: 'Bebas Neue', sans-serif;
   font-size: clamp(48px, 8vw, 80px);

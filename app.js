@@ -3064,7 +3064,7 @@ function renderTVShowsPage(activeSeasonId) {
       const plat = PLATFORMS.find(p => p.id === pId);
       if (!plat) return '';
       return `
-        <button class="watch-btn" onclick="Router.navigate('/platform/${plat.id}')" style="--btn-color:${plat.color};--btn-bg:${plat.bg};margin-right:10px;margin-top:10px;">
+        <button class="watch-btn" onclick="Router.navigate('/platform/${plat.id}')" style="--btn-color:${plat.color};--btn-bg:${plat.bg};">
           <span class="watch-btn-name">Watch on ${plat.name}</span>
         </button>`;
     }).join('');
@@ -3074,7 +3074,7 @@ function renderTVShowsPage(activeSeasonId) {
 
   pg.innerHTML = `
     <section class="movies-page-hero">
-      <div class="movies-page-hero-bg" style="background-image:url('${getSeasonStillByLocalSeasonId(s.id, 4, 'large')}')"></div>
+      <div class="movies-page-hero-bg" style="background-image:url('${getSeasonStillByLocalSeasonId(s.id, 4, 'large', true)}')"></div>
       <div class="movies-page-hero-overlay"></div>
       <div class="movies-page-hero-content">
         <button class="pp-hero-back" onclick="Router.navigate('/')">&larr; Home</button>
