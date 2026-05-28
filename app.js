@@ -3204,7 +3204,7 @@ function renderTVShowsPage(activeSeasonId) {
         <!-- Modern Season Selection Bar with Grid Dropdown Picker -->
         <div class="tv-season-picker-container" style="position:relative;margin-bottom:24px;display:flex;align-items:center;gap:12px;z-index:100;flex-wrap:wrap;">
           <button class="tv-season-picker-btn" id="seasonPickerBtn" style="display:inline-flex;align-items:center;gap:10px;background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text);padding:10px 20px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;outline:none;transition:all 0.2s var(--spring);height:42px;">
-            <span>Season ${activeSeasonId.replace('S', '')} · ${s.label} (${s.year})</span>
+            <span>${s.label}</span>
             <span class="picker-chevron" style="transition:transform 0.2s;font-size:10px;display:inline-block;margin-top:2px;">▼</span>
           </button>
           

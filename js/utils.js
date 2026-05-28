@@ -274,7 +274,7 @@ window.getSeasonRangeString = getSeasonRangeString;
 
 window.optimizeImage = function(url, quality = 75) {
   if (!url || !url.startsWith('http')) return url;
-  if (url.includes('wsrv.nl') || url.includes('pbs.twimg.com')) return url;
+  if (url.includes('wsrv.nl') || url.includes('pbs.twimg.com') || url.includes('uploads.mangadex.org')) return url;
   const cleanUrl = url.replace(/^https?:\/\//, '');
   return `https://wsrv.nl/?url=${encodeURIComponent(cleanUrl)}&output=webp&q=${quality}`;
 };

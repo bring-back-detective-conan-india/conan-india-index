@@ -4,3 +4,5 @@
 .footer-link-badge { display: inline-block; padding: 2px 6px; margin-left: 6px; border-radius: 4px; font-size: 0.75em; font-weight: 600; color: #fff; background: #333; line-height: 1; vertical-align: middle; }
 .footer-link-badge.tag-netflix { background: #E50914; color: #ffffff; }
 .footer-link-badge.tag-prime { background: #00A8E1; color: #000000; }
+
+.movies-page-hero { padding-top: 110px !important; min-height: 380px !important; }
