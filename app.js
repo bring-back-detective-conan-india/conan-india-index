@@ -1409,10 +1409,15 @@ function renderHome() {
         <h2 class="section-title reveal-left">Latest <em>Additions</em></h2>
         <div class="latest-cards-container scroll-row stagger">
           <!-- Card 1: Netflix India Simulcast -->
-          <div class="latest-cinematic-card" onclick="Router.navigate('/platform/netflix')">
+          <div class="latest-cinematic-card" data-platform="netflix" onclick="Router.navigate('/platform/netflix')">
             <div class="lcc-new-inline" style="background:var(--red);box-shadow:0 4px 16px rgba(229,9,20,0.45)">⚡ Simulcast</div>
             <div class="lcc-img" id="netflix-latest-img" style="background-image:url('${window.optimizeImage('https://image.tmdb.org/t/p/w780/hlOn0BETlASlpLThKu2gXn9ae1H.jpg')}')"></div>
             <div class="lcc-overlay"></div>
+            <div class="lcc-play-overlay">
+              <div class="lcc-play-btn">
+                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              </div>
+            </div>
             <div class="lcc-content">
               <span class="lcc-platform-badge" style="background:rgba(229,9,20,0.2);border-color:rgba(229,9,20,0.4)">Netflix India</span>
               <div class="lcc-ep-num" id="netflix-latest-ep-badge">1201</div>
@@ -1423,14 +1428,20 @@ function renderHome() {
                 <span class="ltag">Weekly Episodes</span>
                 <span class="ltag">Japanese &amp; Eng Subs</span>
               </div>
+              <button class="lcc-stream-btn" aria-label="Stream Now">Stream Now →</button>
             </div>
           </div>
 
           <!-- Card 2: Anime Times Hindi Dub -->
-          <div class="latest-cinematic-card" onclick="Router.navigate('/platform/primevideo')">
+          <div class="latest-cinematic-card" data-platform="primevideo" onclick="Router.navigate('/platform/primevideo')">
             <div class="lcc-new-inline">🆕 New Dub</div>
             <div class="lcc-img" style="background-image:url('${IMG.ep96}')"></div>
             <div class="lcc-overlay"></div>
+            <div class="lcc-play-overlay">
+              <div class="lcc-play-btn">
+                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              </div>
+            </div>
             <div class="lcc-content">
               <span class="lcc-platform-badge">Anime Times &amp; Apple TV</span>
               <div class="lcc-ep-num">${(typeof PLATFORMS !== 'undefined') ? (PLATFORMS.find(x => x.id === 'primevideo')?.seriesRange[1] || 96) : 96}</div>
@@ -1441,6 +1452,7 @@ function renderHome() {
                 <span class="ltag">Hindi Dub &amp; Eng Subs</span>
                 <span class="ltag">Add-on with Prime</span>
               </div>
+              <button class="lcc-stream-btn" aria-label="Stream Now">Stream Now →</button>
             </div>
           </div>
         </div>
