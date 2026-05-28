@@ -5,4 +5,5 @@ package.json
 prepros.config
 update_data.js
 scripts/
+!scripts/auto-update.js
 old_app.js

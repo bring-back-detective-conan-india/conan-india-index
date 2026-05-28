@@ -5944,7 +5944,6 @@ async function renderMangaPage() {
     const res = await fetch('https://api.jikan.moe/v4/manga/1061');
     if (res.ok) {
       const j = await res.json();
-      if (j.data?.volumes) LATEST_VOL = j.data.volumes;
       if (j.data?.images?.jpg?.large_image_url) heroCover = j.data.images.jpg.large_image_url;
     }
   } catch (e) { }

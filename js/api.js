@@ -98,11 +98,6 @@ const VALID_MANGA_COVERS = new Set([
 
 window.MANGA_COVERS = new Map();
 
-window.MANGA_ISBNS = {
-  "95": "1974755401",
-  "96": "1974758532",
-  "97": "1974761843"
-};
 
 function convertISBN13to10(isbn13) {
   if (!isbn13 || isbn13.length !== 13 || !isbn13.startsWith("978")) return isbn13;

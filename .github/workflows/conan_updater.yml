@@ -1,0 +1,36 @@
+name: Detective Conan Self-Updater
+
+on:
+  schedule:
+    - cron: '0 0 * * 0,3' # Run every Sunday and Wednesday at midnight UTC
+  workflow_dispatch:      # Enable manual triggers from GitHub Actions UI
+
+permissions:
+  contents: write         # Allows the workflow to commit and push changes back
+
+jobs:
+  update-index:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Execute Update Script
+        run: node scripts/auto-update.js
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "bbdci-auto-updater[bot]"
+          git config --global user.email "bbdci-auto-updater[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --staged --quiet; then
+            echo "No updates found today."
+          else
+            git commit -m "Auto-update: Synced latest simulcast episodes and manga releases [skip ci]"
+            git push
+          fi
