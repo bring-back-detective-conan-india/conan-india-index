@@ -614,8 +614,43 @@ async function updateNetflixLatestCard() {
   }
 }
 
+function processMagicKaitoEpisodes(episodes) {
+  if (!Array.isArray(episodes) || !episodes.length) return;
+  const tmdbByEpisodeNo = new Map();
+  episodes.forEach(te => {
+    if (typeof te.episode_number === 'number') tmdbByEpisodeNo.set(te.episode_number, te);
+  });
+
+  // Map Magic Kaito episodes (1-24) to TMDB data
+  for (let epNum = 1; epNum <= 24; epNum++) {
+    const te = tmdbByEpisodeNo.get(epNum);
+    if (!te) continue;
+
+    // Store in EPISODE_META with a special key format for Magic Kaito
+    window.EPISODE_META.set(`mk${epNum}`, {
+      still: te.still_path ? (TMDB_STILL + te.still_path) : null,
+      overview: te.overview || '',
+      name: te.name || '',
+      tmdbSeason: 1,
+      tmdbEpisode: te.episode_number
+    });
+  }
+}
+
 async function fetchMagicKaitoTMDBMeta() {
   if (typeof MAGIC_KAITO === 'undefined' || !MAGIC_KAITO?.tmdb) return;
+
+  const CACHE_KEY = 'tmdb_magic_kaito_v3';
+  const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+  // Check cache first
+  try {
+    const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+    if (cached && (Date.now() - cached.ts) < CACHE_TTL) {
+      processMagicKaitoEpisodes(cached.episodes);
+      return;
+    }
+  } catch (_) {}
 
   try {
     const r = await fetch(`https://api.themoviedb.org/3/tv/${MAGIC_KAITO.tmdb}/season/1?api_key=${TMDB_KEY}&language=en-US`);
@@ -624,25 +659,15 @@ async function fetchMagicKaitoTMDBMeta() {
     const tmdbEpisodes = Array.isArray(j.episodes) ? j.episodes : [];
     if (!tmdbEpisodes.length) return;
 
-    const tmdbByEpisodeNo = new Map();
-    tmdbEpisodes.forEach(te => {
-      if (typeof te.episode_number === 'number') tmdbByEpisodeNo.set(te.episode_number, te);
-    });
+    // Cache the raw response
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({
+        ts: Date.now(),
+        episodes: tmdbEpisodes
+      }));
+    } catch (_) {}
 
-    // Map Magic Kaito episodes (1-24) to TMDB data
-    for (let epNum = 1; epNum <= 24; epNum++) {
-      const te = tmdbByEpisodeNo.get(epNum);
-      if (!te) continue;
-
-      // Store in EPISODE_META with a special key format for Magic Kaito
-      window.EPISODE_META.set(`mk${epNum}`, {
-        still: te.still_path ? (TMDB_STILL + te.still_path) : null,
-        overview: te.overview || '',
-        name: te.name || '',
-        tmdbSeason: 1,
-        tmdbEpisode: te.episode_number
-      });
-    }
+    processMagicKaitoEpisodes(tmdbEpisodes);
   } catch (_e) {
     // Silent fail
   }
@@ -724,6 +749,23 @@ function refreshEpisodeSeasonVisuals() {
     if (desc) {
       const meta = getEpisodeMeta(ep);
       if (meta && meta.overview) {
+        desc.textContent = meta.overview.trim();
+      }
+    }
+  });
+
+  // Also refresh Magic Kaito 1412 cards in watch guide
+  document.querySelectorAll('[data-mk-ep]').forEach(el => {
+    const epNum = Number(el.dataset.mkEp);
+    if (!epNum) return;
+    const meta = window.EPISODE_META?.get(`mk${epNum}`);
+    if (meta && meta.still) {
+      const img = el.querySelector('.wg2-card-thumb img');
+      if (img) img.src = meta.still;
+      
+      // Also update description if present
+      const desc = el.querySelector('.wg2-card-desc');
+      if (desc && meta.overview) {
         desc.textContent = meta.overview.trim();
       }
     }
@@ -7823,6 +7865,13 @@ try {
   const cachedEpisodes = JSON.parse(localStorage.getItem('tmdb_episodes_v3') || 'null');
   if (cachedEpisodes && cachedEpisodes.episodes) {
     processTMDBEpisodes(cachedEpisodes.episodes);
+  }
+} catch (_) {}
+
+try {
+  const cachedKaito = JSON.parse(localStorage.getItem('tmdb_magic_kaito_v3') || 'null');
+  if (cachedKaito && cachedKaito.episodes) {
+    processMagicKaitoEpisodes(cachedKaito.episodes);
   }
 } catch (_) {}
 

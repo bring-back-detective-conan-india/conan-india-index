@@ -621,8 +621,23 @@ function renderWatchCard(ep, index) {
       case 'magic-file':
       case 'tv-special':
         {
-          const pool = [IMG.conan1, IMG.conan2, IMG.conan3, IMG.conan4, IMG.conan5];
-          imageUrl = pool[index % pool.length];
+          let lookupId = '';
+          const numStr = ep.numbers || '';
+          if (ep.type === 'ova' || ep.type === 'magic-file') {
+            const ovaNum = numStr.replace('OVA ', '').replace('Magic File ', '');
+            lookupId = ep.type === 'magic-file' ? `mf${ovaNum}` : `ova${ovaNum}`;
+          } else if (ep.type === 'tv-special') {
+            const spNum = numStr.replace('TV Special ', '');
+            lookupId = `tvs${spNum}`;
+          }
+          
+          const ovaData = (typeof OVAS !== 'undefined' ? OVAS : []).find(o => o.id === lookupId || o.id === numStr);
+          if (ovaData && ovaData.still) {
+            imageUrl = ovaData.still;
+          } else {
+            const pool = [IMG.conan1, IMG.conan2, IMG.conan3, IMG.conan4, IMG.conan5];
+            imageUrl = pool[index % pool.length];
+          }
         }
         break;
     }
