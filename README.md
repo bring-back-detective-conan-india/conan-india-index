@@ -28,6 +28,26 @@ If you'd like to submit a fix or new data directly:
 
 ---
 
+## 🤖 Automated Updates Engine
+
+To keep the watch guide completely up to date without manual work, this repository features an **automated, self-updating engine** powered by **GitHub Actions** and **Node.js**:
+
+*   📅 **Schedule:** Runs automatically twice a week (every **Sunday** and **Wednesday** at midnight UTC).
+*   🎬 **Netflix Simulcast Sync:** Fetches the latest aired episodes from the official TMDB database. If a new episode has aired, it automatically:
+    *   Appends the entry to [episodes.js](file:///d:/Antigravity%20Projects/BBDCI%20Index/episodes.js).
+    *   Updates the homepage default fallbacks and TMDB stills in [app.js](file:///d:/Antigravity%20Projects/BBDCI%20Index/app.js).
+*   📚 **Viz Media Manga Sync:** Compares the current date against a pre-scheduled queue of upcoming volumes inside [scripts/auto-update.js](file:///d:/Antigravity%20Projects/BBDCI%20Index/scripts/auto-update.js). When a volume reaches its release date, it:
+    *   Promotes the volume and bumps `LATEST_VOL` in [app.js](file:///d:/Antigravity%20Projects/BBDCI%20Index/app.js).
+    *   Extracts and appends the volume ISBN to `MANGA_ISBNS` in [data.js](file:///d:/Antigravity%20Projects/BBDCI%20Index/data.js) to pull the cover art from Open Library.
+    *   Bumps the "Upcoming Releases" countdown widget to the next scheduled volume.
+
+### 💡 Tips for Contributors:
+1.  **Do not manually add standard Netflix episodes:** The automated actions runner will pull them automatically on schedule as they air.
+2.  **Scheduling new Manga volumes:** If you spot new Viz Media releases announced, do not edit [data.js](file:///d:/Antigravity%20Projects/BBDCI%20Index/data.js) directly! Instead, append the volume details (Vol number, Release date, ISBN) to the `UPCOMING_MANGA_RELEASES` array in [scripts/auto-update.js](file:///d:/Antigravity%20Projects/BBDCI%20Index/scripts/auto-update.js). The updater will take care of the rest when that date arrives.
+3.  **Manual Sync Trigger:** If you have write access to the repository, you can manually trigger a full synchronization at any time by going to the **Actions** tab on GitHub, selecting **Detective Conan Self-Updater**, and clicking **"Run workflow"**.
+
+---
+
 ## 📂 Project Structure
 
 ```
