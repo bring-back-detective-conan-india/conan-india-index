@@ -1410,49 +1410,68 @@ function renderHome() {
         <div class="latest-cards-container scroll-row stagger">
           <!-- Card 1: Netflix India Simulcast -->
           <div class="latest-cinematic-card" data-platform="netflix" onclick="Router.navigate('/platform/netflix')">
-            <div class="lcc-new-inline" style="background:var(--red);box-shadow:0 4px 16px rgba(229,9,20,0.45)">⚡ Simulcast</div>
             <div class="lcc-img" id="netflix-latest-img" style="background-image:url('${window.optimizeImage('https://image.tmdb.org/t/p/w780/hlOn0BETlASlpLThKu2gXn9ae1H.jpg')}')"></div>
             <div class="lcc-overlay"></div>
+            
+            <!-- Badges at the top -->
+            <div class="lcc-top-bar">
+              <span class="lcc-badge lcc-badge--platform">Netflix India</span>
+              <span class="lcc-badge lcc-badge--status">⚡ Simulcast</span>
+            </div>
+
+            <!-- Hover Play Button -->
             <div class="lcc-play-overlay">
               <div class="lcc-play-btn">
                 <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
               </div>
             </div>
+
+            <!-- Sleek Bottom Info Bar -->
             <div class="lcc-content">
-              <span class="lcc-platform-badge" style="background:rgba(229,9,20,0.2);border-color:rgba(229,9,20,0.4)">Netflix India</span>
-              <div class="lcc-ep-num" id="netflix-latest-ep-badge">1201</div>
-              <h2 class="lcc-title">Season 31 Simulcast<br>Now at Ep <span id="netflix-latest-title-ep">1201</span></h2>
-              <p class="lcc-desc">Detective Conan is now simulcast in India! Catch the latest weekly episodes streaming on Netflix India.</p>
-              <div class="lcc-tags">
-                <span class="ltag">Season 31</span>
-                <span class="ltag">Weekly Episodes</span>
-                <span class="ltag">Japanese &amp; Eng Subs</span>
+              <div class="lcc-info-left">
+                <span id="netflix-latest-ep-badge" style="display:none;">1201</span>
+                <h3 class="lcc-card-title">Season 31 Simulcast (Ep <span id="netflix-latest-title-ep">1201</span>)</h3>
+                <div class="lcc-meta-line">Japanese Audio · English Subtitles</div>
               </div>
-              <button class="lcc-stream-btn" aria-label="Stream Now">Stream Now →</button>
+              <div class="lcc-info-right">
+                <button class="lcc-action-btn" aria-label="Stream Now">
+                  <span>Stream</span>
+                  <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+              </div>
             </div>
           </div>
 
           <!-- Card 2: Anime Times Hindi Dub -->
           <div class="latest-cinematic-card" data-platform="primevideo" onclick="Router.navigate('/platform/primevideo')">
-            <div class="lcc-new-inline">🆕 New Dub</div>
             <div class="lcc-img" style="background-image:url('${IMG.ep96}')"></div>
             <div class="lcc-overlay"></div>
+            
+            <!-- Badges at the top -->
+            <div class="lcc-top-bar">
+              <span class="lcc-badge lcc-badge--platform">Anime Times &amp; Apple TV</span>
+              <span class="lcc-badge lcc-badge--status">🆕 New Dub</span>
+            </div>
+
+            <!-- Hover Play Button -->
             <div class="lcc-play-overlay">
               <div class="lcc-play-btn">
                 <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
               </div>
             </div>
+
+            <!-- Sleek Bottom Info Bar -->
             <div class="lcc-content">
-              <span class="lcc-platform-badge">Anime Times &amp; Apple TV</span>
-              <div class="lcc-ep-num">${(typeof PLATFORMS !== 'undefined') ? (PLATFORMS.find(x => x.id === 'primevideo')?.seriesRange[1] || 96) : 96}</div>
-              <h2 class="lcc-title">Hindi Dub<br>Now at Ep ${(typeof PLATFORMS !== 'undefined') ? (PLATFORMS.find(x => x.id === 'primevideo')?.seriesRange[1] || 96) : 96}</h2>
-              <p class="lcc-desc">Eps 1–${(typeof PLATFORMS !== 'undefined') ? (PLATFORMS.find(x => x.id === 'primevideo')?.seriesRange[1] || 96) : 96} in Hindi dub — stream with Anime Times.</p>
-              <div class="lcc-tags">
-                <span class="ltag">Ep 1–${(typeof PLATFORMS !== 'undefined') ? (PLATFORMS.find(x => x.id === 'primevideo')?.seriesRange[1] || 96) : 96}</span>
-                <span class="ltag">Hindi Dub &amp; Eng Subs</span>
-                <span class="ltag">Add-on with Prime</span>
+              <div class="lcc-info-left">
+                <h3 class="lcc-card-title">Hindi Dub (Eps 1–<span id="prime-latest-title-ep">${(typeof PLATFORMS !== 'undefined') ? (PLATFORMS.find(x => x.id === 'primevideo')?.seriesRange[1] || 96) : 96}</span>)</h3>
+                <div class="lcc-meta-line">Hindi &amp; Regional Dubs · English Subtitles</div>
               </div>
-              <button class="lcc-stream-btn" aria-label="Stream Now">Stream Now →</button>
+              <div class="lcc-info-right">
+                <button class="lcc-action-btn" aria-label="Stream Now">
+                  <span>Stream</span>
+                  <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
