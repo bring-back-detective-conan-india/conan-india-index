@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<script>
+  (function() {
+    // 1. Set theme
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+
+    // 2. Proactively clear old, potentially corrupted TMDB caches
+    try {
+      localStorage.removeItem('tmdb_posters_v1');
+      localStorage.removeItem('tmdb_posters_v2');
+    } catch (_) {}
+
+    // 3. Dynamic base href and SPA redirect restoration (skipped under file:// protocol to preserve local disk path relative resolution)
+    if (window.location.protocol !== 'file:') {
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const base = document.createElement('base');
+      base.href = isLocal ? '/' : '/conan-india-index/';
+      document.head.appendChild(base);
+
+      const redirect = window.location.search.match(/[?&]p=([^&]*)/);
+      if (redirect && redirect[1]) {
+        const path = '/' + decodeURIComponent(redirect[1]).replace(/~and~/g, '&');
+        const cleanSearch = window.location.search.replace(/[?&]p=[^&]*/, '').replace(/^&/, '?');
+        window.history.replaceState(
+          null, 
+          null, 
+          window.location.pathname.slice(0, window.location.pathname.lastIndexOf('/') + 1) + path.slice(1) + cleanSearch + window.location.hash
+        );
+      }
+    }
+  })();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="seo-title">Detective Conan India Index — Bring Back Detective Conan India</title>
+<meta name="description" id="meta-description" content="The ultimate guide to watching and reading Detective Conan in India. Stream on Netflix, Anime Times, ETV Bal Bharat, and more!">
+<meta name="robots" content="index, follow">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" id="og-url" content="https://bring-back-detective-conan-india.github.io/conan-india-index/">
+<link rel="canonical" id="canonical-url" href="https://bring-back-detective-conan-india.github.io/conan-india-index/">
+<meta property="og:title" id="og-title" content="Detective Conan India Index">
+<meta property="og:description" id="og-description" content="Find where to watch all episodes, spinoffs, and movies of Detective Conan in India with local dubs and subtitles.">
+<meta property="og:image" id="og-image" content="https://bring-back-detective-conan-india.github.io/conan-india-index/images/social-preview.png">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" id="twitter-title" content="Detective Conan India Index">
+<meta name="twitter:description" id="twitter-description" content="Find where to watch all episodes, spinoffs, and movies of Detective Conan in India with local dubs and subtitles.">
+<meta name="twitter:image" id="twitter-image" content="https://bring-back-detective-conan-india.github.io/conan-india-index/images/social-preview.png">
+<link rel="icon" type="image/png" href="fallback-images/misc/bbdci-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="dns-prefetch" href="https://image.tmdb.org">
+<link rel="dns-prefetch" href="https://upload.wikimedia.org">
+<link rel="dns-prefetch" href="https://i.postimg.cc">
+<link rel="dns-prefetch" href="https://covers.openlibrary.org">
+<link rel="preload" as="image" href="https://image.tmdb.org/t/p/w1280/hlOn0BETlASlpLThKu2gXn9ae1H.jpg" fetchpriority="high">
+<link rel="preload" as="image" href="fallback-images/misc/bbdci-logo.png" fetchpriority="high">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,600;1,9..40,300&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet"></noscript>
+<link rel="stylesheet" href="style.css?v=32">
+<link rel="preload" as="style" href="watch-guide-v2.css?v=14" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="watch-guide-v2.css?v=14"></noscript>
+<script src="fallback-images/fallback-images.js"></script>
+</head>
+<body>
+<div id="parallax-bg" aria-hidden="true"></div>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-logo" id="nav-logo">
+    <img src="fallback-images/misc/bbdci-logo.png" alt="Bring Back Detective Conan India" class="nav-bbdci-logo" width="32" height="32" fetchpriority="high" decoding="async">
+    <span class="nav-logo-tagline">Conan <em>India</em> Index</span>
+  </div>
+  <div class="nav-links" id="nav-links">
+    <a data-nav="browse" href="/browse">Browse and Filter</a>
+    <a data-nav="movies" href="/movies">Movies</a>
+    <a data-nav="tvshows" href="/tvshows">TV Shows</a>
+    <a data-nav="manga" href="/manga">Manga</a>
+    <a data-nav="guides" href="/guides">Watch Guides</a>
+    <div class="nav-more-wrap">
+      <button class="nav-more-btn" id="navMoreBtn">More ▾</button>
+      <div class="nav-drawer" id="navDrawer">
+        <a data-nav="spinoffs" data-drawer href="/spinoffs">Spinoffs</a>
+        <a data-nav="events" data-drawer href="/events">Events</a>
+        <a data-nav="archive" data-drawer href="/archive">Archive</a>
+        <a data-nav="platforms" data-drawer href="/platforms">Platforms</a>
+        <a data-nav="languages" data-drawer href="/languages">Languages</a>
+      </div>
+    </div>
+  </div>
+  <div class="nav-right">
+    <div class="nav-search-wrap" id="navSearchWrap">
+      <span class="nav-search-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </span>
+      <input class="nav-search-input" id="navSearch" type="search" placeholder="Search…" autocomplete="off" spellcheck="false">
+      <button class="nav-search-clear" id="navSearchClear" aria-label="Clear search">✕</button>
+    </div>
+    <button class="theme-btn" id="themeToggle" aria-label="Toggle theme">
+      <svg class="theme-icon-dark" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+      <svg class="theme-icon-light" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+    </button>
+    <a class="nav-advocacy-btn" data-nav="advocacy" href="/advocacy">Advocacy ↗</a>
+    <button class="nav-hamburger" id="navHamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- MOBILE TOP BAR -->
+<header class="mobile-top-bar" id="mobileTopBar">
+  <div class="mtb-logo" id="mtbLogo">
+    <img src="fallback-images/misc/bbdci-logo.png" alt="BBDCI" class="mtb-logo-img" width="32" height="32" decoding="async">
+    <span class="mtb-logo-text">Conan <em>India</em></span>
+  </div>
+  <div class="mtb-actions">
+    <button class="mtb-theme-btn" id="mtbThemeToggle" aria-label="Toggle theme" style="background:none;border:none;color:var(--text);cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;transition:transform 0.2s var(--spring);">
+      <svg class="theme-icon-dark" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+      <svg class="theme-icon-light" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+    </button>
+    <button class="mtb-search-btn" id="mtbSearchBtn" aria-label="Search">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- MOBILE SEARCH OVERLAY -->
+<div class="mobile-search-overlay" id="mobileSearchOverlay">
+  <div class="mso-bar">
+    <div class="mso-input-wrap">
+      <svg class="mso-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="mso-input" id="msoInput" type="search" placeholder="Search shows, movies, guides…" autocomplete="off" spellcheck="false">
+      <button class="mso-clear" id="msoClear" aria-label="Clear">✕</button>
+    </div>
+    <button class="mso-cancel" id="msoCancel">Cancel</button>
+  </div>
+</div>
+
+<!-- MOBILE BOTTOM NAV BAR -->
+<nav class="mobile-bottom-bar" id="mobileBottomBar" aria-label="Mobile navigation">
+  <button class="mbb-tab active" data-mbb="home">
+    <span class="mbb-tab-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="svg-conan-icon">
+        <defs>
+          <linearGradient id="homeGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#FF3B30" stop-opacity="0.4" />
+            <stop offset="100%" stop-color="#CC2233" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+        <!-- Outer Ring Base -->
+        <circle cx="12" cy="12" r="10" class="svg-base-path" />
+        <!-- Radial Glow Backdrop -->
+        <circle cx="12" cy="12" r="8" class="svg-accent-glow" fill="url(#homeGlow)" stroke="none" />
+        <!-- Standalone Keyhole Silhouette -->
+        <path d="M12 7a2.5 2.5 0 0 0-2.5 2.5c0 1.05.65 1.95 1.57 2.33L10 17h4l-1.07-5.17c.92-.38 1.57-1.28 1.57-2.33A2.5 2.5 0 0 0 12 7z" class="svg-accent-path" />
+      </svg>
+    </span>
+    <span class="mbb-tab-label">Home</span>
+  </button>
+  <button class="mbb-tab" data-mbb="browse">
+    <span class="mbb-tab-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="svg-conan-icon">
+        <defs>
+          <linearGradient id="browseGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#FF3B30" stop-opacity="0.3" />
+            <stop offset="100%" stop-color="#CC2233" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+        <!-- Magnifying Glass Frame -->
+        <circle cx="10" cy="10" r="6" class="svg-base-path" />
+        <line x1="14.5" y1="14.5" x2="20" y2="20" class="svg-base-path" stroke-linecap="round" />
+        <!-- Lens Glow -->
+        <circle cx="10" cy="10" r="5" class="svg-accent-glow" fill="url(#browseGlow)" stroke="none" />
+        <!-- Conan Reticle Crosshair (Accent) -->
+        <circle cx="10" cy="10" r="2.5" class="svg-accent-path" />
+        <line x1="10" y1="6" x2="10" y2="7.5" class="svg-accent-path" />
+        <line x1="10" y1="12.5" x2="10" y2="14" class="svg-accent-path" />
+        <line x1="6" y1="10" x2="7.5" y2="10" class="svg-accent-path" />
+        <line x1="12.5" y1="10" x2="14" y2="10" class="svg-accent-path" />
+      </svg>
+    </span>
+    <span class="mbb-tab-label">Browse</span>
+  </button>
+  <button class="mbb-tab" data-mbb="tvshows">
+    <span class="mbb-tab-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="svg-conan-icon">
+        <defs>
+          <linearGradient id="tvGlow" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#FF3B30" stop-opacity="0.35" />
+            <stop offset="100%" stop-color="#CC2233" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+        <!-- TV Cabinet & Antennas -->
+        <path d="M9 7L5 3M15 7l4-4" class="svg-base-path" stroke-linecap="round" />
+        <rect x="3" y="7" width="18" height="13" rx="2.5" class="svg-base-path" />
+        <!-- Screen Outline -->
+        <rect x="5" y="9" width="11" height="9" rx="1.5" class="svg-base-path" />
+        <!-- TV Screen Glow -->
+        <rect x="5" y="9" width="11" height="9" rx="1.5" class="svg-accent-glow" fill="url(#tvGlow)" stroke="none" />
+        <!-- TV Controls -->
+        <line x1="18.5" y1="10" x2="18.5" y2="10" class="svg-base-path" stroke-linecap="round" stroke-width="2" />
+        <line x1="18.5" y1="13" x2="18.5" y2="13" class="svg-base-path" stroke-linecap="round" stroke-width="2" />
+        <line x1="18.5" y1="16" x2="18.5" y2="16" class="svg-base-path" stroke-linecap="round" stroke-width="2" />
+        <!-- Small Keyhole inside Screen -->
+        <path d="M10.5 11.5a1 1 0 0 0-.7 1.65l-.3 1.85h2l-.3-1.85a1 1 0 0 0-.7-1.65z" class="svg-accent-path" />
+      </svg>
+    </span>
+    <span class="mbb-tab-label">TV</span>
+  </button>
+  <button class="mbb-tab" data-mbb="movies">
+    <span class="mbb-tab-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="svg-conan-icon">
+        <defs>
+          <linearGradient id="movieGlow" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#FF3B30" stop-opacity="0.35" />
+            <stop offset="100%" stop-color="#CC2233" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+        <!-- Film Strip Outer Frame -->
+        <rect x="5" y="3" width="14" height="18" rx="2" class="svg-base-path" />
+        <!-- Dividers -->
+        <line x1="5" y1="9" x2="19" y2="9" class="svg-base-path" />
+        <line x1="5" y1="15" x2="19" y2="15" class="svg-base-path" />
+        <!-- Left Sprockets -->
+        <rect x="6.5" y="5" width="1.5" height="2" rx="0.5" class="svg-base-path" fill="currentColor" opacity="0.3" stroke="none" />
+        <rect x="6.5" y="11" width="1.5" height="2" rx="0.5" class="svg-base-path" fill="currentColor" opacity="0.3" stroke="none" />
+        <rect x="6.5" y="17" width="1.5" height="2" rx="0.5" class="svg-base-path" fill="currentColor" opacity="0.3" stroke="none" />
+        <!-- Right Sprockets -->
+        <rect x="16" y="5" width="1.5" height="2" rx="0.5" class="svg-base-path" fill="currentColor" opacity="0.3" stroke="none" />
+        <rect x="16" y="11" width="1.5" height="2" rx="0.5" class="svg-base-path" fill="currentColor" opacity="0.3" stroke="none" />
+        <rect x="16" y="17" width="1.5" height="2" rx="0.5" class="svg-base-path" fill="currentColor" opacity="0.3" stroke="none" />
+        <!-- Glow backdrop -->
+        <rect x="9" y="9.5" width="6" height="5" rx="1" class="svg-accent-glow" fill="url(#movieGlow)" stroke="none" />
+        <!-- Play Icon in center frame -->
+        <path d="M11 10.5l3 1.5-3 1.5v-3z" class="svg-accent-path" fill="none" />
+        <!-- Tiny details in top and bottom frames -->
+        <circle cx="12" cy="6" r="1.2" class="svg-accent-path" />
+        <circle cx="12" cy="18" r="1.2" class="svg-accent-path" />
+      </svg>
+    </span>
+    <span class="mbb-tab-label">Movies</span>
+  </button>
+  <button class="mbb-tab" data-mbb="more">
+    <span class="mbb-tab-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="svg-conan-icon">
+        <defs>
+          <linearGradient id="bowGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#FF3B30" stop-opacity="0.4" />
+            <stop offset="100%" stop-color="#CC2233" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+        <!-- Bow Tie Wings (Accent) -->
+        <path d="M10.5 12L3.5 7.5C3 7.2 2.2 7.6 2.2 8.3v7.4c0 .7.8 1.1 1.3.8L10.5 12z" class="svg-accent-path" />
+        <path d="M13.5 12l7-4.5c.5-.3 1.3.1 1.3.8v7.4c0 .7-.8 1.1-1.3.8L13.5 12z" class="svg-accent-path" />
+        <!-- Center Knot (Base) -->
+        <rect x="10" y="8" width="4" height="8" rx="1.5" class="svg-base-path" />
+        <!-- Synthesizer Dial details (Glow white inside active red wings) -->
+        <circle cx="6" cy="12" r="1" class="svg-accent-glow" stroke="#FFF" stroke-width="1.2" fill="none" />
+        <circle cx="18" cy="12" r="1" class="svg-accent-glow" stroke="#FFF" stroke-width="1.2" fill="none" />
+      </svg>
+    </span>
+    <span class="mbb-tab-label">More</span>
+  </button>
+</nav>
+
+<!-- MOBILE MORE MENU BACKDROP -->
+<div class="mbb-backdrop" id="mbbBackdrop"></div>
+
+<!-- MOBILE MORE MENU -->
+<div class="mbb-more-menu" id="mbbMoreMenu">
+  <div class="mbb-more-drag-handle"></div>
+  <div class="mbb-more-header">
+    <span class="mbb-more-header-title">Explore</span>
+    <button class="mbb-more-close" id="mbbMoreClose" aria-label="Close">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+
+  <!-- Campaign Hero Card -->
+  <div class="mbb-campaign-card" data-nav="advocacy" id="mbbCampaignCard" style="margin-top: 8px; margin-bottom: 24px;">
+    <div class="mbb-campaign-glow"></div>
+    <div class="mbb-campaign-shimmer"></div>
+    <div class="mbb-campaign-content">
+      <div class="mbb-campaign-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3L2 10l7 4 3 7 10-18z"/></svg>
+      </div>
+      <div class="mbb-campaign-text">
+        <span class="mbb-campaign-eyebrow">Bring Back Conan · India</span>
+        <span class="mbb-campaign-title">Support the Campaign</span>
+        <span class="mbb-campaign-sub">Help bring Conan back officially to India</span>
+      </div>
+      <div class="mbb-campaign-arrow-wrap">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="mbb-more-section-label">Watch</div>
+  <div class="mbb-more-list">
+    <div class="mbb-more-row" data-nav="guides">
+      <div class="mbb-more-row-icon" style="background:linear-gradient(135deg,#1a1a3e,#3b3bcc)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
+      <div class="mbb-more-row-body"><span class="mbb-more-row-name">Watch Guides</span><span class="mbb-more-row-sub">Essential &amp; complete paths</span></div>
+      <svg class="mbb-more-row-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+    <div class="mbb-more-row" data-nav="platforms">
+      <div class="mbb-more-row-icon" style="background:linear-gradient(135deg,#0d2d0d,#1a7a1a)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+      <div class="mbb-more-row-body"><span class="mbb-more-row-name">Platforms</span><span class="mbb-more-row-sub">Where to watch in India</span></div>
+      <svg class="mbb-more-row-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+    <div class="mbb-more-row" data-nav="spinoffs">
+      <div class="mbb-more-row-icon" style="background:linear-gradient(135deg,#2d1a00,#cc7700)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+      <div class="mbb-more-row-body"><span class="mbb-more-row-name">Spinoffs</span><span class="mbb-more-row-sub">Magic Kaito &amp; more</span></div>
+      <svg class="mbb-more-row-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+    <div class="mbb-more-row" data-nav="languages">
+      <div class="mbb-more-row-icon" style="background:linear-gradient(135deg,#1a002d,#7700cc)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+      <div class="mbb-more-row-body"><span class="mbb-more-row-name">Languages</span><span class="mbb-more-row-sub">Hindi, Tamil, Telugu &amp; more</span></div>
+      <svg class="mbb-more-row-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+  </div>
+
+  <div class="mbb-more-section-label">Discover</div>
+  <div class="mbb-more-list">
+    <div class="mbb-more-row" data-nav="manga">
+      <div class="mbb-more-row-icon" style="background:linear-gradient(135deg,#1a0a0a,#8b0000)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+      <div class="mbb-more-row-body"><span class="mbb-more-row-name">Manga</span><span class="mbb-more-row-sub">Read in India guide</span></div>
+      <svg class="mbb-more-row-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+    <div class="mbb-more-row" data-nav="events">
+      <div class="mbb-more-row-icon" style="background:linear-gradient(135deg,#001a2d,#006699)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+      <div class="mbb-more-row-body"><span class="mbb-more-row-name">Events</span><span class="mbb-more-row-sub">Screenings &amp; fan meets</span></div>
+      <svg class="mbb-more-row-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+    <div class="mbb-more-row" data-nav="merch">
+      <div class="mbb-more-row-icon" style="background:linear-gradient(135deg,#1a1a1a,#555)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></div>
+      <div class="mbb-more-row-body"><span class="mbb-more-row-name">Merch</span><span class="mbb-more-row-sub">Official collectibles</span></div>
+      <svg class="mbb-more-row-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+    <div class="mbb-more-row" data-nav="archive">
+      <div class="mbb-more-row-icon" style="background:linear-gradient(135deg,#0a1a0a,#2d4a2d)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg></div>
+      <div class="mbb-more-row-body"><span class="mbb-more-row-name">Archive</span><span class="mbb-more-row-sub">History &amp; past content</span></div>
+      <svg class="mbb-more-row-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+    <div class="mbb-more-row" id="mbbThemeToggle">
+      <div class="mbb-more-row-icon" style="background:linear-gradient(135deg,#1f1c2c,#928dab)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line></svg></div>
+      <div class="mbb-more-row-body"><span class="mbb-more-row-name">Appearance</span><span class="mbb-more-row-sub">Switch Dark / Light theme</span></div>
+      <div style="margin-right:4px; display:flex; align-items:center;">
+        <svg class="theme-icon-dark" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text2);"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        <svg class="theme-icon-light" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text2);"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ROUTER OUTLET & SEMANTIC SEO FALLBACK -->
+<main id="app">
+  <noscript>
+    <div class="seo-crawler-fallback" style="max-width:800px; margin:80px auto; padding:20px; font-family:system-ui,-apple-system,sans-serif; color:#a0a0b0; line-height:1.6;">
+      <header style="margin-bottom:40px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:20px;">
+        <h1 style="color:#ffffff; font-size:2.4rem; margin:0 0 10px 0; font-family:'Bebas Neue',sans-serif; letter-spacing:1px;">Detective Conan India Index</h1>
+        <p style="font-size:1.1rem; margin:0; color:#e0e0e8;">The definitive watch guide, streaming catalog, and regional language release tracker for Detective Conan (Case Closed) in India.</p>
+      </header>
+
+      <section style="margin-bottom:40px;">
+        <h2 style="color:#ff3b30; font-size:1.6rem; margin-bottom:15px; font-family:'Bebas Neue',sans-serif; letter-spacing:0.5px;">📺 Television Broadcast &amp; Streaming Platforms</h2>
+        <article style="background:rgba(255,255,255,0.03); padding:15px; border-radius:8px; margin-bottom:15px; border-left:4px solid #ff3b30;">
+          <h3 style="color:#ffffff; margin:0 0 10px 0;">ETV Bal Bharat (Television Broadcast)</h3>
+          <p style="margin:0 0 8px 0;">Detective Conan broadcasts nightly in India on <strong>ETV Bal Bharat</strong> television channel at <strong>11:00 PM IST</strong>.</p>
+          <p style="margin:0; font-size:0.95rem;">Available with <strong>12 regional language audio dubs</strong>: Hindi, Tamil, Telugu, Malayalam, Kannada, Bengali, Marathi, Gujarati, Odia, Punjabi, Assamese, and English subtitles.</p>
+        </article>
+        <article style="background:rgba(255,255,255,0.03); padding:15px; border-radius:8px; margin-bottom:15px; border-left:4px solid #ff3b30;">
+          <h3 style="color:#ffffff; margin:0 0 10px 0;">Netflix India (Subscription Streaming)</h3>
+          <p style="margin:0 0 8px 0;">Streaming <strong>Season 31 (Simulcast)</strong> with brand new episodes weekly directly from Japan.</p>
+          <p style="margin:0; font-size:0.95rem;">Available with official English subtitles and Hindi audio dubs.</p>
+        </article>
+        <article style="background:rgba(255,255,255,0.03); padding:15px; border-radius:8px; margin-bottom:15px; border-left:4px solid #ff3b30;">
+          <h3 style="color:#ffffff; margin:0 0 10px 0;">Prime Video / Anime Times (Streaming Catalog)</h3>
+          <p style="margin:0 0 8px 0;">Offers classic seasons and movies of Detective Conan dubbed in Hindi and regional languages.</p>
+          <p style="margin:0; font-size:0.95rem;">Available on the Anime Times subscription channel addon inside Prime Video.</p>
+        </article>
+      </section>
+
+      <section style="margin-bottom:40px;">
+        <h2 style="color:#ff3b30; font-size:1.6rem; margin-bottom:15px; font-family:'Bebas Neue',sans-serif; letter-spacing:0.5px;">🎬 Detective Conan Movies in India</h2>
+        <p style="margin:0 0 15px 0;">Track the availability of all 27 theatrical films and spinoff releases in India:</p>
+        <ul style="padding-left:20px; margin:0; color:#e0e0e8;">
+          <li style="margin-bottom:8px;"><strong>Movie 27: The Million-dollar Pentagram</strong> – Released theatrically in PVR INOX Cinemas India.</li>
+          <li style="margin-bottom:8px;"><strong>Movie 26: Black Iron Submarine</strong> – Available for subscription streaming on Netflix India.</li>
+          <li style="margin-bottom:8px;"><strong>Movie 25: The Bride of Halloween</strong> – Released theatrically and streaming on local subscription platforms.</li>
+          <li style="margin-bottom:8px;"><strong>Movie 24: The Scarlet Bullet</strong> – Released in Indian theaters via PVR Cinemas.</li>
+          <li style="margin-bottom:8px;">Classic movies 1 through 23 available on local streaming catalogs in regional language audio dubs.</li>
+        </ul>
+      </section>
+
+      <section style="margin-bottom:40px;">
+        <h2 style="color:#ff3b30; font-size:1.6rem; margin-bottom:15px; font-family:'Bebas Neue',sans-serif; letter-spacing:0.5px;">📚 Case Closed Manga Volumes</h2>
+        <p style="margin:0 0 10px 0;">Read the official English releases of Case Closed by Viz Media in India. Over 96+ volumes currently imported and distributed via major online retailers like Amazon India.</p>
+      </section>
+
+      <section style="margin-bottom:40px;">
+        <h2 style="color:#ff3b30; font-size:1.6rem; margin-bottom:15px; font-family:'Bebas Neue',sans-serif; letter-spacing:0.5px;">📡 Indian DTH TV Channel Guide</h2>
+        <p style="margin:0 0 10px 0;">Watch ETV Bal Bharat HD / SD channel on DTH providers:</p>
+        <ul style="padding-left:20px; margin:0; color:#e0e0e8;">
+          <li style="margin-bottom:6px;"><strong>Tata Play</strong>: Channel 670</li>
+          <li style="margin-bottom:6px;"><strong>Airtel Digital TV</strong>: Channel 447</li>
+          <li style="margin-bottom:6px;"><strong>Dish TV</strong>: Channel 951</li>
+          <li style="margin-bottom:6px;"><strong>d2h</strong>: Channel 510</li>
+        </ul>
+      </section>
+    </div>
+  </noscript>
+</main>
+
+<!-- MODAL -->
+<div id="modal" class="modal-root"><div class="modal-panel"></div></div>
+
+<script src="episodes.js"></script>
+<script src="js/mangadex-covers.js?v=1"></script>
+<script src="js/api.js?v=5"></script>
+<script src="js/episode-tags.js?v=2"></script>
+<script src="js/components/tag-filter-carousel.js"></script>
+<script src="js/utils.js"></script>
+<script src="data.js?v=60"></script>
+<script src="watch-guide.js"></script>
+<script src="watch-guide-v2.js?v=10"></script>
+<script src="app.js?v=84"></script>
+</body>
+</html>

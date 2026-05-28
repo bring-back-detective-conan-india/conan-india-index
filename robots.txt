@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://bring-back-detective-conan-india.github.io/conan-india-index/sitemap.xml
