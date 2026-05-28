@@ -344,7 +344,7 @@ const PVR_EVENTS = [
     title:"Japan Film Festival",
     subtitle:"Festival Screenings · 2023",
     colors:["#001A3A","#CC0000"],
-    poster:"https://upload.wikimedia.org/wikipedia/en/thumb/b/b8/Japan_Film_Festival_logo.svg/320px-Japan_Film_Festival_logo.svg.png",
+    poster:"fallback-images/misc/japan-film-festival.png",
     detail:"Select Detective Conan films screened as part of the Japan Film Festival across Indian cities."
   }
 ];

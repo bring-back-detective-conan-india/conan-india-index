@@ -92,26 +92,26 @@ function renderFooterHTML(){
         <div>
           <div class="footer-col-title">Streaming Platforms</div>
           <div class="footer-links">
-            ${PLATFORMS.map(p=>`<a onclick="Router.navigate('/platform/${p.id}')">${p.name}${p.nameSub?` <span style="opacity:.8;font-size:.85em">${p.nameSub}</span>`:''}</a>`).join('')}
+            ${PLATFORMS.map(p=>`<a href="/platform/${p.id}" onclick="event.preventDefault(); Router.navigate('/platform/${p.id}')">${p.name}${p.nameSub?` <span style="opacity:.8;font-size:.85em">${p.nameSub}</span>`:''}</a>`).join('')}
           </div>
         </div>
         <div>
           <div class="footer-col-title">Content</div>
           <div class="footer-links">
-            <a onclick="scrollToSection('series')">TV Series <span class="footer-link-badge tag tag-netflix">${SEASONS.length} Seasons</span></a>
-            <a onclick="scrollToSection('movies')">Movies <span class="footer-link-badge tag tag-prime">27 Films</span></a>
-            <a onclick="scrollToSection('spinoffs')">Spinoffs</a>
-            <a onclick="Router.navigate('/browse')">Browse &amp; Filter</a>
-            <a onclick="scrollToSection('manga')">Manga</a>
+            <a href="/#series" onclick="event.preventDefault(); scrollToSection('series')">TV Series <span class="footer-link-badge tag tag-netflix">${SEASONS.length} Seasons</span></a>
+            <a href="/#movies" onclick="event.preventDefault(); scrollToSection('movies')">Movies <span class="footer-link-badge tag tag-prime">27 Films</span></a>
+            <a href="/#spinoffs" onclick="event.preventDefault(); scrollToSection('spinoffs')">Spinoffs</a>
+            <a href="/browse" onclick="event.preventDefault(); Router.navigate('/browse')">Browse &amp; Filter</a>
+            <a href="/#manga" onclick="event.preventDefault(); scrollToSection('manga')">Manga</a>
           </div>
         </div>
         <div>
           <div class="footer-col-title">More</div>
           <div class="footer-links">
-            <a onclick="Router.navigate('/languages')">Languages Guide</a>
-            <a onclick="scrollToSection('etv')">ETV Bal Bharat</a>
-            <a onclick="Router.navigate('/merch')">Fan Merch India</a>
-            <a onclick="Router.currentRoute==='/'||Router.currentRoute===''?scrollToSection('archive'):(Router.navigate('/'),setTimeout(()=>scrollToSection('archive'),400))">Archive</a>
+            <a href="/languages" onclick="event.preventDefault(); Router.navigate('/languages')">Languages Guide</a>
+            <a href="/#etv" onclick="event.preventDefault(); scrollToSection('etv')">ETV Bal Bharat</a>
+            <a href="/merch" onclick="event.preventDefault(); Router.navigate('/merch')">Fan Merch India</a>
+            <a href="/#archive" onclick="event.preventDefault(); Router.currentRoute==='/'||Router.currentRoute===''?scrollToSection('archive'):(Router.navigate('/'),setTimeout(()=>scrollToSection('archive'),400))">Archive</a>
             <a href="https://www.netflix.com/title/80090370" target="_blank" rel="noopener">Watch on Netflix ↗</a>
             <a href="https://www.primevideo.com" target="_blank" rel="noopener">Watch on Anime Times ↗</a>
           </div>
