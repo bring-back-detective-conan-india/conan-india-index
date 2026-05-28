@@ -1,3 +1,8 @@
 node_modules/
 package-lock.json
 package.json
+
+prepros.config
+update_data.js
+scripts/
+old_app.js
