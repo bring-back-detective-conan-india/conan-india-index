@@ -1411,7 +1411,7 @@ function renderHome() {
         <h2 class="section-title reveal-left">Latest <em>Additions</em></h2>
         <div class="latest-cards-container scroll-row stagger">
           <!-- Card 1: Netflix India Simulcast -->
-          <div class="latest-cinematic-card" data-platform="netflix" onclick="Router.navigate('/platform/netflix')">
+          <div class="latest-cinematic-card" data-platform="netflix" onclick="window.open('https://www.netflix.com/title/80090370', '_blank', 'noopener')">
             <div class="lcc-img" id="netflix-latest-img" style="background-image:url('${window.optimizeImage('https://image.tmdb.org/t/p/w780/hlOn0BETlASlpLThKu2gXn9ae1H.jpg')}')"></div>
             <div class="lcc-overlay"></div>
             
@@ -1448,7 +1448,7 @@ function renderHome() {
           </div>
 
           <!-- Card 2: Anime Times Hindi Dub -->
-          <div class="latest-cinematic-card" data-platform="primevideo" onclick="Router.navigate('/platform/primevideo')">
+          <div class="latest-cinematic-card" data-platform="primevideo" onclick="window.open('https://www.primevideo.com/region/eu/detail/0HIFDMYH3JG6WFIM4I7XI2EU96/ref=atv_dp_amz_c_TS5124c5_1_1?jic=16|CgNhbGwSA2FsbA%3D%3D', '_blank', 'noopener')">
             <div class="lcc-img" style="background-image:url('${IMG.ep96}')"></div>
             <div class="lcc-overlay"></div>
             
