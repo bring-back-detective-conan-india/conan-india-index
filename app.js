@@ -5935,10 +5935,9 @@ async function renderMangaPage() {
   loading.textContent = 'Fetching manga data…';
   app.appendChild(loading);
   // Jikan API — free, no key needed. MAL ID 1 = Detective Conan manga
-  let LATEST_VOL = 98; // Official Viz Media latest volume limit
+  let LATEST_VOL = 96; // Official Viz Media latest volume limit in India
   const UPCOMING_RELEASES = {
-    99: 'Releasing July 14, 2026',
-    100: 'Releasing Oct 13, 2026'
+    97: 'Releasing Nov 13, 2026'
   };
   let heroCover = IMG.manga96;
   try {
