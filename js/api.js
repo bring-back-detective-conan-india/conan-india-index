@@ -98,7 +98,7 @@ const VALID_MANGA_COVERS = new Set([
 
 window.MANGA_COVERS = new Map();
 
-window.ISBN_DB = {
+window.MANGA_ISBNS = {
   "95": "1974755401",
   "96": "1974758532",
   "97": "1974761843"
