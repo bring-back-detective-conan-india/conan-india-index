@@ -72,7 +72,7 @@ function renderFooterHTML(){
       <div class="footer-top">
         <div class="footer-brand">
           <div class="footer-logo"><img src="fallback-images/misc/bbdci-logo.png" alt="Bring Back Detective Conan India" class="footer-bbdci-logo" width="48" height="48" loading="lazy" decoding="async"></div>
-          <p class="footer-tagline">The complete, independent fan guide to watching Detective Conan in India — every platform, every language, every episode.<br><span style="opacity:.85;font-size:.92em">By <strong>Bring Back Detective Conan India</strong> — fan community working since 2013 to bring Detective Conan back to India.</span></p>
+          <p class="footer-tagline">The complete, independent fan guide to watching Detective Conan in India — every platform, every language, every episode.<br><span style="color:var(--text2);font-size:.92em">By <strong>Bring Back Detective Conan India</strong> — fan community working since 2013 to bring Detective Conan back to India.</span></p>
           <div class="footer-social">
             <a href="https://www.instagram.com/bringbackdetectiveconanindia/" target="_blank" rel="noopener" class="footer-social-btn" aria-label="Instagram">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" fill="currentColor" stroke="none"/></svg>
