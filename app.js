@@ -1752,7 +1752,7 @@ function initLensSection() {
   }
 
   // Set initial centred position
-  resetLens();
+  requestAnimationFrame(resetLens);
 
   // Ensure ring is visible on both touch and hover
   ring.style.display = 'block';
@@ -2025,7 +2025,7 @@ function renderPlatformCards() {
   rightBtn.onclick = () => grid.scrollBy({ left: step, behavior: 'smooth' });
   grid.addEventListener('scroll', updateScrollButtons, { passive: true });
   window.addEventListener('resize', updateScrollButtons, { passive: true });
-  updateScrollButtons();
+  requestAnimationFrame(updateScrollButtons);
 }
 
 // ─── LANGUAGE SECTION ────────────────────────────────
@@ -2085,7 +2085,7 @@ function renderLanguageSection() {
   rightBtn.onclick = () => row.scrollBy({ left: step, behavior: 'smooth' });
   row.addEventListener('scroll', updateScrollButtons, { passive: true });
   window.addEventListener('resize', updateScrollButtons, { passive: true });
-  updateScrollButtons();
+  requestAnimationFrame(updateScrollButtons);
 
 }
 
@@ -9079,12 +9079,14 @@ function setupMagicKaitoEpisodeListeners() {
   // (consistent at 60 Hz, 90 Hz, 120 Hz, 144 Hz monitors).
   let lastTs = performance.now();
   let time = 0;
+  let cachedScrollY = window.scrollY;
+  window.addEventListener('scroll', () => { cachedScrollY = window.scrollY; }, { passive: true });
 
   function animate(ts) {
     const dt = Math.min(ts - lastTs, 50); // cap delta at 50ms to avoid huge jumps after tab-switch
     lastTs = ts;
     time += dt;
-    const scrollY = window.scrollY;
+    const scrollY = cachedScrollY;
 
     for (let i = 0; i < pillData.length; i++) {
       const d = pillData[i];
