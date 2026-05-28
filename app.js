@@ -4253,7 +4253,11 @@ function getEpisodePlatformRows(ep) {
   return PLATFORMS.reduce((rows, p) => {
     let hasEpisode = false;
 
-    if (Array.isArray(p.seriesSeasons) && p.seriesSeasons.includes(ep.season)) hasEpisode = true;
+    // More robust season matching
+    if (Array.isArray(p.seriesSeasons) && ep.season) {
+      const epSeason = ep.season.toString().trim();
+      if (p.seriesSeasons.includes(epSeason)) hasEpisode = true;
+    }
     if (Array.isArray(p.seriesRange) && typeof ep.n === 'number') {
       const [a, b] = p.seriesRange;
       if (ep.n >= a && ep.n <= b) hasEpisode = true;
@@ -5583,7 +5587,8 @@ window.openMovieModal = function (mid) {
   let backdrop = getMovieBackdrop(m, MOVIES.indexOf(m) + 2);
   // Upgrade to high-res if it's a TMDB image
   if (backdrop.includes('image.tmdb.org')) {
-    backdrop = backdrop.replace('/w154/', '/w1280/').replace('/w185/', '/w1280/').replace('/w300/', '/w1280/').replace('/w500/', '/w1280/');
+    backdrop = backdrop.replace('/w154/', '/w1280/').replace('/w185/', '/w1280/').replace('/w300/', '/w1280/').replace('/w500/', '/w1280/')
+                       .replace('%2Fw154%2F', '%2Fw1280%2F').replace('%2Fw185%2F', '%2Fw1280%2F').replace('%2Fw300%2F', '%2Fw1280%2F').replace('%2Fw500%2F', '%2Fw1280%2F');
   }
 
   const watchBtns = [];
