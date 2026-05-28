@@ -1792,6 +1792,10 @@ function initLensSection() {
     }
   }, { passive: true });
 
+  let isRafScheduled = false;
+  let pendingX = 0;
+  let pendingY = 0;
+
   // Touch Move: Update position if we are dragging the lens
   section.addEventListener('touchmove', e => {
     if (e.touches.length === 0) return;
@@ -1825,7 +1829,16 @@ function initLensSection() {
       e.preventDefault(); // Keep page scroll locked
       const r = section.getBoundingClientRect();
       const t = e.touches[0];
-      setLens(t.clientX - r.left, t.clientY - r.top);
+      pendingX = t.clientX - r.left;
+      pendingY = t.clientY - r.top;
+      
+      if (!isRafScheduled) {
+        isRafScheduled = true;
+        requestAnimationFrame(() => {
+          setLens(pendingX, pendingY);
+          isRafScheduled = false;
+        });
+      }
     }
   }, { passive: false });
 
@@ -1842,7 +1855,16 @@ function initLensSection() {
   // Bind mouse listeners for desktop hover response
   section.addEventListener('mousemove', e => {
     const r = section.getBoundingClientRect();
-    setLens(e.clientX - r.left, e.clientY - r.top);
+    pendingX = e.clientX - r.left;
+    pendingY = e.clientY - r.top;
+    
+    if (!isRafScheduled) {
+      isRafScheduled = true;
+      requestAnimationFrame(() => {
+        setLens(pendingX, pendingY);
+        isRafScheduled = false;
+      });
+    }
   }, { passive: true });
   section.addEventListener('mouseleave', resetLens, { passive: true });
 }
