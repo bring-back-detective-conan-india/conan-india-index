@@ -279,9 +279,9 @@ function getEpisodeStill(ep, fallbackIdx = 0) {
   return getEpisodeMeta(ep)?.still || getImg(fallbackIdx);
 }
 
-function getSeasonStillByLocalSeasonId(sid, fallbackIdx = 0, size = 'medium', useCollage = false) {
+function getSeasonStillByLocalSeasonId(sid, fallbackIdx = 0, size = 'small', useCollage = false) {
   if (useCollage && CUSTOM_SEASON_IMAGES[sid]) {
-    // S21, S23, etc were provided as 900x900 but Twitter handles large/medium for them too.
+    // S21, S23, etc were provided as 900x900 but Twitter handles large/medium/small for them too.
     return CUSTOM_SEASON_IMAGES[sid] + '&name=' + size;
   }
   return window.SEASON_STILLS.get(sid) || getImg(fallbackIdx);
@@ -714,14 +714,14 @@ function refreshEpisodeSeasonVisuals() {
     }
 
     // Set resting background to the old landscape still (useCollage = false)
-    const stillOld = getSeasonStillByLocalSeasonId(sid, 0, 'medium', false);
+    const stillOld = getSeasonStillByLocalSeasonId(sid, 0, 'small', false);
     if (stillOld) {
       const bg = el.querySelector('.season-card-bg, .season-card-img, .browse-card-img');
       if (bg) bg.style.backgroundImage = `url('${stillOld}')`;
     }
 
     // Set hover background to the new custom collage still (useCollage = true)
-    const stillNew = getSeasonStillByLocalSeasonId(sid, 0, 'medium', true);
+    const stillNew = getSeasonStillByLocalSeasonId(sid, 0, 'small', true);
     if (stillNew) {
       const hoverBg = el.querySelector('.season-card-hover-bg');
       if (hoverBg) hoverBg.style.backgroundImage = `url('${stillNew}')`;
@@ -2220,8 +2220,8 @@ function renderSeasonCard(s, idx) {
   const dots = (s.platforms || []).map(pid => `<div class="plat-dot" style="background:${PLAT_COLORS[pid] || '#666'}" title="${pid}"></div>`).join('');
   const epEnd = s.epRange[1] ? `–${s.epRange[1]}` : '–';
   return `<div class="season-card stagger${s.available ? '' : ' unavailable'}" data-season-id="${s.id}" onclick="Router.navigate('/tvshows/${s.id}')">
-    <div class="season-card-bg" style="background-image:url('${getSeasonStillByLocalSeasonId(s.id, idx + 3, 'medium', false)}')"></div>
-    <div class="season-card-hover-bg" style="background-image:url('${getSeasonStillByLocalSeasonId(s.id, idx + 3, 'medium', true)}')"></div>
+    <div class="season-card-bg" style="background-image:url('${getSeasonStillByLocalSeasonId(s.id, idx + 3, 'small', false)}')"></div>
+    <div class="season-card-hover-bg" style="background-image:url('${getSeasonStillByLocalSeasonId(s.id, idx + 3, 'small', true)}')"></div>
     <div class="season-card-overlay"></div>
     <div class="season-card-num">${s.id.replace('S', '')}</div>
     ${s.available ? `<div class="avail-badge yes">✓ IN</div>` : `<div class="avail-badge no">N/A</div>`}
