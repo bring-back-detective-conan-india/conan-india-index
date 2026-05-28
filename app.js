@@ -399,7 +399,8 @@ function refreshMoviePosters() {
   });
 }
 
-async function fetchTMDBEpisodeMeta() {
+function processTMDBEpisodes(tmdbEpisodes) {
+  if (!Array.isArray(tmdbEpisodes) || !tmdbEpisodes.length) return;
   if (typeof EPISODES === 'undefined' || !Array.isArray(EPISODES) || !EPISODES.length) return;
 
   let bySeason = new Map();
@@ -413,107 +414,98 @@ async function fetchTMDBEpisodeMeta() {
   };
   buildBySeason();
 
-  try {
-    // TMDB keeps Conan episodes in season 1; map to local episode numbers.
-    const r = await fetch(`https://api.themoviedb.org/3/tv/${TMDB_TV_ID}/season/1?api_key=${TMDB_KEY}&language=en-US`);
-    if (!r.ok) return;
-    const j = await r.json();
-    const tmdbEpisodes = Array.isArray(j.episodes) ? j.episodes : [];
-    if (!tmdbEpisodes.length) return;
+  // Dynamically inject newly aired episodes from TMDB S1 fetch
+  const maxLocalEp = EPISODES.reduce((max, e) => Math.max(max, e.n || 0), 0);
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = String(today.getMonth() + 1).padStart(2, '0');
+  const d = String(today.getDate()).padStart(2, '0');
+  const todayStr = `${y}-${m}-${d}`;
 
-    // Dynamically inject newly aired episodes from TMDB S1 fetch
-    const maxLocalEp = EPISODES.reduce((max, e) => Math.max(max, e.n || 0), 0);
-    const today = new Date();
-    const y = today.getFullYear();
-    const m = String(today.getMonth() + 1).padStart(2, '0');
-    const d = String(today.getDate()).padStart(2, '0');
-    const todayStr = `${y}-${m}-${d}`;
-
-    let addedAny = false;
-    tmdbEpisodes.forEach(te => {
-      if (te.episode_number > maxLocalEp && te.air_date && te.air_date <= todayStr) {
-        const airYear = new Date(te.air_date).getFullYear();
-        const seasonNum = airYear - 1996 + 1;
-        EPISODES.push({
-          n: te.episode_number,
-          title: te.name || `Episode ${te.episode_number}`,
-          season: `S${seasonNum}`,
-          aired: te.air_date,
-          etv: null,
-          src: "TV Original"
-        });
-        addedAny = true;
-      }
-    });
-
-    if (addedAny) {
-      buildBySeason();
+  let addedAny = false;
+  tmdbEpisodes.forEach(te => {
+    if (te.episode_number > maxLocalEp && te.air_date && te.air_date <= todayStr) {
+      const airYear = new Date(te.air_date).getFullYear();
+      const seasonNum = airYear - 1996 + 1;
+      EPISODES.push({
+        n: te.episode_number,
+        title: te.name || `Episode ${te.episode_number}`,
+        season: `S${seasonNum}`,
+        aired: te.air_date,
+        etv: null,
+        src: "TV Original"
+      });
+      addedAny = true;
     }
+  });
 
-    const tmdbByEpisodeNo = new Map();
-    tmdbEpisodes.forEach(te => {
-      if (typeof te.episode_number === 'number') tmdbByEpisodeNo.set(te.episode_number, te);
+  if (addedAny) {
+    buildBySeason();
+  }
+
+  const tmdbByEpisodeNo = new Map();
+  tmdbEpisodes.forEach(te => {
+    if (typeof te.episode_number === 'number') tmdbByEpisodeNo.set(te.episode_number, te);
+  });
+  const tmdbUnused = new Set(tmdbEpisodes.map((_, i) => i));
+
+  // Priority 1: direct absolute-number mapping (local n -> TMDB S1 episode_number)
+  EPISODES.filter(e => typeof e.n === 'number').forEach(le => {
+    const te = tmdbByEpisodeNo.get(le.n);
+    if (!te) return;
+    const idx = tmdbEpisodes.indexOf(te);
+    if (idx >= 0) tmdbUnused.delete(idx);
+    window.EPISODE_META.set(le.n, {
+      still: te.still_path ? (TMDB_STILL + te.still_path) : null,
+      overview: te.overview || '',
+      name: te.name || '',
+      tmdbSeason: 1,
+      tmdbEpisode: te.episode_number
     });
-    const tmdbUnused = new Set(tmdbEpisodes.map((_, i) => i));
+  });
 
-    // Priority 1: direct absolute-number mapping (local n -> TMDB S1 episode_number)
-    EPISODES.filter(e => typeof e.n === 'number').forEach(le => {
-      const te = tmdbByEpisodeNo.get(le.n);
-      if (!te) return;
-      const idx = tmdbEpisodes.indexOf(te);
-      if (idx >= 0) tmdbUnused.delete(idx);
-      window.EPISODE_META.set(le.n, {
-        still: te.still_path ? (TMDB_STILL + te.still_path) : null,
-        overview: te.overview || '',
-        name: te.name || '',
-        tmdbSeason: 1,
-        tmdbEpisode: te.episode_number
-      });
+  // Priority 2: air date match for any leftovers
+  EPISODES.filter(e => typeof e.n === 'number' && !window.EPISODE_META.has(e.n)).forEach(le => {
+    if (!le.aired) return;
+    let matchIdx = -1;
+    for (const i of tmdbUnused) {
+      if (tmdbEpisodes[i]?.air_date === le.aired) { matchIdx = i; break; }
+    }
+    if (matchIdx < 0) return;
+    const te = tmdbEpisodes[matchIdx];
+    tmdbUnused.delete(matchIdx);
+    window.EPISODE_META.set(le.n, {
+      still: te.still_path ? (TMDB_STILL + te.still_path) : null,
+      overview: te.overview || '',
+      name: te.name || '',
+      tmdbSeason: 1,
+      tmdbEpisode: te.episode_number
     });
+  });
 
-    // Priority 2: air date match for any leftovers
-    EPISODES.filter(e => typeof e.n === 'number' && !window.EPISODE_META.has(e.n)).forEach(le => {
-      if (!le.aired) return;
-      let matchIdx = -1;
-      for (const i of tmdbUnused) {
-        if (tmdbEpisodes[i]?.air_date === le.aired) { matchIdx = i; break; }
+  // Priority 3: title match fallback
+  EPISODES.filter(e => typeof e.n === 'number' && !window.EPISODE_META.has(e.n)).forEach(le => {
+    const lt = normalizeTitle(le.title);
+    if (!lt) return;
+    let matchIdx = -1;
+    for (const i of tmdbUnused) {
+      const tt = normalizeTitle(tmdbEpisodes[i]?.name || '');
+      if (tt && (tt === lt || tt.includes(lt) || lt.includes(tt))) {
+        matchIdx = i;
+        break;
       }
-      if (matchIdx < 0) return;
-      const te = tmdbEpisodes[matchIdx];
-      tmdbUnused.delete(matchIdx);
-      window.EPISODE_META.set(le.n, {
-        still: te.still_path ? (TMDB_STILL + te.still_path) : null,
-        overview: te.overview || '',
-        name: te.name || '',
-        tmdbSeason: 1,
-        tmdbEpisode: te.episode_number
-      });
+    }
+    if (matchIdx < 0) return;
+    const te = tmdbEpisodes[matchIdx];
+    tmdbUnused.delete(matchIdx);
+    window.EPISODE_META.set(le.n, {
+      still: te.still_path ? (TMDB_STILL + te.still_path) : null,
+      overview: te.overview || '',
+      name: te.name || '',
+      tmdbSeason: 1,
+      tmdbEpisode: te.episode_number
     });
-
-    // Priority 3: title match fallback
-    EPISODES.filter(e => typeof e.n === 'number' && !window.EPISODE_META.has(e.n)).forEach(le => {
-      const lt = normalizeTitle(le.title);
-      if (!lt) return;
-      let matchIdx = -1;
-      for (const i of tmdbUnused) {
-        const tt = normalizeTitle(tmdbEpisodes[i]?.name || '');
-        if (tt && (tt === lt || tt.includes(lt) || lt.includes(tt))) {
-          matchIdx = i;
-          break;
-        }
-      }
-      if (matchIdx < 0) return;
-      const te = tmdbEpisodes[matchIdx];
-      tmdbUnused.delete(matchIdx);
-      window.EPISODE_META.set(le.n, {
-        still: te.still_path ? (TMDB_STILL + te.still_path) : null,
-        overview: te.overview || '',
-        name: te.name || '',
-        tmdbSeason: 1,
-        tmdbEpisode: te.episode_number
-      });
-    });
-  } catch (_e) { }
+  });
 
   bySeason.forEach((localList, sid) => {
     const withStill = localList.filter(le => window.EPISODE_META.get(le.n)?.still);
@@ -527,17 +519,51 @@ async function fetchTMDBEpisodeMeta() {
       window.SEASON_STILLS.set(sid, window.EPISODE_META.get(picked.n).still);
     }
   });
+}
+
+async function fetchTMDBEpisodeMeta() {
+  if (typeof EPISODES === 'undefined' || !Array.isArray(EPISODES) || !EPISODES.length) return;
+
+  const CACHE_KEY = 'tmdb_episodes_v3';
+  const CACHE_TTL = 3 * 24 * 60 * 60 * 1000; // 3 days
+
+  // Check cache first
+  try {
+    const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+    if (cached && (Date.now() - cached.ts) < CACHE_TTL) {
+      processTMDBEpisodes(cached.episodes);
+      
+      // Also fetch Magic Kaito 1412 episodes
+      await fetchMagicKaitoTMDBMeta();
+      markOVAsAsUnavailable();
+      refreshEpisodeSeasonVisuals();
+      updateNetflixLatestCard();
+      return;
+    }
+  } catch (_) {}
+
+  try {
+    const r = await fetch(`https://api.themoviedb.org/3/tv/${TMDB_TV_ID}/season/1?api_key=${TMDB_KEY}&language=en-US`);
+    if (!r.ok) return;
+    const j = await r.json();
+    const tmdbEpisodes = Array.isArray(j.episodes) ? j.episodes : [];
+    if (!tmdbEpisodes.length) return;
+
+    // Cache the raw response
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({
+        ts: Date.now(),
+        episodes: tmdbEpisodes
+      }));
+    } catch (_) {}
+
+    processTMDBEpisodes(tmdbEpisodes);
+  } catch (_e) {}
 
   // Also fetch Magic Kaito 1412 episodes
   await fetchMagicKaitoTMDBMeta();
-
-  // Mark OVAs as not available in India
   markOVAsAsUnavailable();
-
-  // Refresh season images now that we have TMDB data
   refreshEpisodeSeasonVisuals();
-
-  // Update Netflix releases card with the latest aired episode dynamically
   updateNetflixLatestCard();
 }
 
@@ -654,6 +680,14 @@ function refreshEpisodeSeasonVisuals() {
     const sid = el.dataset.seasonId;
     if (!sid) return;
 
+    if (el.classList.contains('movies-page-hero-bg')) {
+      const stillHero = getSeasonStillByLocalSeasonId(sid, 4, 'large', true);
+      if (stillHero) {
+        el.style.backgroundImage = `url('${stillHero}')`;
+      }
+      return;
+    }
+
     // Set resting background to the old landscape still (useCollage = false)
     const stillOld = getSeasonStillByLocalSeasonId(sid, 0, 'medium', false);
     if (stillOld) {
@@ -674,15 +708,23 @@ function refreshEpisodeSeasonVisuals() {
     const ep = (typeof EPISODES !== 'undefined' ? EPISODES : []).find(x => x.n === n);
     if (!ep) return;
     // Case 1: data-ep-num is on a parent container - query for child
-    let thumb = el.querySelector('.modal-ep-thumb, .episode-horizontal-img');
+    let thumb = el.querySelector('.modal-ep-thumb, .episode-horizontal-img, .yaiba-ep-thumb');
     // Case 2: data-ep-num is directly on the image element itself
-    if (!thumb && (el.classList.contains('episode-horizontal-img') || el.classList.contains('modal-ep-thumb'))) {
+    if (!thumb && (el.classList.contains('episode-horizontal-img') || el.classList.contains('modal-ep-thumb') || el.classList.contains('yaiba-ep-thumb'))) {
       thumb = el;
     }
     if (thumb) {
       const stillUrl = getEpisodeStill(ep, n + 1);
       if (stillUrl && !stillUrl.includes('conan') && !stillUrl.includes('kid') && !stillUrl.includes('ran') && !stillUrl.includes('heiji') && !stillUrl.includes('haibara')) {
         thumb.style.backgroundImage = `url('${stillUrl}')`;
+      }
+    }
+    // Also update description/overview if present (mostly for tv shows page fallback state)
+    const desc = el.querySelector('.yaiba-ep-desc');
+    if (desc) {
+      const meta = getEpisodeMeta(ep);
+      if (meta && meta.overview) {
+        desc.textContent = meta.overview.trim();
       }
     }
   });
@@ -3074,7 +3116,7 @@ function renderTVShowsPage(activeSeasonId) {
 
   pg.innerHTML = `
     <section class="movies-page-hero">
-      <div class="movies-page-hero-bg" style="background-image:url('${getSeasonStillByLocalSeasonId(s.id, 4, 'large', true)}')"></div>
+      <div class="movies-page-hero-bg" data-season-id="${s.id}" style="background-image:url('${getSeasonStillByLocalSeasonId(s.id, 4, 'large', true)}')"></div>
       <div class="movies-page-hero-overlay"></div>
       <div class="movies-page-hero-content">
         <button class="pp-hero-back" onclick="Router.navigate('/')">&larr; Home</button>
@@ -3229,7 +3271,7 @@ function renderTVShowsPage(activeSeasonId) {
       const overview = (meta.overview && meta.overview.trim()) || 'No description available for this episode yet.';
 
       return `
-        <div class="yaiba-ep-card" onclick="openEpisodeModal(${e.n})">
+        <div class="yaiba-ep-card" data-ep-num="${e.n}" onclick="openEpisodeModal(${e.n})">
           <div class="yaiba-ep-thumb" style="background-image:url('${still}')">
             <div class="yaiba-ep-overlay"></div>
             <div class="yaiba-ep-num-badge">EP ${e.n}${star}</div>
@@ -7764,6 +7806,26 @@ if (netflixPlat && typeof getSeasonRangeString === 'function') {
 }
 
 setupNavLinks();
+
+// Synchronously load posters and episodes from local cache before rendering the first page
+try {
+  const cachedPosters = JSON.parse(localStorage.getItem('tmdb_posters_v3') || 'null');
+  if (cachedPosters && cachedPosters.posters) {
+    cachedPosters.posters.forEach(([id, url]) => window.MOVIE_POSTERS.set(id, url));
+    if (cachedPosters.backdrops) {
+      if (!window.MOVIE_BACKDROPS) window.MOVIE_BACKDROPS = new Map();
+      cachedPosters.backdrops.forEach(([id, url]) => window.MOVIE_BACKDROPS.set(id, url));
+    }
+  }
+} catch (_) {}
+
+try {
+  const cachedEpisodes = JSON.parse(localStorage.getItem('tmdb_episodes_v3') || 'null');
+  if (cachedEpisodes && cachedEpisodes.episodes) {
+    processTMDBEpisodes(cachedEpisodes.episodes);
+  }
+} catch (_) {}
+
 Router.resolve();
 setTimeout(() => { fetchTMDBPosters(); fetchTMDBSpinoffPosters(); fetchTMDBPVRSpecialPosters(); fetchMangaCovers(); fetchTMDBEpisodeMeta(); }, 300);
 
