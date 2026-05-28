@@ -1,4 +1,4 @@
-/* ══════════════════════════════════════════════════════
+﻿/* ══════════════════════════════════════════════════════
    APP.JS — Detective Conan India Watch Guide v2
    Multi-page router · Filter system · Language section
 ══════════════════════════════════════════════════════ */
@@ -184,8 +184,8 @@ const TMDB_STILL = _isMobileSmall ? 'https://image.tmdb.org/t/p/w300' : 'https:/
 const TMDB_MODAL_POSTER = 'https://image.tmdb.org/t/p/w500'; // hi-res for modal
 window.MOVIE_POSTERS = new Map();
 window.SPINOFF_POSTERS = new Map();
-window.YAIBA_POSTER = 'https://image.tmdb.org/t/p/w500/cxD3FQP4hDU5hSABwdQCvGrrnz6.jpg';
-window.YAIBA_BACKDROP = 'https://image.tmdb.org/t/p/w1280/8anbNuU3e5PAvpfa8r26aZG7ubP.jpg';
+window.YAIBA_POSTER = window.optimizeImage('https://image.tmdb.org/t/p/w500/cxD3FQP4hDU5hSABwdQCvGrrnz6.jpg');
+window.YAIBA_BACKDROP = window.optimizeImage('https://image.tmdb.org/t/p/w1280/8anbNuU3e5PAvpfa8r26aZG7ubP.jpg');
 window.PVR_SPECIAL_POSTERS = new Map(); // key: pvr event id => TMDB poster url
 window.EPISODE_META = new Map();   // key: local episode number => tmdb metadata
 window.SEASON_STILLS = new Map();  // key: local season id (S1...) => representative still
@@ -1411,7 +1411,7 @@ function renderHome() {
           <!-- Card 1: Netflix India Simulcast -->
           <div class="latest-cinematic-card" onclick="Router.navigate('/platform/netflix')">
             <div class="lcc-new-inline" style="background:var(--red);box-shadow:0 4px 16px rgba(229,9,20,0.45)">⚡ Simulcast</div>
-            <div class="lcc-img" id="netflix-latest-img" style="background-image:url('https://image.tmdb.org/t/p/w780/hlOn0BETlASlpLThKu2gXn9ae1H.jpg')"></div>
+            <div class="lcc-img" id="netflix-latest-img" style="background-image:url('${window.optimizeImage('https://image.tmdb.org/t/p/w780/hlOn0BETlASlpLThKu2gXn9ae1H.jpg')}')"></div>
             <div class="lcc-overlay"></div>
             <div class="lcc-content">
               <span class="lcc-platform-badge" style="background:rgba(229,9,20,0.2);border-color:rgba(229,9,20,0.4)">Netflix India</span>
@@ -1507,7 +1507,7 @@ function renderHome() {
           <button class="section-view-all" onclick="Router.navigate('/browse')">Browse All &rarr;</button>
         </div>
         <div class="manga-teaser reveal" onclick="Router.navigate('/browse')" style="cursor:pointer">
-          <div class="manga-teaser-img" style="background-image:url('https://occ-0-8407-2218.1.nflxso.net/dnm/api/v6/6AYY37jfdO6hpXcMjf9Yu5cnmO0/AAAABemirHr5-iYrdm1iRdUOx3Rs7aRskVuVEi9vshoNe7M4wAM_jwCKfiz6vY-GC9_gKPY6Iz19vkBizq31-P3Dl8qqjWTEvi_2a3QwZujQrw.jpg'); background-position: 80% center;"></div>
+          <div class="manga-teaser-img" style="background-image:url('${window.optimizeImage('https://occ-0-8407-2218.1.nflxso.net/dnm/api/v6/6AYY37jfdO6hpXcMjf9Yu5cnmO0/AAAABemirHr5-iYrdm1iRdUOx3Rs7aRskVuVEi9vshoNe7M4wAM_jwCKfiz6vY-GC9_gKPY6Iz19vkBizq31-P3Dl8qqjWTEvi_2a3QwZujQrw.jpg')}'); background-position: 80% center;"></div>
           <div class="manga-teaser-body">
             <div class="manga-teaser-label">Movies · Episodes · OVAs · Spinoffs</div>
             <div class="manga-teaser-title">Browse <em>All Content</em></div>
@@ -1528,7 +1528,7 @@ function renderHome() {
           <button class="section-view-all" onclick="Router.navigate('/guides')">View Guide &rarr;</button>
         </div>
         <div class="manga-teaser reveal" onclick="Router.navigate('/guides')" style="cursor:pointer">
-          <div class="manga-teaser-img" style="background-image:url('https://www.video-games-museum.com/en/screenshots/Playstation/2/37748-menu-Meitantei-Conan-Trick-Trick-Vol-1.jpg')"></div>
+          <div class="manga-teaser-img" style="background-image:url('${window.optimizeImage('https://www.video-games-museum.com/en/screenshots/Playstation/2/37748-menu-Meitantei-Conan-Trick-Trick-Vol-1.jpg')}')"></div>
           <div class="manga-teaser-body">
             <div class="manga-teaser-label">Plot Tags · Canon Episodes · Filler Filter</div>
             <div class="manga-teaser-title">Find the <em>Best Episodes</em></div>
@@ -4347,7 +4347,7 @@ function renderComprehensiveGuide() {
 
   pg.innerHTML = `
     <section class="movies-page-hero">
-      <div class="movies-page-hero-bg" style="background-image:url('https://image.tmdb.org/t/p/w1280/vG4KHOzT1qk8ATnBMWUuvwGIlcR.jpg')"></div>
+      <div class="movies-page-hero-bg" style="background-image:url('${window.optimizeImage('https://image.tmdb.org/t/p/w1280/vG4KHOzT1qk8ATnBMWUuvwGIlcR.jpg')}')"></div>
       <div class="movies-page-hero-overlay"></div>
       <div class="movies-page-hero-content">
         <button class="pp-hero-back" onclick="Router.navigate('/guide')">← Watch Guides</button>
@@ -5273,7 +5273,7 @@ function renderImportantEpisodesPage() {
 
   pg.innerHTML = `
     <section class="movies-page-hero">
-      <div class="movies-page-hero-bg" style="background-image:url('https://image.tmdb.org/t/p/w1280/j2qXQ8kHpMMX6U9qkPLo0yw8fF4.jpg')"></div>
+      <div class="movies-page-hero-bg" style="background-image:url('${window.optimizeImage('https://image.tmdb.org/t/p/w1280/j2qXQ8kHpMMX6U9qkPLo0yw8fF4.jpg')}')"></div>
       <div class="movies-page-hero-overlay"></div>
       <div class="movies-page-hero-content">
         <button class="pp-hero-back" onclick="Router.navigate('/guide')">&larr; Watch Guide</button>
@@ -5358,7 +5358,7 @@ function renderCanonEpisodesPage() {
 
   pg.innerHTML = `
     <section class="movies-page-hero">
-      <div class="movies-page-hero-bg" style="background-image:url('https://image.tmdb.org/t/p/w1280/y7Wr1CbEiu1Lpv7ZQmVPwKovire.jpg')"></div>
+      <div class="movies-page-hero-bg" style="background-image:url('${window.optimizeImage('https://image.tmdb.org/t/p/w1280/y7Wr1CbEiu1Lpv7ZQmVPwKovire.jpg')}')"></div>
       <div class="movies-page-hero-overlay"></div>
       <div class="movies-page-hero-content">
         <button class="pp-hero-back" onclick="Router.navigate('/guide')">&larr; Watch Guide</button>
@@ -5413,7 +5413,7 @@ function renderWatchGuidesIndex() {
 
   pg.innerHTML = `
     <section class="movies-page-hero">
-      <div class="movies-page-hero-bg" style="background-image:url('https://image.tmdb.org/t/p/w1280/vG4KHOzT1qk8ATnBMWUuvwGIlcR.jpg')"></div>
+      <div class="movies-page-hero-bg" style="background-image:url('${window.optimizeImage('https://image.tmdb.org/t/p/w1280/vG4KHOzT1qk8ATnBMWUuvwGIlcR.jpg')}')"></div>
       <div class="movies-page-hero-overlay"></div>
       <div class="movies-page-hero-content">
         <div class="section-eyebrow">Watch Guides</div>
@@ -5429,7 +5429,7 @@ function renderWatchGuidesIndex() {
         
         <div class="featured-guide-card" onclick="Router.navigate('/guide')">
           <div class="featured-guide-img-wrap">
-            <div class="featured-guide-img" style="background-image:url('https://image.tmdb.org/t/p/w1280/j2qXQ8kHpMMX6U9qkPLo0yw8fF4.jpg')"></div>
+            <div class="featured-guide-img" style="background-image:url('${window.optimizeImage('https://image.tmdb.org/t/p/w1280/j2qXQ8kHpMMX6U9qkPLo0yw8fF4.jpg')}')"></div>
             <div class="featured-guide-badge">01</div>
           </div>
           <div class="featured-guide-body">
@@ -5457,7 +5457,7 @@ function renderWatchGuidesIndex() {
           <!-- Canon Episodes Guide Card -->
           <div class="guide-card-modern" onclick="Router.navigate('/guide/canon-episodes')">
             <div class="guide-card-img-wrap">
-              <div class="guide-card-img" style="background-image:url('https://image.tmdb.org/t/p/w500/y7Wr1CbEiu1Lpv7ZQmVPwKovire.jpg')"></div>
+              <div class="guide-card-img" style="background-image:url('${window.optimizeImage('https://image.tmdb.org/t/p/w500/y7Wr1CbEiu1Lpv7ZQmVPwKovire.jpg')}')"></div>
               <div class="guide-card-badge">02</div>
             </div>
             <div class="guide-card-body">
@@ -5477,7 +5477,7 @@ function renderWatchGuidesIndex() {
           <!-- Release Order Guide Card -->
           <div class="guide-card-modern" onclick="Router.navigate('/guide/release-order')">
             <div class="guide-card-img-wrap">
-              <div class="guide-card-img" style="background-image:url('https://image.tmdb.org/t/p/w500/425liZqczC5PtEaCKF1TQ4PEt9Z.jpg')"></div>
+              <div class="guide-card-img" style="background-image:url('${window.optimizeImage('https://image.tmdb.org/t/p/w500/425liZqczC5PtEaCKF1TQ4PEt9Z.jpg')}')"></div>
               <div class="guide-card-badge">03</div>
             </div>
             <div class="guide-card-body">
@@ -5497,7 +5497,7 @@ function renderWatchGuidesIndex() {
           <!-- Black Organization Arc Guide Card -->
           <div class="guide-card-modern" onclick="Router.navigate('/guide/black-org-guide')">
             <div class="guide-card-img-wrap">
-              <div class="guide-card-img" style="background-image:url('https://image.tmdb.org/t/p/w500/9GD5K65E3VkKB9O44xg5qpKae54.jpg')"></div>
+              <div class="guide-card-img" style="background-image:url('${window.optimizeImage('https://image.tmdb.org/t/p/w500/9GD5K65E3VkKB9O44xg5qpKae54.jpg')}')"></div>
               <div class="guide-card-badge">04</div>
             </div>
             <div class="guide-card-body">
@@ -5517,7 +5517,7 @@ function renderWatchGuidesIndex() {
           <!-- India Watch Guide Card -->
           <div class="guide-card-modern" onclick="Router.navigate('/guide/india')">
             <div class="guide-card-img-wrap">
-              <div class="guide-card-img" style="background-image:url('https://image.tmdb.org/t/p/w500/iz0CLEAUGEx642NccmpCtGGCQ8t.jpg')"></div>
+              <div class="guide-card-img" style="background-image:url('${window.optimizeImage('https://image.tmdb.org/t/p/w500/iz0CLEAUGEx642NccmpCtGGCQ8t.jpg')}')"></div>
               <div class="guide-card-badge">05</div>
               <div class="guide-card-india-flag">🇮🇳</div>
             </div>
@@ -7734,7 +7734,7 @@ function renderNoFillerPage() {
 
   pg.innerHTML = `
     <section class="movies-page-hero">
-      <div class="movies-page-hero-bg" style="background-image:url('https://image.tmdb.org/t/p/w1280/j2qXQ8kHpMMX6U9qkPLo0yw8fF4.jpg')"></div>
+      <div class="movies-page-hero-bg" style="background-image:url('${window.optimizeImage('https://image.tmdb.org/t/p/w1280/j2qXQ8kHpMMX6U9qkPLo0yw8fF4.jpg')}')"></div>
       <div class="movies-page-hero-overlay"></div>
       <div class="movies-page-hero-content">
         <button class="pp-hero-back" onclick="Router.navigate('/guide')">&larr; Watch Guides</button>

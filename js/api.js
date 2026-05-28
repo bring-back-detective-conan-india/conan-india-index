@@ -117,18 +117,18 @@ function getMangaCover(vol){
   // Priority 1: Amazon CDN via converted ISBN-10
   if (typeof MANGA_ISBNS !== 'undefined' && MANGA_ISBNS[n]) {
     const isbn10 = convertISBN13to10(MANGA_ISBNS[n]);
-    return `https://images-na.ssl-images-amazon.com/images/P/${isbn10}.01.LZZZZZZZ.jpg`;
+    return window.optimizeImage(`https://images-na.ssl-images-amazon.com/images/P/${isbn10}.01.LZZZZZZZ.jpg`);
   }
   
   // Priority 2: Open Library verified covers (to avoid 404s)
   if (VALID_MANGA_COVERS.has(n) && typeof MANGA_ISBNS !== 'undefined' && MANGA_ISBNS[n]) {
-    return `https://covers.openlibrary.org/b/isbn/${MANGA_ISBNS[n]}-L.jpg?default=false`;
+    return window.optimizeImage(`https://covers.openlibrary.org/b/isbn/${MANGA_ISBNS[n]}-L.jpg?default=false`);
   }
   
   // Priority 3: MangaDex cover via pre-generated cover mapping (CORS-friendly CDN)
   if (typeof MANGADEX_COVERS !== 'undefined' && MANGADEX_COVERS[n.toString()]) {
     const fileName = MANGADEX_COVERS[n.toString()];
-    return `https://uploads.mangadex.org/covers/7f30dfc3-0b80-4dcc-a3b9-0cd746fac005/${fileName}.512.jpg`;
+    return window.optimizeImage(`https://uploads.mangadex.org/covers/7f30dfc3-0b80-4dcc-a3b9-0cd746fac005/${fileName}.512.jpg`);
   }
   
   return '';
@@ -248,49 +248,49 @@ function getEpisodeMeta(ep){
 }
 
 function getEpisodeStill(ep, fallbackIdx=0){
-  return getEpisodeMeta(ep)?.still || getImg(fallbackIdx);
+  return window.optimizeImage(getEpisodeMeta(ep)?.still || getImg(fallbackIdx));
 }
 
 function getSeasonStillByLocalSeasonId(sid, fallbackIdx=0){
-  return window.SEASON_STILLS.get(sid) || getImg(fallbackIdx);
+  return window.optimizeImage(window.SEASON_STILLS.get(sid) || getImg(fallbackIdx));
 }
 
 function getMoviePosterHiRes(m, fallbackIdx){
   const cached = window.MOVIE_POSTERS.get(m.id);
-  if(cached) return cached.replace('/w154/','/w500/').replace('/w185/','/w500/');
-  return getImg(fallbackIdx !== undefined ? fallbackIdx : m.n);
+  if(cached) return window.optimizeImage(cached.replace('/w154/','/w500/').replace('/w185/','/w500/'));
+  return window.optimizeImage(getImg(fallbackIdx !== undefined ? fallbackIdx : m.n));
 }
 
 function getMovieBackdrop(m, fallbackIdx){
   if(!window.MOVIE_BACKDROPS) return getMoviePoster(m, fallbackIdx);
   const cached = window.MOVIE_BACKDROPS.get(m.id);
-  if(cached) return cached;
+  if(cached) return window.optimizeImage(cached);
   return getMoviePoster(m, fallbackIdx);
 }
 
 function getMoviePoster(m, fallbackIdx){
   const cached = window.MOVIE_POSTERS.get(m.id);
-  if(cached) return cached;
-  return getImg(fallbackIdx !== undefined ? fallbackIdx : m.n);
+  if(cached) return window.optimizeImage(cached);
+  return window.optimizeImage(getImg(fallbackIdx !== undefined ? fallbackIdx : m.n));
 }
 
 function getPVREventPoster(ev, fallbackIdx){
-  if(ev.poster) return ev.poster; // hardcoded (e.g. JFF)
+  if(ev.poster) return window.optimizeImage(ev.poster); // hardcoded (e.g. JFF)
   if(ev.movieId){
     const m = (typeof MOVIES!=='undefined'?MOVIES:[]).find(x=>x.id===ev.movieId);
     if(m) return getMoviePoster(m, fallbackIdx);
   }
   if(ev.tmdb){
     const cached = window.PVR_SPECIAL_POSTERS.get(ev.id);
-    if(cached) return cached;
+    if(cached) return window.optimizeImage(cached);
   }
-  return getImg(fallbackIdx !== undefined ? fallbackIdx : 0);
+  return window.optimizeImage(getImg(fallbackIdx !== undefined ? fallbackIdx : 0));
 }
 
 function getSpinoffPoster(sp, fallbackIdx){
-  if(!sp) return getImg(fallbackIdx || 0);
+  if(!sp) return window.optimizeImage(getImg(fallbackIdx || 0));
   const cached = window.SPINOFF_POSTERS.get(sp.id);
-  if(cached) return cached;
-  return getImg(fallbackIdx !== undefined ? fallbackIdx : 0);
+  if(cached) return window.optimizeImage(cached);
+  return window.optimizeImage(getImg(fallbackIdx !== undefined ? fallbackIdx : 0));
 }
 
