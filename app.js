@@ -754,15 +754,23 @@ function refreshEpisodeSeasonVisuals() {
     }
   });
 
-  // Also refresh Magic Kaito 1412 cards in watch guide
+  // Also refresh Magic Kaito 1412 cards in watch guide and spinoff page
   document.querySelectorAll('[data-mk-ep]').forEach(el => {
     const epNum = Number(el.dataset.mkEp);
     if (!epNum) return;
     const meta = window.EPISODE_META?.get(`mk${epNum}`);
-    if (meta && meta.still) {
-      const img = el.querySelector('.wg2-card-thumb img');
-      if (img) img.src = meta.still;
+    if (meta) {
+      if (meta.still) {
+        const img = el.querySelector('.wg2-card-thumb img, .episode-poster img');
+        if (img) img.src = meta.still;
+      }
       
+      // Update title on Magic Kaito spinoff page
+      const titleEl = el.querySelector('.episode-title');
+      if (titleEl && meta.name) {
+        titleEl.textContent = meta.name;
+      }
+
       // Also update description if present
       const desc = el.querySelector('.wg2-card-desc');
       if (desc && meta.overview) {
@@ -8227,9 +8235,11 @@ function renderMagicKaitoPage() {
       <h2 class="section-title">All Episodes</h2>
       <div class="episodes-grid">
         ${Array.from({ length: MAGIC_KAITO.episodes }, (_, i) => i + 1).map(epNum => {
-    const imageUrl = [IMG.kid, IMG.conan1, IMG.ran, IMG.heiji][epNum % 4];
+    const meta = window.EPISODE_META?.get(`mk${epNum}`);
+    const imageUrl = meta?.still || [IMG.kid, IMG.conan1, IMG.ran, IMG.heiji][epNum % 4];
+    const epTitle = meta?.name || `Episode ${epNum}`;
     return `
-            <div class="episode-card reveal" onclick="event.preventDefault(); event.stopPropagation(); openMagicKaitoEpisode('episode', ${epNum});">
+            <div class="episode-card reveal" data-mk-ep="${epNum}" onclick="event.preventDefault(); event.stopPropagation(); openMagicKaitoEpisode('episode', ${epNum});">
               <div class="episode-poster">
                 <img src="${imageUrl}" alt="Episode ${epNum}" loading="lazy">
                 <div class="episode-overlay">
@@ -8238,7 +8248,7 @@ function renderMagicKaitoPage() {
               </div>
               <div class="episode-info">
                 <div class="episode-number">Episode ${epNum}</div>
-                <h3 class="episode-title">Episode ${epNum}</h3>
+                <h3 class="episode-title">${epTitle}</h3>
                 <p class="episode-year">2014</p>
               </div>
             </div>
@@ -8446,10 +8456,22 @@ async function openMagicKaitoEpisode(type, number) {
     badge = 'Magic Kaito 1412';
     title = `Episode ${number}`;
     desc = '2014 • English Dub Available';
-    // Get TMDB still for episode
-    stillUrl = `https://image.tmdb.org/t/p/w500/yFAqxNPOK5JkWKLSSB65gK59W8Q.jpg`; // fallback to series poster
-    heroImage = `https://image.tmdb.org/t/p/w1280/yFAqxNPOK5JkWKLSSB65gK59W8Q.jpg`;
-    content = `<div class="modal-loading">Loading episode details...</div>`;
+    
+    // Check if TMDB metadata is already in cache
+    const meta = window.EPISODE_META?.get(`mk${number}`);
+    if (meta) {
+      title = meta.name || `Episode ${number}`;
+      stillUrl = meta.still || `https://image.tmdb.org/t/p/w500/yFAqxNPOK5JkWKLSSB65gK59W8Q.jpg`;
+      heroImage = meta.still ? meta.still.replace('/w500/', '/w1280/').replace('/w300/', '/w1280/') : `https://image.tmdb.org/t/p/w1280/yFAqxNPOK5JkWKLSSB65gK59W8Q.jpg`;
+      content = `
+        <h3 style="margin: 0 0 12px 0; color: var(--text); font-size: 18px;">${title}</h3>
+        <p style="margin: 0 0 12px 0; color: var(--text2); line-height: 1.6;">${meta.overview || 'No description available.'}</p>
+      `;
+    } else {
+      stillUrl = `https://image.tmdb.org/t/p/w500/yFAqxNPOK5JkWKLSSB65gK59W8Q.jpg`; // fallback to series poster
+      heroImage = `https://image.tmdb.org/t/p/w1280/yFAqxNPOK5JkWKLSSB65gK59W8Q.jpg`;
+      content = `<div class="modal-loading">Loading episode details...</div>`;
+    }
   } else if (type === 'ova') {
     const ova = OVAS.find(o => o.id === number);
     badge = 'OVA';
@@ -8503,7 +8525,17 @@ async function openMagicKaitoEpisode(type, number) {
     let data, watchContent;
 
     if (type === 'episode') {
-      data = await fetchTMBDEpisodeData(MAGIC_KAITO.tmdb, 1, number);
+      const meta = window.EPISODE_META?.get(`mk${number}`);
+      if (meta) {
+        data = {
+          title: meta.name || `Episode ${number}`,
+          description: meta.overview,
+          image: meta.still,
+          airDate: null
+        };
+      } else {
+        data = await fetchTMBDEpisodeData(MAGIC_KAITO.tmdb, 1, number);
+      }
 
       if (data) {
         // Update hero with episode still if available
@@ -8698,11 +8730,29 @@ function refreshYaibaPosters() {
 async function fetchYaibaSeasonData() {
   const cacheKey = `yaiba-${YAIBA.tmdb}-s1`;
   if (window.SPINOFF_SEASON_DATA.has(cacheKey)) return window.SPINOFF_SEASON_DATA.get(cacheKey);
+
+  const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
+  try {
+    const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+    if (cached && (Date.now() - cached.ts) < CACHE_TTL) {
+      window.SPINOFF_SEASON_DATA.set(cacheKey, cached.data);
+      return cached.data;
+    }
+  } catch (_) {}
+
   try {
     const r = await fetch(`https://api.themoviedb.org/3/tv/${YAIBA.tmdb}/season/1?api_key=${TMDB_KEY}&language=en-US`);
     if (!r.ok) return null;
     const data = await r.json();
     window.SPINOFF_SEASON_DATA.set(cacheKey, data);
+
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify({
+        ts: Date.now(),
+        data: data
+      }));
+    } catch (_) {}
+
     return data;
   } catch (e) { return null; }
 }
@@ -8786,14 +8836,28 @@ function renderYaibaPage() {
   const heroImage = window.YAIBA_BACKDROP || (window.YAIBA_POSTER ? window.YAIBA_POSTER.replace('/w500/', '/w1280/') : '');
   const localEps = typeof YAIBA_EPISODES !== 'undefined' ? YAIBA_EPISODES : [];
 
+  // Try loading cached season data synchronously
+  let cachedData = null;
+  try {
+    const cached = JSON.parse(localStorage.getItem(`yaiba-${y.tmdb}-s1`) || 'null');
+    if (cached && (Date.now() - cached.ts) < 7 * 24 * 60 * 60 * 1000) {
+      cachedData = cached.data;
+      window.SPINOFF_SEASON_DATA.set(`yaiba-${y.tmdb}-s1`, cachedData);
+    }
+  } catch (_) {}
+
   const episodeCards = Array.from({ length: y.episodes }, (_, i) => {
     const epNum = i + 1;
     const ep = localEps.find(e => e.n === epNum);
-    const title = ep ? ep.title : `Episode ${epNum}`;
-    const desc = ep ? ep.desc : '';
+    const tmdbEp = cachedData && cachedData.episodes ? cachedData.episodes.find(e => e.episode_number === epNum) : null;
+
+    const title = ep ? ep.title : (tmdbEp ? tmdbEp.name : `Episode ${epNum}`);
+    const desc = ep ? ep.desc : (tmdbEp ? tmdbEp.overview : '');
+    const thumbUrl = tmdbEp && tmdbEp.still_path ? `https://image.tmdb.org/t/p/w300${tmdbEp.still_path}` : '';
+
     return `
       <div class="yaiba-ep-card" data-yaiba-ep="${epNum}" onclick="openYaibaEpisode(${epNum})">
-        <div class="yaiba-ep-thumb" id="yaiba-thumb-${epNum}">
+        <div class="yaiba-ep-thumb" id="yaiba-thumb-${epNum}" ${thumbUrl ? `style="background-image:url('${thumbUrl}')"` : ''}>
           <div class="yaiba-ep-overlay"></div>
           <div class="yaiba-ep-num-badge">${epNum}</div>
         </div>
@@ -8853,7 +8917,7 @@ function renderYaibaPage() {
       const epNum = epData.episode_number;
       const thumbEl = document.getElementById(`yaiba-thumb-${epNum}`);
       const descEl = document.getElementById(`yaiba-desc-${epNum}`);
-      if (thumbEl && epData.still_path) {
+      if (thumbEl && epData.still_path && !thumbEl.style.backgroundImage) {
         thumbEl.style.backgroundImage = `url('https://image.tmdb.org/t/p/w300${epData.still_path}')`;
       }
       if (descEl && epData.overview && !descEl.textContent.trim()) {
