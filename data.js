@@ -344,7 +344,7 @@ const PVR_EVENTS = [
     title:"Japan Film Festival",
     subtitle:"Festival Screenings · 2023",
     colors:["#001A3A","#CC0000"],
-    poster:"fallback-images/misc/japan-film-festival.png",
+    poster:"https://japanesefilmfestph.jfmo.org.ph/wp-content/uploads/elementor/thumbs/JFF_Logo-01-rmpqv0et7y7xp0ozq5gbfi8b94c81gnuntmh3js2jq.png",
     detail:"Select Detective Conan films screened as part of the Japan Film Festival across Indian cities."
   }
 ];
