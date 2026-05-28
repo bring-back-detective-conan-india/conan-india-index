@@ -109,6 +109,7 @@ function renderFooterHTML(){
           <div class="footer-col-title">More</div>
           <div class="footer-links">
             <a href="/languages" onclick="event.preventDefault(); Router.navigate('/languages')">Languages Guide</a>
+            <a href="/calendar" onclick="event.preventDefault(); Router.navigate('/calendar')">Release Calendar</a>
             <a href="/#etv" onclick="event.preventDefault(); scrollToSection('etv')">ETV Bal Bharat</a>
             <a href="/merch" onclick="event.preventDefault(); Router.navigate('/merch')">Fan Merch India</a>
             <a href="/#archive" onclick="event.preventDefault(); Router.currentRoute==='/'||Router.currentRoute===''?scrollToSection('archive'):(Router.navigate('/'),setTimeout(()=>scrollToSection('archive'),400))">Archive</a>

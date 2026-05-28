@@ -906,6 +906,8 @@ const Router = {
       renderBrowsePage();
     } else if (path === '/languages') {
       renderLanguagesPage();
+    } else if (path === '/calendar') {
+      renderCalendarPage();
     } else if (path === '/merch') {
       renderMerchPage();
     } else if (path === '/guides') {
@@ -1013,6 +1015,10 @@ const Router = {
         case '/languages':
           title = "12 Regional Language Dubs & Cast — Conan India";
           desc = "Meet the official voice cast behind the regional dubs (Hindi, Tamil, Telugu, Bengali, Gujarati, etc.) for ETV Bal Bharat and Netflix.";
+          break;
+        case '/calendar':
+          title = "Detective Conan Release Calendar — Weekly Indian Schedule";
+          desc = "Stay up to date with new Detective Conan weekly episodes on Netflix, Anime Times, ETV Bal Bharat regional dub broadcasts, and new manga volume releases.";
           break;
         case '/merch':
           title = "Detective Conan Official Merchandise in India";
@@ -6575,6 +6581,330 @@ function renderBrowsePage() {
       window.removeEventListener('scroll', updateStickyTop);
     }, { once: true });
   }
+}
+
+// ─── CASE CALENDAR PAGE ──────────────────────────────
+function renderCalendarPage() {
+  app.innerHTML = '';
+  window.scrollTo({ top: 0, behavior: "instant" });
+
+  const pg = document.createElement('div');
+  pg.className = 'page-enter';
+
+  // Hero Section
+  pg.innerHTML = `
+    <section id="hero" class="hero-subpage" style="height:320px;min-height:320px;background-image:linear-gradient(rgba(7,7,15,0.75),rgba(7,7,15,0.95)),url('${window.optimizeImage('https://image.tmdb.org/t/p/w1280/lsowV2yCGg0YsV0HIg22eREUaqm.jpg')}')">
+      <div class="section-max hero-slide-content">
+        <span class="hero-tag" style="border-color:#CC2233;color:#ff4d58;"><span class="hero-emoji">📅</span> Case Schedule</span>
+        <h1 class="hero-title" style="font-size:clamp(36px,6vw,64px)">Release <em>Calendar</em></h1>
+        <p class="hero-desc" style="max-width:560px;margin-top:10px">Track upcoming episodes, TV broadcasts, and manga publications in India at a single glance.</p>
+      </div>
+    </section>
+
+    <section class="section-max" style="padding-top:40px;padding-bottom:80px;position:relative;z-index:10;">
+      <div class="calendar-layout">
+        <!-- Calendar Grid Card -->
+        <div class="calendar-card">
+          <div class="cal-header">
+            <h2 class="cal-month-title" id="cal-month-title">May 2026</h2>
+            <div class="cal-nav-btns">
+              <button class="cal-nav-btn" id="cal-prev-btn" aria-label="Previous Month">‹</button>
+              <button class="cal-nav-btn" id="cal-next-btn" aria-label="Next Month">›</button>
+            </div>
+          </div>
+          <div class="cal-weekdays">
+            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+          </div>
+          <div class="cal-grid" id="cal-grid"></div>
+        </div>
+
+        <!-- Dossier Sidebar -->
+        <div class="calendar-sidebar">
+          <div class="cal-dossier-card">
+            <h3 class="cal-dossier-title">Case File: <span id="cal-selected-date-str">May 28, 2026</span></h3>
+            <div id="cal-dossier-content" style="display:flex;flex-direction:column;gap:12px;"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  `;
+
+  app.appendChild(pg);
+
+  // Calendar State
+  // Start at May 2026 (local time is May 28, 2026)
+  let viewDate = new Date(2026, 4, 28); 
+  let selectedDate = new Date(2026, 4, 28);
+
+  const monthTitle = document.getElementById('cal-month-title');
+  const calGrid = document.getElementById('cal-grid');
+  const selectedDateStr = document.getElementById('cal-selected-date-str');
+  const dossierContent = document.getElementById('cal-dossier-content');
+
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  // Upcoming Manga Releases static schedule
+  const MANGA_SCHEDULE = [
+    { vol: 95, date: "2026-05-12", title: "Volume 95 Viz Release", isbn: "1974758532" },
+    { vol: 96, date: "2026-08-11", title: "Volume 96 Viz Release", isbn: "1974755401" },
+    { vol: 97, date: "2026-11-13", title: "Volume 97 Viz Release", isbn: "9781974761843" },
+    { vol: 98, date: "2027-03-09", title: "Volume 98 Viz Release", isbn: "9781974765669" },
+    { vol: 99, date: "2027-07-13", title: "Volume 99 Viz Release", isbn: "9781974769001" }
+  ];
+
+  function getEventsForDate(d) {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const date = String(d.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${date}`;
+    const dayOfWeek = d.getDay(); // 0 = Sun, 6 = Sat
+
+    const events = [];
+
+    // 1. Daily ETV Bal Bharat Broadcast
+    events.push({
+      type: 'broadcast',
+      badgeClass: 'cal-event-type-badge--broadcast',
+      badgeName: 'ETV Bal Bharat',
+      time: '11:00 PM IST',
+      title: 'Nightly Regional Dub Broadcast',
+      desc: 'Selective dubbed episodes airing nightly. Available in Hindi, Tamil, Telugu, Malayalam, Kannada, and other regional languages on paid DTH/cable.',
+      url: 'https://www.instagram.com/etvbalbharat/'
+    });
+
+    // 2. Weekly Netflix Saturday Simulcast
+    if (dayOfWeek === 6) { // Saturday
+      // Try to find matching episode in EPISODES
+      const catalogedEp = (typeof EPISODES !== 'undefined' ? EPISODES : []).find(e => e.aired === dateStr);
+      if (catalogedEp) {
+        events.push({
+          type: 'netflix',
+          badgeClass: 'cal-event-type-badge--netflix',
+          badgeName: 'Netflix India',
+          time: '4:30 PM IST',
+          title: `Ep ${catalogedEp.n}: "${catalogedEp.title}"`,
+          desc: `Official weekly simulcast premiere of Season 31 on Netflix India. Japanese audio with English subtitles.`,
+          url: 'https://www.netflix.com/title/80090370'
+        });
+      } else {
+        // Calculate estimated episode number for future Saturdays
+        const baseSaturday = new Date("2026-05-09");
+        const baseEpNum = 1201;
+        const diffTime = d.getTime() - baseSaturday.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays > 0 && diffDays % 7 === 0) {
+          const weeksGap = diffDays / 7;
+          const estimatedEp = baseEpNum + weeksGap;
+          events.push({
+            type: 'netflix',
+            badgeClass: 'cal-event-type-badge--netflix',
+            badgeName: 'Netflix India',
+            time: '4:30 PM IST',
+            title: `Ep ${estimatedEp} (Estimated Simulcast)`,
+            desc: `Scheduled premiere of new Simulcast episode on Netflix India. Japanese audio with English subtitles.`,
+            url: 'https://www.netflix.com/title/80090370'
+          });
+        }
+      }
+    }
+
+    // 3. Manga Volume releases
+    const mangaRelease = MANGA_SCHEDULE.find(m => m.date === dateStr);
+    if (mangaRelease) {
+      events.push({
+        type: 'manga',
+        badgeClass: 'cal-event-type-badge--manga',
+        badgeName: 'Viz Media Manga',
+        time: 'Physical / Digital Release',
+        title: `Case Closed, Vol. ${mangaRelease.vol}`,
+        desc: `Official publication of Case Closed (Detective Conan) Volume ${mangaRelease.vol} in English by Viz Media. Available in India at online stores and retail libraries.`,
+        url: `https://www.amazon.in/s?k=Case+Closed+Volume+${mangaRelease.vol}+Gosho+Aoyama`
+      });
+    }
+
+    // 4. Special/Anniversary Days
+    // Shinichi Kudo's Birthday (May 4)
+    if (d.getMonth() === 4 && d.getDate() === 4) {
+      events.push({
+        type: 'manga',
+        badgeClass: 'cal-event-type-badge--manga',
+        badgeName: 'Special Fan Event',
+        time: 'All Day',
+        title: "🎉 Shinichi Kudo's Birthday!",
+        desc: "Happy Birthday to our famous high school detective, Shinichi Kudo (Jimmy Kudo)!",
+        url: null
+      });
+    }
+    // Ran Mouri's Birthday (July 31)
+    if (d.getMonth() === 6 && d.getDate() === 31) {
+      events.push({
+        type: 'manga',
+        badgeClass: 'cal-event-type-badge--manga',
+        badgeName: 'Special Fan Event',
+        time: 'All Day',
+        title: "🎉 Ran Mouri's Birthday!",
+        desc: "Happy Birthday to karate champion and Shinichi's best friend, Ran Mouri!",
+        url: null
+      });
+    }
+    // Anime Anniversary (January 8)
+    if (d.getMonth() === 0 && d.getDate() === 8) {
+      events.push({
+        type: 'manga',
+        badgeClass: 'cal-event-type-badge--manga',
+        badgeName: 'Anniversary',
+        time: 'All Day',
+        title: "📺 Detective Conan Anime Anniversary!",
+        desc: "On this day in 1996, the first episode of Detective Conan premiered on television in Japan!",
+        url: null
+      });
+    }
+    // Manga Anniversary (January 5)
+    if (d.getMonth() === 0 && d.getDate() === 5) {
+      events.push({
+        type: 'manga',
+        badgeClass: 'cal-event-type-badge--manga',
+        badgeName: 'Anniversary',
+        time: 'All Day',
+        title: "📚 Detective Conan Manga Anniversary!",
+        desc: "On this day in 1994, Gosho Aoyama published the very first chapter of Detective Conan in Weekly Shonen Sunday!",
+        url: null
+      });
+    }
+
+    return events;
+  }
+
+  function updateDossier(d) {
+    const options = { month: 'long', day: 'numeric', year: 'numeric' };
+    selectedDateStr.textContent = d.toLocaleDateString('en-US', options);
+
+    const events = getEventsForDate(d);
+    dossierContent.innerHTML = '';
+
+    if (events.length === 0) {
+      dossierContent.innerHTML = `
+        <div style="text-align:center;padding:32px 12px;color:var(--muted);">
+          <span style="font-size:32px;display:block;margin-bottom:8px;">🕵️‍♂️</span>
+          No scheduled releases on this day. Use the calendar grid to explore other dates!
+        </div>
+      `;
+      return;
+    }
+
+    events.forEach(e => {
+      const item = document.createElement('div');
+      item.className = 'cal-event-item';
+      item.innerHTML = `
+        <div class="cal-event-top">
+          <span class="cal-event-type-badge ${e.badgeClass}">${e.badgeName}</span>
+          <span class="cal-event-time">${e.time}</span>
+        </div>
+        <div class="cal-event-title">${e.title}</div>
+        <div class="cal-event-desc">${e.desc}</div>
+        ${e.url ? `
+          <button class="lcc-action-btn cal-event-btn" onclick="window.open('${e.url}', '_blank', 'noopener')">
+            <span>${e.type === 'manga' ? 'Check Release' : 'Stream Now'}</span>
+            <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        ` : ''}
+      `;
+      dossierContent.appendChild(item);
+    });
+  }
+
+  function renderGrid() {
+    const year = viewDate.getFullYear();
+    const month = viewDate.getMonth();
+
+    // Set header month title
+    monthTitle.textContent = `${monthNames[month]} ${year}`;
+
+    // Get first day of month (0 = Sun, 6 = Sat)
+    const firstDayIndex = new Date(year, month, 1).getDay();
+
+    // Get last date of current month
+    const totalDays = new Date(year, month + 1, 0).getDate();
+
+    // Get last date of previous month
+    const prevTotalDays = new Date(year, month, 0).getDate();
+
+    calGrid.innerHTML = '';
+
+    // 1. Render padding from previous month
+    for (let i = firstDayIndex; i > 0; i--) {
+      const cell = document.createElement('div');
+      cell.className = 'cal-cell other-month';
+      cell.innerHTML = `<span class="cal-cell-num">${prevTotalDays - i + 1}</span>`;
+      calGrid.appendChild(cell);
+    }
+
+    // 2. Render actual days of the current month
+    for (let dayNum = 1; dayNum <= totalDays; dayNum++) {
+      const cellDate = new Date(year, month, dayNum);
+      const cell = document.createElement('div');
+      cell.className = 'cal-cell';
+
+      // Check if it is today (May 28, 2026)
+      const isToday = year === 2026 && month === 4 && dayNum === 28;
+      if (isToday) cell.classList.add('today');
+
+      // Check if selected
+      const isSelected = selectedDate && 
+                         selectedDate.getFullYear() === year && 
+                         selectedDate.getMonth() === month && 
+                         selectedDate.getDate() === dayNum;
+      if (isSelected) cell.classList.add('selected');
+
+      // Day number label
+      let innerHTML = `<span class="cal-cell-num">${dayNum}</span>`;
+
+      // Get indicators for this cell
+      const events = getEventsForDate(cellDate);
+      if (events.length > 0) {
+        let dotsHTML = '<div class="cal-cell-indicators">';
+        events.forEach(ev => {
+          dotsHTML += `<span class="cal-indicator-dot cal-indicator-dot--${ev.type}" title="${ev.badgeName}"></span>`;
+        });
+        dotsHTML += '</div>';
+        innerHTML += dotsHTML;
+      }
+
+      cell.innerHTML = innerHTML;
+
+      // Click handler
+      cell.onclick = () => {
+        selectedDate = new Date(year, month, dayNum);
+        
+        // Remove selection from previous cells
+        const selectedCells = calGrid.querySelectorAll('.cal-cell.selected');
+        selectedCells.forEach(c => c.classList.remove('selected'));
+        
+        cell.classList.add('selected');
+        updateDossier(selectedDate);
+      };
+
+      calGrid.appendChild(cell);
+    }
+  }
+
+  // Set up Nav Button Listeners
+  document.getElementById('cal-prev-btn').onclick = () => {
+    viewDate.setMonth(viewDate.getMonth() - 1);
+    renderGrid();
+  };
+
+  document.getElementById('cal-next-btn').onclick = () => {
+    viewDate.setMonth(viewDate.getMonth() + 1);
+    renderGrid();
+  };
+
+  // Initial Load
+  renderGrid();
+  updateDossier(selectedDate);
 }
 
 // ─── LANGUAGES PAGE ──────────────────────────────────
