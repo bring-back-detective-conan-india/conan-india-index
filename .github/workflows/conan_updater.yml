@@ -2,7 +2,7 @@ name: Detective Conan Self-Updater
 
 on:
   schedule:
-    - cron: '0 0 * * 0,3' # Run every Sunday and Wednesday at midnight UTC
+    - cron: '30 19 * * 6' # Run every Sunday at 1:00 AM IST (Saturday 19:30 UTC)
   workflow_dispatch:      # Enable manual triggers from GitHub Actions UI
 
 permissions:
