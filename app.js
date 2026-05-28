@@ -5935,7 +5935,11 @@ async function renderMangaPage() {
   loading.textContent = 'Fetching manga data…';
   app.appendChild(loading);
   // Jikan API — free, no key needed. MAL ID 1 = Detective Conan manga
-  let LATEST_VOL = 96;
+  let LATEST_VOL = 98; // Official Viz Media latest volume limit
+  const UPCOMING_RELEASES = {
+    99: 'Releasing July 14, 2026',
+    100: 'Releasing Oct 13, 2026'
+  };
   let heroCover = IMG.manga96;
   try {
     const res = await fetch('https://api.jikan.moe/v4/manga/1061');
@@ -6030,9 +6034,9 @@ async function renderMangaPage() {
         <div class="manga-vol-img-wrap">
           <div class="manga-vol-img" style="background-image:url('${getMangaCover(n)}'); ${isUnavailable ? 'filter: grayscale(100%) opacity(0.5);' : ''}"></div>
         </div>
-        <div class="manga-vol-label">Vol. ${n}${n === LATEST_VOL ? ' <span class="manga-latest-badge">Latest</span>' : ''}</div>
+        <div class="manga-vol-label">Vol. ${n}${n === LATEST_VOL ? ' <span class="manga-latest-badge">Latest in India</span>' : ''}</div>
         ${isUnavailable 
-          ? '<div class="manga-vol-buy" style="background:var(--surface3);color:var(--text2);font-size:10px;">Unavailable</div>'
+          ? `<div class="manga-vol-buy" style="background:var(--surface3);color:var(--text2);font-size:10px;text-align:center;">${UPCOMING_RELEASES[n] || 'TBA'}</div>`
           : '<div class="manga-vol-buy">Buy &nearr;</div>'
         }
       </a>`;
