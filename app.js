@@ -5516,7 +5516,7 @@ window.openMovieModal = function (mid) {
     // Under HTTP/HTTPS hosts, embeds play flawlessly.
     heroVideoHTML = `
       <div class="movie-hero-video-container" id="modal-video-container">
-        <iframe id="modal-youtube-iframe" src="https://www.youtube-nocookie.com/embed/${m.youtubeId}?enablejsapi=1&autoplay=1&mute=1&controls=0&showinfo=0&rel=0&loop=1&playlist=${m.youtubeId}&playsinline=1" frameborder="0" referrerpolicy="strict-origin-when-cross-origin" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        <iframe id="modal-youtube-iframe" src="https://www.youtube.com/embed/${m.youtubeId}?enablejsapi=1&autoplay=1&mute=1&controls=0&showinfo=0&rel=0&loop=1&playlist=${m.youtubeId}&playsinline=1&origin=${encodeURIComponent(window.location.origin)}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         <div class="video-shield-overlay" style="position:absolute;inset:0;z-index:4;background:transparent;pointer-events:auto;"></div>
       </div>
     `;
@@ -8954,7 +8954,7 @@ function setupMagicKaitoEpisodeListeners() {
         if (videoContainer) {
           const yid = videoContainer.getAttribute('data-youtube-id');
           if (yid) {
-            videoContainer.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${yid}?autoplay=1&mute=1&controls=0&showinfo=0&rel=0&loop=1&playlist=${yid}&playsinline=1" frameborder="0" referrerpolicy="strict-origin-when-cross-origin" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+            videoContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${yid}?autoplay=1&mute=1&controls=0&showinfo=0&rel=0&loop=1&playlist=${yid}&playsinline=1&origin=${encodeURIComponent(window.location.origin)}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
             videoContainer.style.opacity = '1';
           }
         }
