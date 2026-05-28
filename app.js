@@ -226,34 +226,34 @@ window.MANGA_COVERS = new Map();  // key: volume number => cover image URL
 
 function getMoviePosterHiRes(m, fallbackIdx) {
   const cached = window.MOVIE_POSTERS.get(m.id);
-  if (cached) return cached.replace('/w154/', '/w500/').replace('/w185/', '/w500/');
-  return getImg(fallbackIdx !== undefined ? fallbackIdx : m.n);
+  if (cached) return window.optimizeImage(cached.replace('/w154/', '/w500/').replace('/w185/', '/w500/'));
+  return window.optimizeImage(getImg(fallbackIdx !== undefined ? fallbackIdx : m.n));
 }
 
 function getMoviePoster(m, fallbackIdx) {
   const cached = window.MOVIE_POSTERS.get(m.id);
-  if (cached) return cached;
-  return getImg(fallbackIdx !== undefined ? fallbackIdx : m.n);
+  if (cached) return window.optimizeImage(cached);
+  return window.optimizeImage(getImg(fallbackIdx !== undefined ? fallbackIdx : m.n));
 }
 
 function getPVREventPoster(ev, fallbackIdx) {
-  if (ev.poster) return ev.poster; // hardcoded (e.g. JFF)
+  if (ev.poster) return window.optimizeImage(ev.poster); // hardcoded (e.g. JFF)
   if (ev.movieId) {
     const m = (typeof MOVIES !== 'undefined' ? MOVIES : []).find(x => x.id === ev.movieId);
     if (m) return getMoviePoster(m, fallbackIdx);
   }
   if (ev.tmdb) {
     const cached = window.PVR_SPECIAL_POSTERS.get(ev.id);
-    if (cached) return cached;
+    if (cached) return window.optimizeImage(cached);
   }
-  return getImg(fallbackIdx !== undefined ? fallbackIdx : 0);
+  return window.optimizeImage(getImg(fallbackIdx !== undefined ? fallbackIdx : 0));
 }
 
 function getSpinoffPoster(sp, fallbackIdx) {
-  if (!sp) return getImg(fallbackIdx || 0);
+  if (!sp) return window.optimizeImage(getImg(fallbackIdx || 0));
   const cached = window.SPINOFF_POSTERS.get(sp.id);
-  if (cached) return cached;
-  return getImg(fallbackIdx !== undefined ? fallbackIdx : 0);
+  if (cached) return window.optimizeImage(cached);
+  return window.optimizeImage(getImg(fallbackIdx !== undefined ? fallbackIdx : 0));
 }
 
 function debounce(fn, delay) {
@@ -276,15 +276,15 @@ function getEpisodeMeta(ep) {
 }
 
 function getEpisodeStill(ep, fallbackIdx = 0) {
-  return getEpisodeMeta(ep)?.still || getImg(fallbackIdx);
+  return window.optimizeImage(getEpisodeMeta(ep)?.still || getImg(fallbackIdx));
 }
 
 function getSeasonStillByLocalSeasonId(sid, fallbackIdx = 0, size = 'small', useCollage = false) {
   if (useCollage && CUSTOM_SEASON_IMAGES[sid]) {
     // S21, S23, etc were provided as 900x900 but Twitter handles large/medium/small for them too.
-    return CUSTOM_SEASON_IMAGES[sid] + '&name=' + size;
+    return window.optimizeImage(CUSTOM_SEASON_IMAGES[sid] + '&name=' + size);
   }
-  return window.SEASON_STILLS.get(sid) || getImg(fallbackIdx);
+  return window.optimizeImage(window.SEASON_STILLS.get(sid) || getImg(fallbackIdx));
 }
 
 async function fetchTMDBPosters() {
@@ -1860,10 +1860,10 @@ function initHeroCarousel() {
     el.className = 'hero-slide' + (i === 0 ? ' active slide-reset' : '');
     el.innerHTML = `
       ${slide.imgMode === 'contain-right'
-        ? `<div class="hero-slide-bg" style="background-image:url('${slide.img}');background-color:${slide.bgColor};background-size:cover;background-position:center center"></div>
-      <img class="hero-slide-img-right" src="${slide.img}" alt="" draggable="false" decoding="async" ${i === 0 ? 'fetchpriority="high"' : 'loading="lazy"'}>
+        ? `<div class="hero-slide-bg" style="background-image:url('${window.optimizeImage(slide.img)}');background-color:${slide.bgColor};background-size:cover;background-position:center center"></div>
+      <img class="hero-slide-img-right" src="${window.optimizeImage(slide.img)}" alt="" draggable="false" decoding="async" ${i === 0 ? 'fetchpriority="high"' : 'loading="lazy"'}>
       <div class="hero-slide-img-right-grad"></div>`
-        : `<div class="hero-slide-bg" style="background-image:url('${slide.img}');background-color:${slide.bgColor};background-position:${slide.bgPosition || 'center 20%'};background-size:cover"></div>`}
+        : `<div class="hero-slide-bg" style="background-image:url('${window.optimizeImage(slide.img)}');background-color:${slide.bgColor};background-position:${slide.bgPosition || 'center 20%'};background-size:cover"></div>`}
       <div class="hero-slide-content">
         <div class="hero-tag" style="--accent:${slide.accent};color:${slide.accent};border-color:${slide.accent}">
           <span class="hero-emoji">${slide.emoji}</span>${slide.tag}

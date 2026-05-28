@@ -273,7 +273,7 @@ function getSeasonRangeString(seasonIds) {
 window.getSeasonRangeString = getSeasonRangeString;
 
 window.optimizeImage = function(url, quality = 75) {
-  if (!url || url.startsWith('data:')) return url;
+  if (!url || !url.startsWith('http')) return url;
   if (url.includes('wsrv.nl')) return url;
   const cleanUrl = url.replace(/^https?:\/\//, '');
   return `https://wsrv.nl/?url=${encodeURIComponent(cleanUrl)}&output=webp&q=${quality}`;
