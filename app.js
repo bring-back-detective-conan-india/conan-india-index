@@ -568,12 +568,18 @@ async function fetchTMDBEpisodeMeta() {
 }
 
 async function updateNetflixLatestCard() {
-  const CACHE_KEY = 'latest_netflix_ep_v3';
+  const CACHE_KEY = 'latest_netflix_ep_v6';
   const CACHE_TTL = 12 * 60 * 60 * 1000; // 12 hours
 
-  let latestEpNum = 1201; // Default fallback
-  let latestEpTitle = "I'm the Culprit";
-  let latestEpStill = "/jGHvKoaAhpP00XN0Z9sLtE1Ub6x.jpg"; // Default Ep 1201 fallback still
+  let latestEpNum = 1203; // Default fallback
+  let latestEpTitle = "The Perfect Answer";
+  let latestEpStill = "/nzp4EeAgVxLx9bnQS2Z43Xgj0q3.jpg"; // Default Ep 1203 fallback still
+  let latestEpDate = "NOW STREAMING";
+  
+  let nextEpNum = 1204;
+  let nextEpTitle = "Next Episode";
+  let nextEpDate = "AIRS SATURDAY";
+  let nextEpStill = null;
 
   try {
     const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
@@ -581,6 +587,11 @@ async function updateNetflixLatestCard() {
       latestEpNum = cached.number;
       latestEpTitle = cached.title;
       latestEpStill = cached.still || latestEpStill;
+      latestEpDate = cached.date || latestEpDate;
+      nextEpNum = cached.nextNumber || nextEpNum;
+      nextEpTitle = cached.nextTitle || nextEpTitle;
+      nextEpDate = cached.nextDate || nextEpDate;
+      nextEpStill = cached.nextStill || null;
     } else {
       const r = await fetch(`https://api.themoviedb.org/3/tv/${TMDB_TV_ID}?api_key=${TMDB_KEY}&language=en-US`);
       if (r.ok) {
@@ -590,30 +601,65 @@ async function updateNetflixLatestCard() {
           latestEpNum = lastEp.episode_number;
           latestEpTitle = lastEp.name || latestEpTitle;
           latestEpStill = lastEp.still_path || latestEpStill;
-          localStorage.setItem(CACHE_KEY, JSON.stringify({
-            number: latestEpNum,
-            title: latestEpTitle,
-            still: latestEpStill,
-            ts: Date.now()
-          }));
+          if (lastEp.air_date) {
+            const d = new Date(lastEp.air_date);
+            latestEpDate = `AIRED ${d.toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}`.toUpperCase();
+          }
         }
+        const nextEp = j.next_episode_to_air;
+        if (nextEp && nextEp.episode_number) {
+          nextEpNum = nextEp.episode_number;
+          nextEpTitle = nextEp.name || nextEpTitle;
+          if (nextEp.air_date) {
+             const airDate = new Date(nextEp.air_date);
+             nextEpDate = `AIRS ${airDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}`.toUpperCase();
+          }
+          nextEpStill = nextEp.still_path || null;
+        } else {
+          nextEpNum = latestEpNum + 1;
+        }
+        
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+          number: latestEpNum,
+          title: latestEpTitle,
+          still: latestEpStill,
+          date: latestEpDate,
+          nextNumber: nextEpNum,
+          nextTitle: nextEpTitle,
+          nextDate: nextEpDate,
+          nextStill: nextEpStill,
+          ts: Date.now()
+        }));
       }
     }
   } catch (err) {
     console.error("Error fetching latest Netflix episode:", err);
   }
 
-  const badge = document.getElementById('netflix-latest-ep-badge');
-  const titleEp = document.getElementById('netflix-latest-title-ep');
-  const cardImg = document.getElementById('netflix-latest-img');
-  const titleText = document.getElementById('netflix-latest-title-text');
+  // Update Latest
+  const badges = document.querySelectorAll('.netflix-latest-ep-badge');
+  const titleEps = document.querySelectorAll('.netflix-latest-title-ep');
+  const cardImgs = document.querySelectorAll('.netflix-latest-img');
+  const titleTexts = document.querySelectorAll('.netflix-latest-title-text');
+  const latestSubtitles = document.querySelectorAll('.netflix-latest-subtitle');
 
-  if (badge) badge.textContent = latestEpNum;
-  if (titleEp) titleEp.textContent = latestEpNum;
-  if (titleText && latestEpTitle) titleText.textContent = latestEpTitle;
-  if (cardImg && latestEpStill) {
-    cardImg.style.backgroundImage = `url('https://image.tmdb.org/t/p/w780${latestEpStill}')`;
-  }
+  badges.forEach(el => el.textContent = latestEpNum);
+  titleEps.forEach(el => el.textContent = latestEpNum);
+  if (latestEpTitle) titleTexts.forEach(el => el.textContent = latestEpTitle);
+  if (latestEpDate) latestSubtitles.forEach(el => el.textContent = latestEpDate);
+  if (latestEpStill) cardImgs.forEach(el => el.style.backgroundImage = `url('https://image.tmdb.org/t/p/w780${latestEpStill}')`);
+  
+  // Update Next
+  const nextTitleEps = document.querySelectorAll('.netflix-next-title-ep');
+  const nextTitleTexts = document.querySelectorAll('.netflix-next-title-text');
+  const nextSubtitles = document.querySelectorAll('.netflix-next-subtitle');
+  const nextImgs = document.querySelectorAll('.netflix-next-img');
+  
+  nextTitleEps.forEach(el => el.textContent = nextEpNum);
+  if (nextEpTitle) nextTitleTexts.forEach(el => el.textContent = nextEpTitle);
+  if (nextEpDate) nextSubtitles.forEach(el => el.textContent = nextEpDate);
+  const nextUrl = nextEpStill ? `url('https://image.tmdb.org/t/p/w780${nextEpStill}')` : `url('${IMG.conan8}')`;
+  nextImgs.forEach(el => el.style.backgroundImage = nextUrl);
 }
 
 function processMagicKaitoEpisodes(episodes) {
@@ -1360,6 +1406,9 @@ function renderHome() {
   const home = document.createElement('div');
   home.id = 'home-page';
   home.className = 'page-enter';
+
+  const latestMangaVol = 96;
+
   home.innerHTML = `
     <!-- HERO -->
     <section id="hero">
@@ -1411,83 +1460,183 @@ function renderHome() {
       </div>
     </section>
 
-    <!-- LATEST -->
-    <section id="latest">
+    <!-- LATEST & UPCOMING RELEASES -->
+    <section id="latest" style="padding-top:40px;">
       <div class="section-max">
-        <h2 class="section-title reveal-left">Latest <em>Additions</em></h2>
-        <div class="latest-cards-container scroll-row stagger">
+        <h2 class="section-title reveal-left" style="margin-bottom: 24px;">Latest &amp; Upcoming <em>Releases</em></h2>
+        <div class="latest-cards-container stagger" style="padding-bottom: 20px;">
+          
           <!-- Card 1: Netflix India Simulcast -->
-          <div class="latest-cinematic-card" data-platform="netflix" onclick="window.open('https://www.netflix.com/title/80090370', '_blank', 'noopener')">
-            <div class="lcc-img" id="netflix-latest-img" style="background-image:url('${window.optimizeImage('https://image.tmdb.org/t/p/w780/hlOn0BETlASlpLThKu2gXn9ae1H.jpg')}')"></div>
+          <div class="latest-cinematic-card desktop-card" data-platform="netflix" onclick="window.open('https://www.netflix.com/title/80090370', '_blank', 'noopener')">
+            <div class="lcc-img netflix-latest-img" style="background-image:url('${window.optimizeImage('https://image.tmdb.org/t/p/w780/hlOn0BETlASlpLThKu2gXn9ae1H.jpg')}')"></div>
             <div class="lcc-overlay"></div>
-            
-            <!-- Badges at the top -->
             <div class="lcc-top-bar">
-              <div class="lcc-logo-badge">
-                <img src="${PLATFORM_LOGOS.netflix}" alt="Netflix" class="lcc-logo-img">
-              </div>
+              <div class="lcc-logo-badge"><img src="${PLATFORM_LOGOS.netflix}" alt="Netflix" class="lcc-logo-img"></div>
               <span class="lcc-status-tag lcc-status-tag--netflix">Simulcast</span>
             </div>
-
-            <!-- Hover Play Button -->
-            <div class="lcc-play-overlay">
-              <div class="lcc-play-btn">
-                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-              </div>
-            </div>
-
-            <!-- Sleek Bottom Info Bar -->
+            <div class="lcc-play-overlay"><div class="lcc-play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>
             <div class="lcc-content">
               <div class="lcc-info-left">
-                <span id="netflix-latest-ep-badge" style="display:none;">1201</span>
-                <h3 class="lcc-card-title">Ep <span id="netflix-latest-title-ep">1201</span>: "<span id="netflix-latest-title-text">I'm the Culprit</span>"</h3>
+                <span class="netflix-latest-ep-badge" style="display:none;">1201</span>
+                <h3 class="lcc-card-title">Ep <span class="netflix-latest-title-ep">1201</span>: <span class="netflix-latest-title-text">I'm the Culprit</span></h3>
                 <div class="lcc-meta-line" style="margin-top:4px;font-weight:700;color:var(--text);">Season 31 Simulcast</div>
-                <div class="lcc-meta-line" style="margin-top:2px;opacity:0.8;">Japanese Audio · English Subtitles</div>
+                <div class="lcc-meta-line netflix-latest-subtitle" style="margin-top:2px;opacity:0.8;">NOW STREAMING</div>
               </div>
-              <div class="lcc-info-right">
-                <button class="lcc-action-btn" aria-label="Watch on Netflix">
-                  <span>Watch on Netflix</span>
-                  <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                </button>
-              </div>
+              <div class="lcc-info-right"><button class="lcc-action-btn" aria-label="Watch on Netflix"><span>Watch on Netflix</span><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button></div>
+            </div>
+          </div>
+          <div class="masked-banner-card mobile-card" style="--card-theme: #B81D24; min-width: 85vw; max-width: 500px; flex-shrink: 0; scroll-snap-align: center; margin-bottom: 0;" onclick="window.open('https://www.netflix.com/title/80090370', '_blank', 'noopener')">
+            <div class="mbc-content">
+              <span class="mbc-badge">NETFLIX LATEST</span>
+              <h3 class="mbc-title">EP <span class="netflix-latest-title-ep">1201</span>: <span class="netflix-latest-title-text" style="font-size: 0.6em; line-height: 1.1; display: block; margin-top: 4px;">I'm the Culprit</span></h3>
+              <div class="mbc-subtitle netflix-latest-subtitle" style="font-size: 14px;">NOW STREAMING</div>
+            </div>
+            <div class="mbc-image-wrapper">
+              <div class="mbc-gradient-mask"></div>
+              <div class="mbc-image netflix-latest-img" style="background-image:url('${window.optimizeImage('https://image.tmdb.org/t/p/w780/hlOn0BETlASlpLThKu2gXn9ae1H.jpg')}'); background-size: cover; background-position: center;"></div>
             </div>
           </div>
 
-          <!-- Card 2: Anime Times Hindi Dub -->
-          <div class="latest-cinematic-card" data-platform="primevideo" onclick="window.open('https://www.primevideo.com/region/eu/detail/0HIFDMYH3JG6WFIM4I7XI2EU96/ref=atv_dp_amz_c_TS5124c5_1_1?jic=16|CgNhbGwSA2FsbA%3D%3D', '_blank', 'noopener')">
+          <!-- Card 2: Upcoming Netflix Episode -->
+          <div class="latest-cinematic-card desktop-card" data-platform="netflix" onclick="window.location.hash='#guides/simulcast'">
+            <div class="lcc-img netflix-next-img" style="background-image:url('${IMG.conan8}')"></div>
+            <div class="lcc-overlay"></div>
+            <div class="lcc-top-bar">
+              <div class="lcc-logo-badge"><img src="${PLATFORM_LOGOS.netflix}" alt="Netflix" class="lcc-logo-img"></div>
+              <span class="lcc-status-tag lcc-status-tag--netflix">Upcoming Simulcast</span>
+            </div>
+            <div class="lcc-play-overlay"><div class="lcc-play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>
+            <div class="lcc-content">
+              <div class="lcc-info-left">
+                <h3 class="lcc-card-title">Ep <span class="netflix-next-title-ep">1202</span>: <span class="netflix-next-title-text">Next Episode</span></h3>
+                <div class="lcc-meta-line" style="margin-top:4px;font-weight:700;color:var(--text);">Season 31 Simulcast</div>
+                <div class="lcc-meta-line netflix-next-subtitle" style="margin-top:2px;opacity:0.8;">AIRS SATURDAY</div>
+              </div>
+              <div class="lcc-info-right"><button class="lcc-action-btn" aria-label="View Details"><span>View Details</span><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button></div>
+            </div>
+          </div>
+          <div class="masked-banner-card mobile-card" style="--card-theme: #B81D24; min-width: 85vw; max-width: 500px; flex-shrink: 0; scroll-snap-align: center; margin-bottom: 0;" onclick="window.location.hash='#guides/simulcast'">
+            <div class="mbc-content">
+              <span class="mbc-badge">UPCOMING SIMULCAST</span>
+              <h3 class="mbc-title">EP <span class="netflix-next-title-ep">1202</span>: <span class="netflix-next-title-text" style="font-size: 0.6em; line-height: 1.1; display: block; margin-top: 4px;">Next Episode</span></h3>
+              <div class="mbc-subtitle netflix-next-subtitle" style="font-size: 14px;">AIRS SATURDAY</div>
+            </div>
+            <div class="mbc-image-wrapper">
+              <div class="mbc-gradient-mask"></div>
+              <div class="mbc-image netflix-next-img" style="background-image: url('${IMG.conan8}'); background-size: cover; background-position: center 20%;"></div>
+            </div>
+          </div>
+
+          <!-- Card 3: Anime Times Hindi Dub -->
+          <div class="latest-cinematic-card desktop-card" data-platform="primevideo" onclick="window.open('https://www.primevideo.com/region/eu/detail/0HIFDMYH3JG6WFIM4I7XI2EU96/', '_blank', 'noopener')">
             <div class="lcc-img" style="background-image:url('${IMG.ep96}')"></div>
             <div class="lcc-overlay"></div>
-            
-            <!-- Badges at the top -->
             <div class="lcc-top-bar">
-              <div class="lcc-logo-badge">
-                <img src="${PLATFORM_LOGOS.primevideo}" alt="Prime Video" class="lcc-logo-img">
-              </div>
+              <div class="lcc-logo-badge"><img src="${PLATFORM_LOGOS.primevideo}" alt="Prime Video" class="lcc-logo-img"></div>
               <span class="lcc-status-tag lcc-status-tag--prime">New Hindi Dub</span>
             </div>
-
-            <!-- Hover Play Button -->
-            <div class="lcc-play-overlay">
-              <div class="lcc-play-btn">
-                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-              </div>
-            </div>
-
-            <!-- Sleek Bottom Info Bar -->
+            <div class="lcc-play-overlay"><div class="lcc-play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>
             <div class="lcc-content">
               <div class="lcc-info-left">
-                <h3 class="lcc-card-title">Ep ${(typeof PLATFORMS !== 'undefined') ? (PLATFORMS.find(x => x.id === 'primevideo')?.seriesRange[1] || 96) : 96}: "${(typeof EPISODES !== 'undefined') ? (EPISODES.find(x => x.n === ((typeof PLATFORMS !== 'undefined') ? (PLATFORMS.find(y => y.id === 'primevideo')?.seriesRange[1] || 96) : 96))?.title || "The Cornered Famous Detective! Two Big Murder Cases ★★") : "The Cornered Famous Detective! Two Big Murder Cases ★★"}"</h3>
-                <div class="lcc-meta-line" style="margin-top:4px;font-weight:700;color:var(--text);">Hindi Dub</div>
-                <div class="lcc-meta-line" style="margin-top:2px;opacity:0.8;">Hindi Audio · English Subtitles</div>
+                <h3 class="lcc-card-title">Ep ${(typeof PLATFORMS !== 'undefined') ? (PLATFORMS.find(x => x.id === 'primevideo')?.seriesRange[1] || 96) : 96}: The Cornered Famous Detective!</h3>
+                <div class="lcc-meta-line" style="margin-top:2px;opacity:0.8;">RELEASED APR 23, 2026</div>
               </div>
-              <div class="lcc-info-right">
-                <button class="lcc-action-btn" aria-label="Watch on Prime Video">
-                  <span>Watch on Prime Video</span>
-                  <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                </button>
+              <div class="lcc-info-right"><button class="lcc-action-btn" aria-label="Watch on Prime Video"><span>Watch on Prime Video</span><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button></div>
+            </div>
+          </div>
+          <div class="masked-banner-card mobile-card" style="--card-theme: #005299; min-width: 85vw; max-width: 500px; flex-shrink: 0; scroll-snap-align: center; margin-bottom: 0;" onclick="window.open('https://www.primevideo.com/region/eu/detail/0HIFDMYH3JG6WFIM4I7XI2EU96/', '_blank', 'noopener')">
+            <div class="mbc-content">
+              <span class="mbc-badge">ANIME TIMES</span>
+              <h3 class="mbc-title">EP ${(typeof PLATFORMS !== 'undefined') ? (PLATFORMS.find(x => x.id === 'primevideo')?.seriesRange[1] || 96) : 96}: <span style="font-size: 0.6em; line-height: 1.1; display: block; margin-top: 4px;">Cornered Famous Detective!</span></h3>
+              <div class="mbc-subtitle" style="font-size: 14px;">RELEASED APR 23, 2026</div>
+            </div>
+            <div class="mbc-image-wrapper">
+              <div class="mbc-gradient-mask"></div>
+              <div class="mbc-image" style="background-image: url('${IMG.ep96}'); background-size: cover; background-position: center;"></div>
+            </div>
+          </div>
+
+          <!-- Card 4: ETV Bal Bharat Reruns -->
+          <div class="latest-cinematic-card desktop-card" style="cursor:pointer;" onclick="window.location.hash='#platform/etvbalb?tab=episodes'">
+            <div class="lcc-img" style="background-image:url('${IMG.etvHero}')"></div>
+            <div class="lcc-overlay" style="background: linear-gradient(0deg, rgba(7, 7, 15, 0.95) 0%, rgba(7, 7, 15, 0.4) 40%, transparent 100%);"></div>
+            <div class="lcc-top-bar">
+              <span class="lcc-status-tag" style="background:#cc5200;border:1px solid #ff7700;color:#fff;">ETV Bal Bharat</span>
+            </div>
+            <div class="lcc-content">
+              <div class="lcc-info-left">
+                <h3 class="lcc-card-title">Daily Reruns</h3>
+                <div class="lcc-meta-line" style="margin-top:4px;font-weight:700;color:var(--text);">Hindi, Tamil, Telugu, Malayalam, Kannada</div>
+                <div class="lcc-meta-line" style="margin-top:2px;opacity:0.8;">AIRING 11 PM TO 6 AM</div>
               </div>
             </div>
           </div>
+          <div class="masked-banner-card mobile-card" style="--card-theme: #cc5200; min-width: 85vw; max-width: 500px; flex-shrink: 0; scroll-snap-align: center; margin-bottom: 0;" onclick="window.location.hash='#platform/etvbalb?tab=episodes'">
+            <div class="mbc-content">
+              <span class="mbc-badge">ETV BAL BHARAT</span>
+              <h3 class="mbc-title">DAILY RERUNS</h3>
+              <div class="mbc-subtitle" style="font-size: 14px;">11 PM TO 6 AM</div>
+            </div>
+            <div class="mbc-image-wrapper">
+              <div class="mbc-gradient-mask"></div>
+              <div class="mbc-image" style="background-image: url('${IMG.etvHero}'); background-size: cover; background-position: center 10%;"></div>
+            </div>
+          </div>
+
+          <!-- Card 5: Latest Manga Volume -->
+          <div class="latest-cinematic-card desktop-card" style="cursor:pointer;" onclick="Router.navigate('/manga')">
+            <div class="lcc-img" style="background-image:url('${typeof getMangaCover === 'function' ? getMangaCover(latestMangaVol) : IMG.manga96}'); background-size: cover; background-position: center 30%;"></div>
+            <div class="lcc-overlay" style="background: linear-gradient(0deg, rgba(7, 7, 15, 0.95) 0%, rgba(7, 7, 15, 0.4) 40%, transparent 100%);"></div>
+            <div class="lcc-top-bar">
+              <span class="lcc-status-tag" style="background:#0A633F;border:1px solid #14a36b;color:#fff;">Viz Media</span>
+            </div>
+            <div class="lcc-content">
+              <div class="lcc-info-left">
+                <h3 class="lcc-card-title">Case Closed: Vol ${latestMangaVol}</h3>
+                <div class="lcc-meta-line" style="margin-top:4px;font-weight:700;color:var(--text);">Latest English Release</div>
+                <div class="lcc-meta-line" style="margin-top:2px;opacity:0.8;">AVAILABLE NOW</div>
+              </div>
+            </div>
+          </div>
+          <div class="masked-banner-card mobile-card" style="--card-theme: #0A633F; min-width: 85vw; max-width: 500px; flex-shrink: 0; scroll-snap-align: center; margin-bottom: 0;" onclick="Router.navigate('/manga')">
+            <div class="mbc-content">
+              <span class="mbc-badge">VIZ MEDIA</span>
+              <h3 class="mbc-title">CASE CLOSED: VOL ${latestMangaVol}</h3>
+              <div class="mbc-subtitle" style="font-size: 14px;">AVAILABLE NOW</div>
+            </div>
+            <div class="mbc-image-wrapper">
+              <div class="mbc-gradient-mask"></div>
+              <div class="mbc-image" style="background-image: url('${typeof getMangaCover === 'function' ? getMangaCover(latestMangaVol) : IMG.manga96}'); background-size: cover; background-position: center 30%;"></div>
+            </div>
+          </div>
+
+          <!-- Card 6: Upcoming Manga Volume -->
+          <div class="latest-cinematic-card desktop-card" style="cursor:pointer;" onclick="Router.navigate('/manga')">
+            <div class="lcc-img" style="background-image:url('${typeof getMangaCover === 'function' ? getMangaCover(latestMangaVol + 1) : IMG.manga96}'); background-size: cover; background-position: center 30%;"></div>
+            <div class="lcc-overlay" style="background: linear-gradient(0deg, rgba(7, 7, 15, 0.95) 0%, rgba(7, 7, 15, 0.4) 40%, transparent 100%);"></div>
+            <div class="lcc-top-bar">
+              <span class="lcc-status-tag" style="background:#0A633F;border:1px solid #14a36b;color:#fff;">Upcoming Release</span>
+            </div>
+            <div class="lcc-content">
+              <div class="lcc-info-left">
+                <h3 class="lcc-card-title">Case Closed: Vol ${latestMangaVol + 1}</h3>
+                <div class="lcc-meta-line" style="margin-top:4px;font-weight:700;color:var(--text);">Next English Release</div>
+                <div class="lcc-meta-line" style="margin-top:2px;opacity:0.8;color:#ff4d58;font-weight:700;"><span id="manga-countdown-pc" class="manga-countdown-text">PRE-ORDER NOW</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="masked-banner-card mobile-card" style="--card-theme: #0A633F; min-width: 85vw; max-width: 500px; flex-shrink: 0; scroll-snap-align: center; margin-bottom: 0;" onclick="Router.navigate('/manga')">
+            <div class="mbc-content">
+              <span class="mbc-badge">UPCOMING RELEASE</span>
+              <h3 class="mbc-title">CASE CLOSED: VOL ${latestMangaVol + 1}</h3>
+              <div id="manga-countdown-mob" class="mbc-subtitle manga-countdown-text" style="font-size: 14px;color:#ff4d58;font-weight:700;">PRE-ORDER NOW</div>
+            </div>
+            <div class="mbc-image-wrapper">
+              <div class="mbc-gradient-mask"></div>
+              <div class="mbc-image" style="background-image: url('${typeof getMangaCover === 'function' ? getMangaCover(latestMangaVol + 1) : IMG.manga96}'); background-size: cover; background-position: center 30%;"></div>
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
@@ -1744,8 +1893,34 @@ function renderHome() {
   document.querySelectorAll('.scroll-row,.platforms-grid,.lang-one-row').forEach(addDragScroll);
 
   initLatestAutoScroll();
+  initMangaCountdown();
 
   setTimeout(() => { observeAll(); refreshHover(); }, 80);
+}
+
+function initMangaCountdown() {
+  const cdMob = document.getElementById('manga-countdown-mob');
+  const cdPc = document.getElementById('manga-countdown-pc');
+  if (!cdMob && !cdPc) return;
+  
+  // Volume 96 and 97 release date: Nov 13, 2026
+  const releaseDate = new Date('2026-11-13T00:00:00Z').getTime();
+  
+  const timer = setInterval(() => {
+    const now = new Date().getTime();
+    const distance = releaseDate - now;
+    if (distance < 0) {
+      if (cdMob) cdMob.innerHTML = "AVAILABLE NOW";
+      if (cdPc) cdPc.innerHTML = "AVAILABLE NOW";
+      clearInterval(timer);
+      return;
+    }
+    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const text = `IN ${days}D ${hours}H`;
+    if (cdMob) cdMob.innerHTML = text;
+    if (cdPc) cdPc.innerHTML = text;
+  }, 1000);
 }
 
 // ─── PLATFORM LOGO MARQUEE ────────────────────────────
@@ -2034,36 +2209,94 @@ function initLatestAutoScroll() {
   const container = document.querySelector('.latest-cards-container');
   if (!container) return;
 
-  let slideIndex = 0;
   let timer;
+  let currentIndex = 0;
 
-  function scrollNext() {
-    const cards = container.querySelectorAll('.latest-cinematic-card');
-    if (cards.length <= 1) return;
+  function getVisibleCards() {
+    return Array.from(container.children).filter(c => getComputedStyle(c).display !== 'none');
+  }
 
-    slideIndex = (slideIndex + 1) % cards.length;
-    const card = cards[slideIndex];
+  function goTo(index) {
+    const visibleCards = getVisibleCards();
+    if (index < 0) index = 0;
+    if (index >= visibleCards.length) index = visibleCards.length - 1;
+    currentIndex = index;
+    const card = visibleCards[currentIndex];
     container.scrollTo({
       left: card.offsetLeft - container.offsetLeft,
       behavior: 'smooth'
     });
   }
 
+  function scrollNext() {
+    const visibleCards = getVisibleCards();
+    if (visibleCards.length <= 1) return;
+    if (currentIndex + 1 >= visibleCards.length) {
+      stopTimer();
+      return;
+    }
+    goTo(currentIndex + 1);
+  }
+
   function startTimer() {
-    timer = setInterval(scrollNext, 5500); // Toggles card every 5.5s (same as hero carousel)
+    timer = setInterval(scrollNext, 4500);
   }
 
   function stopTimer() {
     clearInterval(timer);
   }
 
-  startTimer();
+  // --- PC Drag & Mobile Swipe Logic (Like Hero Carousel) ---
+  let isDown = false, startX = 0, startY = 0, moved = false;
 
-  // Pause on user hover/touch to keep it highly premium and interactive
-  container.addEventListener('mouseenter', stopTimer, { passive: true });
-  container.addEventListener('mouseleave', startTimer, { passive: true });
-  container.addEventListener('touchstart', stopTimer, { passive: true });
-  container.addEventListener('touchend', startTimer, { passive: true });
+  const onStart = (x, y) => {
+    isDown = true;
+    startX = x;
+    startY = y;
+    moved = false;
+    stopTimer();
+    container.style.cursor = 'grabbing';
+    container.style.userSelect = 'none';
+  };
+
+  const onMove = (x) => {
+    if (!isDown) return;
+    if (Math.abs(x - startX) > 10) moved = true;
+  };
+
+  const onEnd = (x, y) => {
+    if (!isDown) return;
+    isDown = false;
+    container.style.cursor = '';
+    container.style.userSelect = '';
+    
+    if (moved || Math.abs(x - startX) > 40) {
+      const dx = x - startX;
+      const dy = y ? (y - startY) : 0;
+      
+      // On mobile touch, only swipe if horizontal swipe > vertical swipe
+      if (y === undefined || Math.abs(dx) > Math.abs(dy)) {
+        if (dx < -40) {
+          goTo(currentIndex + 1); // Swipe left -> next card
+        } else if (dx > 40) {
+          goTo(currentIndex - 1); // Swipe right -> prev card
+        }
+      }
+    }
+    startTimer();
+  };
+
+  // Mouse Events (PC)
+  container.addEventListener('mousedown', e => { if (e.button === 0) onStart(e.clientX, e.clientY); });
+  window.addEventListener('mousemove', e => { if (isDown) onMove(e.clientX); });
+  window.addEventListener('mouseup', e => { if (isDown) onEnd(e.clientX, e.clientY); });
+
+  // Touch Events (Mobile)
+  container.addEventListener('touchstart', e => onStart(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+  window.addEventListener('touchmove', e => { if (isDown) onMove(e.touches[0].clientX); }, { passive: true });
+  window.addEventListener('touchend', e => { if (isDown) onEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY); }, { passive: true });
+
+  startTimer();
 }
 
 // ─── PLATFORM CARDS ──────────────────────────────────
@@ -2653,7 +2886,10 @@ window.toggleArchive = function (id) {
 
 
 // ─── PLATFORM PAGE ────────────────────────────────────
-function renderPlatformPage(id) {
+function renderPlatformPage(rawId) {
+  const id = rawId.split('?')[0];
+  const urlParams = new URLSearchParams(rawId.split('?')[1] || '');
+  const targetTab = urlParams.get('tab');
   const p = PLATFORMS.find(x => x.id === id);
   if (!p) { Router.navigate('/'); return; }
 
@@ -3051,6 +3287,11 @@ function renderPlatformPage(id) {
       }
     });
   });
+
+  if (targetTab) {
+    const tabEl = pg.querySelector(`.pp-tab[data-tab="${targetTab}"]`);
+    if (tabEl) setTimeout(() => tabEl.click(), 10);
+  }
 
   // Animate hero image + logo entrance
   setTimeout(() => {
@@ -6025,7 +6266,7 @@ async function renderMangaPage() {
               <div class="manga-featured-badge">The Beginning</div>
               <h3 class="manga-featured-vol">Volume 1</h3>
               <p class="manga-featured-desc">Witness the start of the legendary saga! Meet Shinichi Kudo, the brilliant high school detective, and relive his fateful transformation into Conan Edogawa by the Black Organization.</p>
-              <a href="https://www.amazon.in/s?k=case+closed+detective+conan+volume+1+viz+media" target="_blank" rel="noopener" class="manga-featured-buy">Buy Vol 1 &nearr;</a>
+              <a href="https://www.amazon.in/s?k=case+closed+volume+1+viz+media" target="_blank" rel="noopener" class="manga-featured-buy">Buy Vol 1 &nearr;</a>
             </div>
           </div>
 
@@ -6038,7 +6279,7 @@ async function renderMangaPage() {
               <div class="manga-featured-badge manga-featured-badge--latest">Latest Volume</div>
               <h3 class="manga-featured-vol">Volume ${LATEST_VOL}</h3>
               <p class="manga-featured-desc">Conan Edogawa continues his relentless quest to uncover the secrets of the syndicate! Dive into the latest high-stakes cases and mind-bending riddles in VIZ's newest volume.</p>
-              <a href="https://www.amazon.in/s?k=case+closed+detective+conan+volume+${LATEST_VOL}+viz+media" target="_blank" rel="noopener" class="manga-featured-buy manga-featured-buy--latest">Buy Vol ${LATEST_VOL} &nearr;</a>
+              <a href="https://www.amazon.in/s?k=case+closed+volume+${LATEST_VOL}+viz+media" target="_blank" rel="noopener" class="manga-featured-buy manga-featured-buy--latest">Buy Vol ${LATEST_VOL} &nearr;</a>
             </div>
           </div>
         </div>
@@ -6068,7 +6309,7 @@ async function renderMangaPage() {
     const vols = ascending ? [...VOLUMES] : [...VOLUMES].reverse();
     grid.innerHTML = vols.map(n => {
       const isUnavailable = n > LATEST_VOL;
-      const cardHref = isUnavailable ? '#' : `https://www.amazon.in/s?k=case+closed+detective+conan+volume+${n}+viz+media`;
+      const cardHref = isUnavailable ? '#' : `https://www.amazon.in/s?k=case+closed+volume+${n}+viz+media`;
       const clickAttr = isUnavailable ? `onclick="return false;" style="cursor:default;"` : `target="_blank" rel="noopener"`;
       
       return `
@@ -6684,12 +6925,20 @@ function renderCalendarPage() {
 
   monthSelect.onchange = () => {
     viewDate.setMonth(parseInt(monthSelect.value));
-    refreshView();
+    if (activeView === 'grid') {
+      refreshView();
+    } else {
+      scrollToMonth(viewDate.getFullYear(), viewDate.getMonth());
+    }
   };
 
   yearSelect.onchange = () => {
     viewDate.setFullYear(parseInt(yearSelect.value));
-    refreshView();
+    if (activeView === 'grid') {
+      refreshView();
+    } else {
+      scrollToMonth(viewDate.getFullYear(), viewDate.getMonth());
+    }
   };
 
   const btnGrid = document.getElementById('cal-btn-grid');
@@ -6807,6 +7056,12 @@ function renderCalendarPage() {
     // ── 1. PVR INOX Theatrical Releases (historical archive) ─────────────────
     const pvrEvent = PVR_CALENDAR_EVENTS.find(e => e.date === dateStr);
     if (pvrEvent) {
+      const match = pvrEvent.title.match(/Movie\s+(\d+)/i);
+      const mNum = match ? parseInt(match[1]) : null;
+      const movieObj = mNum ? (typeof MOVIES !== 'undefined' ? MOVIES : []).find(m => m.n === mNum) : null;
+      const mId = movieObj ? movieObj.id : (pvrEvent.title.includes("Ai Haibara") ? "ai-haibara-recap" : (pvrEvent.title.includes("Kid") ? "kid-phantom-thief" : null));
+      const posterImg = movieObj && window.MOVIE_POSTERS ? (window.MOVIE_POSTERS.get(movieObj.id) || pvrEvent.image) : pvrEvent.image;
+      
       events.push({
         type: 'pvr',
         badgeClass: 'cal-event-type-badge--pvr',
@@ -6815,7 +7070,9 @@ function renderCalendarPage() {
         title: pvrEvent.title,
         desc: pvrEvent.detail,
         url: pvrEvent.url,
-        image: pvrEvent.image
+        image: posterImg,
+        movieId: movieObj ? mId : null,
+        spinoffId: !movieObj && mId ? mId : null
       });
     }
 
@@ -6823,6 +7080,12 @@ function renderCalendarPage() {
     const etvMovie = ETV_MOVIE_CALENDAR_EVENTS.filter(e => e.date === dateStr);
     if (etvMovie.length > 0) {
       etvMovie.forEach(em => {
+        const match = em.title.match(/Movie\s+(\d+)/i);
+        const mNum = match ? parseInt(match[1]) : null;
+        const movieObj = mNum ? (typeof MOVIES !== 'undefined' ? MOVIES : []).find(m => m.n === mNum) : null;
+        const mId = movieObj ? movieObj.id : null;
+        const posterImg = movieObj && window.MOVIE_POSTERS ? (window.MOVIE_POSTERS.get(movieObj.id) || em.image) : em.image;
+
         events.push({
           type: 'broadcast',
           badgeClass: 'cal-event-type-badge--broadcast',
@@ -6831,7 +7094,8 @@ function renderCalendarPage() {
           title: em.title,
           desc: em.detail,
           url: em.url,
-          image: em.image
+          image: posterImg,
+          movieId: mId
         });
       });
     }
@@ -6846,7 +7110,8 @@ function renderCalendarPage() {
         title: "Movie 27: The Million Dollar Pentagram",
         desc: "The blockbuster 27th Detective Conan film premieres on Anime Times (Prime Video channel) in India! Available in Hindi dub and Japanese with English subtitles.",
         url: 'https://www.primevideo.com/detail/Detective-Conan-The-Movie-The-Million-dollar-Pentagram/0TNZYG7W823R6Q2LSX1JXVAOJQ',
-        image: IMG.heiji
+        image: (window.MOVIE_POSTERS && window.MOVIE_POSTERS.get("milliondollar")) || IMG.heiji,
+        movieId: "milliondollar"
       });
     }
 
@@ -6866,51 +7131,34 @@ function renderCalendarPage() {
     }
 
     // ── 3. Netflix Season 31 weekly Saturday simulcast (India premiere May 23, 2026) ─
-    // Only show for Saturdays on or after the India launch date
-    const s31IndiaStart = new Date(2026, 4, 23); // May 23 2026
-    if (dayOfWeek === 6 && d >= s31IndiaStart) {
-      // Netflix India is 14 days behind Japan broadcast
-      const japanDate = new Date(d);
-      japanDate.setDate(japanDate.getDate() - 14);
-      const jYear = japanDate.getFullYear();
-      const jMonth = String(japanDate.getMonth() + 1).padStart(2, '0');
-      const jDate = String(japanDate.getDate()).padStart(2, '0');
-      const japanDateStr = `${jYear}-${jMonth}-${jDate}`;
+    // Ep 1201 premiered on May 23. From May 30 (Ep 1202) onwards, episodes air on the same day as Japan.
+    if (dayOfWeek === 6 && d >= new Date(2026, 4, 23)) {
+      let simulcastEpStr = null;
+      if (dateStr === '2026-05-23') {
+        // Hardcode ep 1201 for May 23 launch
+        const ep1201 = (typeof EPISODES !== 'undefined' ? EPISODES : []).find(e => e.n === 1201);
+        if (ep1201) simulcastEpStr = ep1201.aired;
+      } else if (dateStr >= '2026-05-30') {
+        // Simulcast is same day as Japan air date
+        simulcastEpStr = dateStr;
+      }
 
-      const catalogedEp = (typeof EPISODES !== 'undefined' ? EPISODES : []).find(e => e.aired === japanDateStr);
-      if (catalogedEp) {
-        const meta = window.EPISODE_META && window.EPISODE_META.get(catalogedEp.n);
-        const epImg = (meta && meta.still) || IMG.ep96;
-        const epDesc = (meta && meta.overview) || 'Season 31 simulcast on Netflix India. Japanese audio with English subtitles.';
-        events.push({
-          type: 'netflix',
-          badgeClass: 'cal-event-type-badge--netflix',
-          badgeName: 'Netflix',
-          time: '4:30 PM IST',
-          title: `Ep ${catalogedEp.n}: "${catalogedEp.title}"`,
-          desc: epDesc,
-          url: 'https://www.netflix.com/title/80090370',
-          image: epImg
-        });
-      } else {
-        // Estimate future episode numbers (base: Ep 1201 on May 23, 2026)
-        const baseSat = new Date(2026, 4, 23); // May 23 2026
-        const baseEp  = 1201;
-        const diffDays = Math.round((d - baseSat) / 86400000);
-        if (diffDays >= 0 && diffDays % 7 === 0) {
-          const weeksGap = diffDays / 7;
-          const meta = window.EPISODE_META && window.EPISODE_META.get(baseEp + weeksGap);
+      if (simulcastEpStr) {
+        const catalogedEp = (typeof EPISODES !== 'undefined' ? EPISODES : []).find(e => e.aired === simulcastEpStr && e.season === 'S31');
+        if (catalogedEp) {
+          const meta = window.EPISODE_META && window.EPISODE_META.get(catalogedEp.n);
           const epImg = (meta && meta.still) || IMG.ep96;
-          const epDesc = (meta && meta.overview) || 'Estimated weekly simulcast premiere on Netflix India. Japanese audio with English subtitles.';
+          const epDesc = (meta && meta.overview) || 'Season 31 simulcast on Netflix India. Japanese audio with English subtitles.';
           events.push({
             type: 'netflix',
             badgeClass: 'cal-event-type-badge--netflix',
             badgeName: 'Netflix',
-            time: '4:30 PM IST (Est.)',
-            title: `Ep ${baseEp + weeksGap} – Season 31 Simulcast`,
+            time: '4:30 PM IST',
+            title: `Ep ${catalogedEp.n}: "${catalogedEp.title}"`,
             desc: epDesc,
             url: 'https://www.netflix.com/title/80090370',
-            image: epImg
+            image: epImg,
+            episodeNumber: catalogedEp.n
           });
         }
       }
@@ -6919,16 +7167,23 @@ function renderCalendarPage() {
     // ── 4. Anime Times (Prime Video) Hindi Dub batches ───────────────────────
     const atBatch = (window._ANIME_TIMES_BATCHES || []).find(b => b.date === dateStr);
     if (atBatch) {
-      events.push({
-        type: 'animetimes',
-        badgeClass: 'cal-event-type-badge--animetimes',
-        badgeName: 'Anime Times',
-        time: 'New Batch Drop',
-        title: `Eps ${atBatch.epFrom}–${atBatch.epTo} – Hindi Dub`,
-        desc: `Hindi-dubbed episodes ${atBatch.epFrom} to ${atBatch.epTo} of Detective Conan drop on Anime Times (Prime Video channel). Also available with English subtitles.`,
-        url: 'https://www.primevideo.com/detail/0MVCS1X42CJKXIIGFZL0EXI39Q',
-        image: PLAT_BG.primevideo
-      });
+      for (let epNum = atBatch.epFrom; epNum <= atBatch.epTo; epNum++) {
+        const meta = window.EPISODE_META && window.EPISODE_META.get(epNum);
+        const epImg = (meta && meta.still) || PLAT_BG.primevideo;
+        const epTitle = (meta && meta.title) || `Episode ${epNum}`;
+        const epDesc = (meta && meta.overview) || `Episode ${epNum} now streaming in Hindi dub on Anime Times (Amazon Prime Video).`;
+        events.push({
+          type: 'animetimes',
+          badgeClass: 'cal-event-type-badge--animetimes',
+          badgeName: 'Anime Times',
+          time: 'New Episode Drop',
+          title: `Ep ${epNum}: "${epTitle}" (Hindi Dub)`,
+          desc: epDesc,
+          url: 'https://www.primevideo.com/detail/0MVCS1X42CJKXIIGFZL0EXI39Q',
+          image: epImg,
+          episodeNumber: epNum
+        });
+      }
     }
 
     // ── 5. Viz Media Manga Volume releases ───────────────────────────────────
@@ -6948,21 +7203,60 @@ function renderCalendarPage() {
 
     // ── 6. Real ETV Bal Bharat Broadcast Dates (historical archive 2023-2024) ──
     const etvEps = (typeof EPISODES !== 'undefined' ? EPISODES : []).filter(e => e.etv === dateStr);
-    if (etvEps.length > 0) {
-      const epList = etvEps.map(e => `Ep ${e.n}`).join(', ');
-      const meta = window.EPISODE_META && window.EPISODE_META.get(etvEps[0].n);
+    etvEps.forEach(e => {
+      const meta = window.EPISODE_META && window.EPISODE_META.get(e.n);
       const epImg = (meta && meta.still) || IMG.etvHero;
+      const epDesc = (meta && meta.overview) || `Episode ${e.n} airing on ETV Bal Bharat with regional dubs (Hindi, Tamil, Telugu, Kannada, etc.).`;
       events.push({
         type: 'broadcast',
         badgeClass: 'cal-event-type-badge--broadcast',
         badgeName: 'ETV Bal Bharat',
         time: '11:00 PM IST',
-        title: `${etvEps.length} Episode${etvEps.length > 1 ? 's' : ''} Broadcast`,
-        desc: `${epList} — "${etvEps[0].title}"${etvEps.length > 1 ? ` + ${etvEps.length - 1} more` : ''} premiering on ETV Bal Bharat.`,
+        title: `Ep ${e.n}: "${e.title}"`,
+        desc: epDesc,
         url: 'https://www.instagram.com/etvbalbharat/',
-        image: epImg
+        image: epImg,
+        episodeNumber: e.n
       });
-    }
+    });
+
+    // ── 6b. Direct Netflix India Releases (Database-Driven Calendar Switch) ──
+    const dbNetflixEps = (typeof EPISODES !== 'undefined' ? EPISODES : []).filter(e => e.netflix === dateStr);
+    dbNetflixEps.forEach(e => {
+      const meta = window.EPISODE_META && window.EPISODE_META.get(e.n);
+      const epImg = (meta && meta.still) || IMG.ep96;
+      const epDesc = (meta && meta.overview) || `Episode ${e.n} premieres on Netflix India. Japanese audio with English subtitles.`;
+      events.push({
+        type: 'netflix',
+        badgeClass: 'cal-event-type-badge--netflix',
+        badgeName: 'Netflix',
+        time: '4:30 PM IST',
+        title: `Ep ${e.n}: "${e.title}"`,
+        desc: epDesc,
+        url: 'https://www.netflix.com/title/80090370',
+        image: epImg,
+        episodeNumber: e.n
+      });
+    });
+
+    // ── 6c. Direct Anime Times Premieres (Database-Driven Calendar Switch) ──
+    const dbAnimeTimesEps = (typeof EPISODES !== 'undefined' ? EPISODES : []).filter(e => e.animetimes === dateStr);
+    dbAnimeTimesEps.forEach(e => {
+      const meta = window.EPISODE_META && window.EPISODE_META.get(e.n);
+      const epImg = (meta && meta.still) || PLAT_BG.primevideo;
+      const epDesc = (meta && meta.overview) || `Episode ${e.n} now streaming in Hindi dub on Anime Times (Amazon Prime Video).`;
+      events.push({
+        type: 'animetimes',
+        badgeClass: 'cal-event-type-badge--animetimes',
+        badgeName: 'Anime Times',
+        time: 'New Episode Drop',
+        title: `Ep ${e.n}: "${e.title}" (Hindi Dub)`,
+        desc: epDesc,
+        url: 'https://www.primevideo.com/detail/0MVCS1X42CJKXIIGFZL0EXI39Q',
+        image: epImg,
+        episodeNumber: e.n
+      });
+    });
 
     // ── 7. ETV Bal Bharat Reruns (subtle — only within known airing windows) ──
     // Window 1: Sep 20 – Oct 20, 2025 | Window 2: Apr 3, 2026 – ongoing
@@ -6984,13 +7278,7 @@ function renderCalendarPage() {
       });
     }
 
-    // ── 8. Special/Anniversary Days ──────────────────────────────────────────
-    const mo = d.getMonth(), dt = d.getDate();
-    if (mo === 4 && dt === 4) events.push({ type: 'special', badgeClass: 'cal-event-type-badge--special', badgeName: '🎂 Fan Day', time: 'All Day', title: "Shinichi Kudo's Birthday!", desc: 'Happy Birthday to the great detective, Shinichi Kudo (Jimmy Kudo)!', url: null, image: IMG.conan3 });
-    if (mo === 6 && dt === 31) events.push({ type: 'special', badgeClass: 'cal-event-type-badge--special', badgeName: '🎂 Fan Day', time: 'All Day', title: "Ran Mouri's Birthday!", desc: "Happy Birthday to karate champion and Shinichi's childhood friend, Ran Mouri!", url: null, image: IMG.ran });
-    if (mo === 0 && dt === 8) events.push({ type: 'special', badgeClass: 'cal-event-type-badge--special', badgeName: '🎌 Anniversary', time: 'All Day', title: '📺 Anime Premiere Anniversary', desc: 'On this day in 1996, the first episode of Detective Conan premiered on Yomiuri TV in Japan!', url: null, image: IMG.conan7 });
-    if (mo === 0 && dt === 5) events.push({ type: 'special', badgeClass: 'cal-event-type-badge--special', badgeName: '🎌 Anniversary', time: 'All Day', title: '📚 Manga Debut Anniversary', desc: 'On this day in 1994, Gosho Aoyama published Chapter 1 of Detective Conan in Weekly Shonen Sunday!', url: null, image: IMG.conan8 });
-    if (mo === 0 && dt === 19) events.push({ type: 'special', badgeClass: 'cal-event-type-badge--special', badgeName: '🎂 Fan Day', time: 'All Day', title: "Conan Edogawa's Birthday!", desc: 'Happy Birthday to our pint-sized detective, Conan Edogawa!', url: null, image: IMG.conan1 });
+
 
     return events;
   }
@@ -7040,24 +7328,38 @@ function renderCalendarPage() {
     // Render main events first, then reruns as a muted footnote
     mainEvents.forEach(e => {
       const item = document.createElement('div');
-      item.className = 'cal-event-item';
+      item.className = 'masked-banner-card';
+      
+      // Map event types to bold theme colors for the masked banner background
+      let themeColor = '#1a1a2e'; // default dark
+      if (e.type === 'netflix') themeColor = '#B81D24'; // Netflix Red
+      else if (e.type === 'animetimes') themeColor = '#005299'; // Prime Blue
+      else if (e.type === 'pvr') themeColor = '#996600'; // Gold/Bronze
+      else if (e.type === 'broadcast') themeColor = '#cc5200'; // ETV Orange
+      else if (e.type === 'manga') themeColor = '#00704a'; // Manga Green
+      
+      item.style.setProperty('--card-theme', themeColor);
       const imgUrl = e.image || IMG.conan2;
       
+      if (e.movieId || e.episodeNumber || e.spinoffId) {
+        item.style.cursor = 'pointer';
+        item.onclick = (event) => {
+          if (event.target.closest('.cal-event-btn')) return;
+          if (e.movieId) openMovieModal(e.movieId);
+          else if (e.episodeNumber) openEpisodeModal(e.episodeNumber);
+          else if (e.spinoffId) openSpinoffModal(e.spinoffId);
+        };
+      }
+      
       item.innerHTML = `
-        <div class="cal-event-item-img" style="background-image:url('${imgUrl}')"></div>
-        <div class="cal-event-item-body">
-          <div class="cal-event-top">
-            <span class="cal-event-type-badge ${e.badgeClass}">${e.badgeName}</span>
-            <span class="cal-event-time">${e.time}</span>
-          </div>
-          <div class="cal-event-title">${e.title}</div>
-          <div class="cal-event-desc">${e.desc}</div>
-          ${e.url ? `
-            <button class="lcc-action-btn cal-event-btn" onclick="window.open('${e.url}', '_blank', 'noopener')">
-              <span>${e.type === 'manga' ? 'Check Release' : e.type === 'pvr' ? 'View Cinemas' : e.type === 'animetimes' ? 'Watch Now' : 'Stream Now'}</span>
-              <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </button>
-          ` : ''}
+        <div class="mbc-content">
+          <span class="mbc-badge">${e.badgeName}</span>
+          <h3 class="mbc-title">${e.title}</h3>
+          <div class="mbc-subtitle">${e.time}</div>
+        </div>
+        <div class="mbc-image-wrapper">
+          <div class="mbc-gradient-mask"></div>
+          <img src="${imgUrl}" class="mbc-image" alt="" loading="lazy">
         </div>
       `;
       dossierContent.appendChild(item);
@@ -7148,15 +7450,22 @@ function renderCalendarPage() {
         
         let chipsHTML = '<div class="cal-cell-chips">';
         dotEvents.forEach(ev => {
-          let label = '';
-          if (ev.type === 'netflix') label = 'N';
-          else if (ev.type === 'animetimes') label = 'AT';
-          else if (ev.type === 'manga') label = '📖';
-          else if (ev.type === 'pvr') label = '🎬';
-          else if (ev.type === 'broadcast') label = '📺';
-          else if (ev.type === 'special') label = '🎂';
+          let svgContent = '';
+          if (ev.type === 'netflix') {
+            svgContent = `<svg class="brand-emblem-svg" viewBox="0 0 24 24" fill="currentColor"><path d="M5.5 2h4.25l4.5 12.25V2h4.25v20h-4.25L9.75 9.75V22H5.5V2z"/></svg>`;
+          } else if (ev.type === 'animetimes') {
+            svgContent = `<svg class="brand-emblem-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>`;
+          } else if (ev.type === 'manga') {
+            svgContent = `<svg class="brand-emblem-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`;
+          } else if (ev.type === 'pvr') {
+            svgContent = `<svg class="brand-emblem-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h6M3 15h6M15 9h6M15 15h6"/></svg>`;
+          } else if (ev.type === 'broadcast') {
+            svgContent = `<svg class="brand-emblem-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg>`;
+          } else if (ev.type === 'special') {
+            svgContent = `<svg class="brand-emblem-svg" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+          }
           
-          chipsHTML += `<span class="cal-cell-chip cal-cell-chip--${ev.type}" title="${ev.badgeName}: ${ev.title}">${label}</span>`;
+          chipsHTML += `<span class="cal-cell-chip cal-cell-chip--${ev.type}" title="${ev.badgeName}: ${ev.title}">${svgContent}</span>`;
         });
         chipsHTML += '</div>';
         innerHTML += chipsHTML;
@@ -7180,33 +7489,69 @@ function renderCalendarPage() {
     }
   }
 
+  let activeTimelineObserver = null;
+  let isScrollingToMonth = false;
+
+  function scrollToMonth(year, month) {
+    const monthGroupKey = `${year}-${String(month).padStart(2, '0')}`;
+    const targetEl = document.getElementById(`cal-group-${monthGroupKey}`);
+    if (targetEl) {
+      isScrollingToMonth = true;
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => {
+        isScrollingToMonth = false;
+      }, 800);
+    } else {
+      // Find closest month group that actually has events
+      const allGroups = Array.from(calGrid.querySelectorAll('.cal-timeline-group'));
+      const targetPrefix = `cal-group-${year}-`;
+      const matchingGroups = allGroups.filter(el => el.id.startsWith(targetPrefix));
+      if (matchingGroups.length > 0) {
+        isScrollingToMonth = true;
+        matchingGroups[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setTimeout(() => {
+          isScrollingToMonth = false;
+        }, 800);
+      }
+    }
+  }
+
   function renderTimeline() {
-    const year = viewDate.getFullYear();
-    const month = viewDate.getMonth();
-
-    // Set select dropdown values to keep synced
-    monthSelect.value = month;
-    yearSelect.value = year;
-
-    // Get last date of current month
-    const totalDays = new Date(year, month + 1, 0).getDate();
+    // Clear any active observer
+    if (activeTimelineObserver) {
+      activeTimelineObserver.disconnect();
+      activeTimelineObserver = null;
+    }
 
     calGrid.className = 'cal-timeline-container';
     calGrid.innerHTML = '<div class="cal-timeline-line"></div>';
 
+    const startDate = new Date(2023, 0, 1);
+    const endDate = new Date(2028, 11, 31);
+    let current = new Date(startDate);
     let hasAnyEvents = false;
 
-    // We loop through each day in the selected month
-    for (let dayNum = 1; dayNum <= totalDays; dayNum++) {
-      const cellDate = new Date(year, month, dayNum);
+    // Fast generation loop across 2023-2028
+    while (current <= endDate) {
+      const cellDate = new Date(current);
       const events = getFilteredEventsForDate(cellDate).filter(e => !e.rerun);
 
       if (events.length > 0) {
         hasAnyEvents = true;
-        
+        const year = cellDate.getFullYear();
+        const month = cellDate.getMonth();
+        const dayNum = cellDate.getDate();
+        const monthGroupKey = `${year}-${String(month).padStart(2, '0')}`;
+
         const group = document.createElement('div');
         group.className = 'cal-timeline-group';
+        group.dataset.date = cellDate.toISOString();
         
+        // Tag the first event element of any given month as the scroll anchor
+        if (!document.getElementById(`cal-group-${monthGroupKey}`)) {
+          group.id = `cal-group-${monthGroupKey}`;
+        }
+
         const isSelected = selectedDate && 
                            selectedDate.getFullYear() === year && 
                            selectedDate.getMonth() === month && 
@@ -7218,7 +7563,7 @@ function renderCalendarPage() {
         group.innerHTML = `
           <div class="cal-timeline-date-bubble"></div>
           <div class="cal-timeline-date-label">
-            ${dayNum} ${monthNames[month].substring(0, 3)} – ${cellDate.toLocaleDateString('en-US', { weekday: 'long' })}
+            ${dayNum} ${monthNames[month].substring(0, 3)} ${year} – ${cellDate.toLocaleDateString('en-US', { weekday: 'long' })}
           </div>
           <div class="cal-timeline-items-list"></div>
         `;
@@ -7236,7 +7581,7 @@ function renderCalendarPage() {
             <div class="cal-timeline-item-img" style="background-image:url('${imgUrl}')"></div>
             <div class="cal-timeline-item-body">
               <div class="cal-timeline-item-header">
-                <span class="cal-event-type-badge ${ev.badgeClass}">${ev.badgeName}</span>
+                <span class="cal-event-type-badge ${ev.type}">${ev.badgeName}</span>
                 <span class="cal-event-time">${ev.time}</span>
               </div>
               <div class="cal-timeline-item-title">${ev.title}</div>
@@ -7248,7 +7593,6 @@ function renderCalendarPage() {
             e.stopPropagation();
             selectedDate = new Date(year, month, dayNum);
             
-            // Re-render the timeline selected state
             const allGroups = calGrid.querySelectorAll('.cal-timeline-group');
             allGroups.forEach(g => g.classList.remove('selected'));
             group.classList.add('selected');
@@ -7258,6 +7602,10 @@ function renderCalendarPage() {
             card.classList.add('selected');
             
             updateDossier(selectedDate);
+
+            if (ev.movieId) openMovieModal(ev.movieId);
+            else if (ev.episodeNumber) openEpisodeModal(ev.episodeNumber);
+            else if (ev.spinoffId) openSpinoffModal(ev.spinoffId);
           };
 
           itemsList.appendChild(card);
@@ -7265,16 +7613,52 @@ function renderCalendarPage() {
 
         calGrid.appendChild(group);
       }
+
+      current.setDate(current.getDate() + 1);
     }
 
     if (!hasAnyEvents) {
       calGrid.innerHTML = `
         <div style="text-align:center;padding:48px 12px;color:var(--muted);width:100%;">
           <span style="font-size:40px;display:block;margin-bottom:12px;">🕵️‍♂️</span>
-          No scheduled releases match this filter in ${monthNames[month]} ${year}.
+          No scheduled releases match this filter in the calendar range.
         </div>
       `;
+      return;
     }
+
+    // Scroll to the active month's group anchor initially
+    setTimeout(() => {
+      scrollToMonth(viewDate.getFullYear(), viewDate.getMonth());
+    }, 100);
+
+    // Set up scroll tracker to auto-update header select boxes as user scrolls!
+    const observerOptions = {
+      root: null,
+      rootMargin: '-10% 0px -75% 0px',
+      threshold: 0
+    };
+
+    activeTimelineObserver = new IntersectionObserver((entries) => {
+      if (isScrollingToMonth) return;
+      
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const groupDate = new Date(entry.target.dataset.date);
+          const y = groupDate.getFullYear();
+          const m = groupDate.getMonth();
+          
+          monthSelect.value = m;
+          yearSelect.value = y;
+          viewDate.setMonth(m);
+          viewDate.setFullYear(y);
+        }
+      });
+    }, observerOptions);
+
+    calGrid.querySelectorAll('.cal-timeline-group').forEach(el => {
+      activeTimelineObserver.observe(el);
+    });
   }
 
   function refreshView() {

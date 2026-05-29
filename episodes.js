@@ -9850,8 +9850,27 @@ const EPISODES = [
     "n": 1201,
     "title": "I'm the Culprit",
     "season": "S31",
-    "aired": "2026-05-09",
     "etv": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1202,
+    "title": "You can't Lie in Archery (tentative title)",
+    "season": "S31",
+    "aired": "2026-05-30",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1203,
+    "title": "The Perfect Answer",
+    "season": "S31",
+    "aired": "2026-06-06",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
     "src": "TV Original"
   }
 ];
