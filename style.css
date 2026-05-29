@@ -2044,6 +2044,20 @@ html, body {
   text-transform: uppercase !important;
 }
 
+/* Position the more-wrap relatively so the dropdown aligns perfectly under the More button */
+.nav-more-wrap {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.nav-drawer {
+  position: absolute !important;
+  top: calc(100% + 12px) !important;
+  right: 0 !important;
+  left: auto !important;
+}
+
 /* Squishing & Overlap Prevention on Medium Viewports (Tablets / Laptops) */
 @media (min-width: 769px) and (max-width: 1180px) {
   #nav {
