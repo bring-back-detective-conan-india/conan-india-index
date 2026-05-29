@@ -6713,10 +6713,6 @@ function renderCalendarPage() {
   const selectedDateStr = document.getElementById('cal-selected-date-str');
   const dossierContent = document.getElementById('cal-dossier-content');
 
-  const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
 
   // ── Viz Media Case Closed Manga Release Schedule (verified dates) ─────────
   // Vols 95 & 96 already published. Vol 97+ are upcoming.
