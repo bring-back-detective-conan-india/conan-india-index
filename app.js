@@ -6606,51 +6606,31 @@ function renderCalendarPage() {
         <!-- Calendar Grid Card -->
         <div class="calendar-card">
           <div class="cal-header">
-            <h2 class="cal-month-title" id="cal-month-title"></h2>
+            <div class="cal-header-left">
+              <select id="cal-month-select" class="cal-select" aria-label="Select Month"></select>
+              <select id="cal-year-select" class="cal-select" aria-label="Select Year"></select>
+            </div>
             <div class="cal-nav-btns">
               <button class="cal-nav-btn" id="cal-prev-btn" aria-label="Previous Month">‹</button>
               <button class="cal-nav-btn" id="cal-next-btn" aria-label="Next Month">›</button>
             </div>
           </div>
 
-          <!-- Controls Row: Platform Filters & View Switcher -->
-          <div class="cal-controls-row">
-            <div class="cal-filters" id="cal-filters">
-              <button class="cal-filter-pill cal-filter-pill--all active" data-filter="all">
-                <span>All</span>
-              </button>
-              <button class="cal-filter-pill cal-filter-pill--netflix" data-filter="netflix">
-                <span style="color:#e50914;">●</span> <span>Netflix</span>
-              </button>
-              <button class="cal-filter-pill cal-filter-pill--animetimes" data-filter="animetimes">
-                <span style="color:#00a8e1;">●</span> <span>Anime Times</span>
-              </button>
-              <button class="cal-filter-pill cal-filter-pill--broadcast" data-filter="broadcast">
-                <span style="color:#ff8800;">●</span> <span>ETV Bal Bharat</span>
-              </button>
-              <button class="cal-filter-pill cal-filter-pill--manga" data-filter="manga">
-                <span style="color:#00e676;">●</span> <span>Manga</span>
-              </button>
-              <button class="cal-filter-pill cal-filter-pill--pvr" data-filter="pvr">
-                <span style="color:#ffd700;">●</span> <span>Cinemas</span>
-              </button>
-              <button class="cal-filter-pill cal-filter-pill--special" data-filter="special">
-                <span style="color:#d500f9;">●</span> <span>Fan Days</span>
-              </button>
-            </div>
+          <!-- Controls Row: View Switcher -->
+          <div class="cal-controls-row" style="justify-content: flex-end; margin-bottom: 16px;">
             <div class="cal-view-switcher">
-              <button class="cal-switch-btn active" id="cal-btn-grid">
+              <button class="cal-switch-btn" id="cal-btn-grid">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                 <span>Grid</span>
               </button>
-              <button class="cal-switch-btn" id="cal-btn-timeline">
+              <button class="cal-switch-btn active" id="cal-btn-timeline">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="6" x2="20" y2="6"></line><line x1="9" y1="12" x2="20" y2="12"></line><line x1="9" y1="18" x2="20" y2="18"></line><line x1="5" y1="6" x2="5.01" y2="6"></line><line x1="5" y1="12" x2="5.01" y2="12"></line><line x1="5" y1="18" x2="5.01" y2="18"></line></svg>
                 <span>Timeline</span>
               </button>
             </div>
           </div>
 
-          <div class="cal-weekdays-container" id="cal-weekdays-container">
+          <div class="cal-weekdays-container" id="cal-weekdays-container" style="display:none;">
             <div class="cal-weekdays">
               <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
             </div>
@@ -6671,24 +6651,46 @@ function renderCalendarPage() {
 
   app.appendChild(pg);
 
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
   // Calendar State – always starts on today's real date
   const _today = new Date();
   let viewDate = new Date(_today.getFullYear(), _today.getMonth(), 1);
   let selectedDate = new Date(_today.getFullYear(), _today.getMonth(), _today.getDate());
   let activeFilter = 'all';
-  let activeView = 'grid';
+  let activeView = 'timeline';
 
-  // Set up Dynamic Filters & View Switchers event listeners
-  const filterPills = document.querySelectorAll('.cal-filter-pill');
-  filterPills.forEach(pill => {
-    pill.onclick = () => {
-      filterPills.forEach(p => p.classList.remove('active'));
-      pill.classList.add('active');
-      activeFilter = pill.getAttribute('data-filter');
-      refreshView();
-      updateDossier(selectedDate);
-    };
+  const monthSelect = document.getElementById('cal-month-select');
+  const yearSelect = document.getElementById('cal-year-select');
+
+  // Populate Month dropdown
+  monthNames.forEach((name, idx) => {
+    const opt = document.createElement('option');
+    opt.value = idx;
+    opt.textContent = name;
+    monthSelect.appendChild(opt);
   });
+
+  // Populate Year dropdown (from 2023 to 2028)
+  for (let y = 2023; y <= 2028; y++) {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    yearSelect.appendChild(opt);
+  }
+
+  monthSelect.onchange = () => {
+    viewDate.setMonth(parseInt(monthSelect.value));
+    refreshView();
+  };
+
+  yearSelect.onchange = () => {
+    viewDate.setFullYear(parseInt(yearSelect.value));
+    refreshView();
+  };
 
   const btnGrid = document.getElementById('cal-btn-grid');
   const btnTimeline = document.getElementById('cal-btn-timeline');
@@ -6707,7 +6709,6 @@ function renderCalendarPage() {
     refreshView();
   };
 
-  const monthTitle = document.getElementById('cal-month-title');
   const calGrid = document.getElementById('cal-grid');
   const selectedDateStr = document.getElementById('cal-selected-date-str');
   const dossierContent = document.getElementById('cal-dossier-content');
@@ -7075,8 +7076,9 @@ function renderCalendarPage() {
     const year = viewDate.getFullYear();
     const month = viewDate.getMonth();
 
-    // Set header month title
-    monthTitle.textContent = `${monthNames[month]} ${year}`;
+    // Set select dropdown values to keep synced
+    monthSelect.value = month;
+    yearSelect.value = year;
 
     // Get first day of month (0 = Sun, 6 = Sat)
     const firstDayIndex = new Date(year, month, 1).getDay();
@@ -7163,8 +7165,9 @@ function renderCalendarPage() {
     const year = viewDate.getFullYear();
     const month = viewDate.getMonth();
 
-    // Set header month title
-    monthTitle.textContent = `${monthNames[month]} ${year}`;
+    // Set select dropdown values to keep synced
+    monthSelect.value = month;
+    yearSelect.value = year;
 
     // Get last date of current month
     const totalDays = new Date(year, month + 1, 0).getDate();

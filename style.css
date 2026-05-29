@@ -780,7 +780,7 @@
 /* ─── MOBILE BOTTOM NAVIGATION & MORE MENU ────────────────── */
 /* Hidden on desktop */
 .mobile-bottom-bar, .mbb-backdrop, .mbb-more-menu {
-  display: none;
+  display: none !important;
 }
 
 @media (max-width: 768px) {
@@ -1079,6 +1079,48 @@ html, body {
 }
 
 /* ─── CALENDAR UPGRADE STYLES ────────────────────────── */
+.cal-header-left {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.cal-select {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 6px 32px 6px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: calc(100% - 12px) center;
+}
+
+.cal-select:hover, .cal-select:focus {
+  border-color: rgba(255, 255, 255, 0.2);
+  background-color: var(--surface);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+}
+
+@media (max-width: 768px) {
+  .cal-select {
+    font-size: 16px;
+    padding: 4px 24px 4px 8px;
+    background-position: calc(100% - 8px) center;
+    border-radius: 8px;
+  }
+}
+
 .cal-controls-row {
   display: flex;
   justify-content: space-between;
