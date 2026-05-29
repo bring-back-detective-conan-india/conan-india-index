@@ -6619,18 +6619,18 @@ function renderCalendarPage() {
           <!-- Controls Row: View Switcher -->
           <div class="cal-controls-row" style="justify-content: flex-end; margin-bottom: 16px;">
             <div class="cal-view-switcher">
-              <button class="cal-switch-btn" id="cal-btn-grid">
+              <button class="cal-switch-btn active" id="cal-btn-grid">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                 <span>Grid</span>
               </button>
-              <button class="cal-switch-btn active" id="cal-btn-timeline">
+              <button class="cal-switch-btn" id="cal-btn-timeline">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="6" x2="20" y2="6"></line><line x1="9" y1="12" x2="20" y2="12"></line><line x1="9" y1="18" x2="20" y2="18"></line><line x1="5" y1="6" x2="5.01" y2="6"></line><line x1="5" y1="12" x2="5.01" y2="12"></line><line x1="5" y1="18" x2="5.01" y2="18"></line></svg>
                 <span>Timeline</span>
               </button>
             </div>
           </div>
 
-          <div class="cal-weekdays-container" id="cal-weekdays-container" style="display:none;">
+          <div class="cal-weekdays-container" id="cal-weekdays-container">
             <div class="cal-weekdays">
               <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
             </div>
@@ -6661,7 +6661,7 @@ function renderCalendarPage() {
   let viewDate = new Date(_today.getFullYear(), _today.getMonth(), 1);
   let selectedDate = new Date(_today.getFullYear(), _today.getMonth(), _today.getDate());
   let activeFilter = 'all';
-  let activeView = 'timeline';
+  let activeView = 'grid';
 
   const monthSelect = document.getElementById('cal-month-select');
   const yearSelect = document.getElementById('cal-year-select');
@@ -6879,15 +6879,18 @@ function renderCalendarPage() {
 
       const catalogedEp = (typeof EPISODES !== 'undefined' ? EPISODES : []).find(e => e.aired === japanDateStr);
       if (catalogedEp) {
+        const meta = window.EPISODE_META && window.EPISODE_META.get(catalogedEp.n);
+        const epImg = (meta && meta.still) || IMG.ep96;
+        const epDesc = (meta && meta.overview) || 'Season 31 simulcast on Netflix India. Japanese audio with English subtitles.';
         events.push({
           type: 'netflix',
           badgeClass: 'cal-event-type-badge--netflix',
           badgeName: 'Netflix',
           time: '4:30 PM IST',
           title: `Ep ${catalogedEp.n}: "${catalogedEp.title}"`,
-          desc: 'Season 31 simulcast on Netflix India. Japanese audio with English subtitles.',
+          desc: epDesc,
           url: 'https://www.netflix.com/title/80090370',
-          image: IMG.ep96
+          image: epImg
         });
       } else {
         // Estimate future episode numbers (base: Ep 1201 on May 23, 2026)
@@ -6896,15 +6899,18 @@ function renderCalendarPage() {
         const diffDays = Math.round((d - baseSat) / 86400000);
         if (diffDays >= 0 && diffDays % 7 === 0) {
           const weeksGap = diffDays / 7;
+          const meta = window.EPISODE_META && window.EPISODE_META.get(baseEp + weeksGap);
+          const epImg = (meta && meta.still) || IMG.ep96;
+          const epDesc = (meta && meta.overview) || 'Estimated weekly simulcast premiere on Netflix India. Japanese audio with English subtitles.';
           events.push({
             type: 'netflix',
             badgeClass: 'cal-event-type-badge--netflix',
             badgeName: 'Netflix',
             time: '4:30 PM IST (Est.)',
             title: `Ep ${baseEp + weeksGap} – Season 31 Simulcast`,
-            desc: 'Estimated weekly simulcast premiere on Netflix India. Japanese audio with English subtitles.',
+            desc: epDesc,
             url: 'https://www.netflix.com/title/80090370',
-            image: IMG.ep96
+            image: epImg
           });
         }
       }
@@ -6944,6 +6950,8 @@ function renderCalendarPage() {
     const etvEps = (typeof EPISODES !== 'undefined' ? EPISODES : []).filter(e => e.etv === dateStr);
     if (etvEps.length > 0) {
       const epList = etvEps.map(e => `Ep ${e.n}`).join(', ');
+      const meta = window.EPISODE_META && window.EPISODE_META.get(etvEps[0].n);
+      const epImg = (meta && meta.still) || IMG.etvHero;
       events.push({
         type: 'broadcast',
         badgeClass: 'cal-event-type-badge--broadcast',
@@ -6952,7 +6960,7 @@ function renderCalendarPage() {
         title: `${etvEps.length} Episode${etvEps.length > 1 ? 's' : ''} Broadcast`,
         desc: `${epList} — "${etvEps[0].title}"${etvEps.length > 1 ? ` + ${etvEps.length - 1} more` : ''} premiering on ETV Bal Bharat.`,
         url: 'https://www.instagram.com/etvbalbharat/',
-        image: IMG.etvHero
+        image: epImg
       });
     }
 
@@ -7122,6 +7130,21 @@ function renderCalendarPage() {
         cell.classList.add('has-events');
         // Add a primary class for the first event type to style it
         cell.classList.add(`cal-cell--${dotEvents[0].type}`);
+        
+        // Visual-focused calendar cell upgrade:
+        const bgImg = dotEvents[0].image || IMG.conan2;
+        cell.style.backgroundImage = `linear-gradient(to bottom, rgba(14, 14, 28, 0.75), rgba(14, 14, 28, 0.95)), url('${bgImg}')`;
+        cell.style.backgroundSize = 'cover';
+        cell.style.backgroundPosition = 'center';
+        
+        cell.onmouseenter = () => {
+          cell.style.backgroundImage = `linear-gradient(to bottom, rgba(14, 14, 28, 0.2), rgba(14, 14, 28, 0.5)), url('${bgImg}')`;
+          cell.style.transform = 'translateY(-2px)';
+        };
+        cell.onmouseleave = () => {
+          cell.style.backgroundImage = `linear-gradient(to bottom, rgba(14, 14, 28, 0.75), rgba(14, 14, 28, 0.95)), url('${bgImg}')`;
+          cell.style.transform = 'none';
+        };
         
         let chipsHTML = '<div class="cal-cell-chips">';
         dotEvents.forEach(ev => {

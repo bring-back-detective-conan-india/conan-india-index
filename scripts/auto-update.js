@@ -216,10 +216,40 @@ async function updateMangaReleases() {
   }
 }
 
+function bumpIndexHtmlVersion() {
+  console.log('\n--- BUMPING CACHE-BUSTING VERSIONS ---');
+  const indexFilePath = path.join(__dirname, '../index.html');
+  if (!fs.existsSync(indexFilePath)) {
+    console.error('index.html not found');
+    return;
+  }
+  let indexContent = fs.readFileSync(indexFilePath, 'utf8');
+
+  // Bump style.css?v=XX and app.js?v=YY
+  indexContent = indexContent.replace(/style\.css\?v=(\d+)/, (match, v) => {
+    const newV = parseInt(v, 10) + 1;
+    console.log(`Bumping style.css version: v=${v} -> v=${newV}`);
+    return `style.css?v=${newV}`;
+  });
+
+  indexContent = indexContent.replace(/app\.js\?v=(\d+)/, (match, v) => {
+    const newV = parseInt(v, 10) + 1;
+    console.log(`Bumping app.js version: v=${v} -> v=${newV}`);
+    return `app.js?v=${newV}`;
+  });
+
+  fs.writeFileSync(indexFilePath, indexContent, 'utf8');
+}
+
 async function run() {
   try {
+    // Track if any updates happened
     await updateNetflixEpisodes();
     await updateMangaReleases();
+    
+    // Always bump versions so that updates reflect instantly for clients
+    bumpIndexHtmlVersion();
+    
     console.log('\nAuto-update process complete!');
   } catch (err) {
     console.error('Fatal error during auto-update run:', err);
