@@ -6612,8 +6612,48 @@ function renderCalendarPage() {
               <button class="cal-nav-btn" id="cal-next-btn" aria-label="Next Month">›</button>
             </div>
           </div>
-          <div class="cal-weekdays">
-            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+
+          <!-- Controls Row: Platform Filters & View Switcher -->
+          <div class="cal-controls-row">
+            <div class="cal-filters" id="cal-filters">
+              <button class="cal-filter-pill cal-filter-pill--all active" data-filter="all">
+                <span>All</span>
+              </button>
+              <button class="cal-filter-pill cal-filter-pill--netflix" data-filter="netflix">
+                <span style="color:#e50914;">●</span> <span>Netflix</span>
+              </button>
+              <button class="cal-filter-pill cal-filter-pill--animetimes" data-filter="animetimes">
+                <span style="color:#00a8e1;">●</span> <span>Anime Times</span>
+              </button>
+              <button class="cal-filter-pill cal-filter-pill--broadcast" data-filter="broadcast">
+                <span style="color:#ff8800;">●</span> <span>ETV Bal Bharat</span>
+              </button>
+              <button class="cal-filter-pill cal-filter-pill--manga" data-filter="manga">
+                <span style="color:#00e676;">●</span> <span>Manga</span>
+              </button>
+              <button class="cal-filter-pill cal-filter-pill--pvr" data-filter="pvr">
+                <span style="color:#ffd700;">●</span> <span>Cinemas</span>
+              </button>
+              <button class="cal-filter-pill cal-filter-pill--special" data-filter="special">
+                <span style="color:#d500f9;">●</span> <span>Fan Days</span>
+              </button>
+            </div>
+            <div class="cal-view-switcher">
+              <button class="cal-switch-btn active" id="cal-btn-grid">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                <span>Grid</span>
+              </button>
+              <button class="cal-switch-btn" id="cal-btn-timeline">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="6" x2="20" y2="6"></line><line x1="9" y1="12" x2="20" y2="12"></line><line x1="9" y1="18" x2="20" y2="18"></line><line x1="5" y1="6" x2="5.01" y2="6"></line><line x1="5" y1="12" x2="5.01" y2="12"></line><line x1="5" y1="18" x2="5.01" y2="18"></line></svg>
+                <span>Timeline</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="cal-weekdays-container" id="cal-weekdays-container">
+            <div class="cal-weekdays">
+              <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+            </div>
           </div>
           <div class="cal-grid" id="cal-grid"></div>
         </div>
@@ -6635,6 +6675,37 @@ function renderCalendarPage() {
   const _today = new Date();
   let viewDate = new Date(_today.getFullYear(), _today.getMonth(), 1);
   let selectedDate = new Date(_today.getFullYear(), _today.getMonth(), _today.getDate());
+  let activeFilter = 'all';
+  let activeView = 'grid';
+
+  // Set up Dynamic Filters & View Switchers event listeners
+  const filterPills = document.querySelectorAll('.cal-filter-pill');
+  filterPills.forEach(pill => {
+    pill.onclick = () => {
+      filterPills.forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      activeFilter = pill.getAttribute('data-filter');
+      refreshView();
+      updateDossier(selectedDate);
+    };
+  });
+
+  const btnGrid = document.getElementById('cal-btn-grid');
+  const btnTimeline = document.getElementById('cal-btn-timeline');
+
+  btnGrid.onclick = () => {
+    btnGrid.classList.add('active');
+    btnTimeline.classList.remove('active');
+    activeView = 'grid';
+    refreshView();
+  };
+
+  btnTimeline.onclick = () => {
+    btnTimeline.classList.add('active');
+    btnGrid.classList.remove('active');
+    activeView = 'timeline';
+    refreshView();
+  };
 
   const monthTitle = document.getElementById('cal-month-title');
   const calGrid = document.getElementById('cal-grid');
@@ -6919,11 +6990,25 @@ function renderCalendarPage() {
     return events;
   }
 
+  function getFilteredEventsForDate(d) {
+    const events = getEventsForDate(d);
+    if (activeFilter === 'all') return events;
+    return events.filter(e => {
+      if (activeFilter === 'netflix') return e.type === 'netflix';
+      if (activeFilter === 'animetimes') return e.type === 'animetimes';
+      if (activeFilter === 'broadcast') return e.type === 'broadcast';
+      if (activeFilter === 'manga') return e.type === 'manga';
+      if (activeFilter === 'pvr') return e.type === 'pvr';
+      if (activeFilter === 'special') return e.type === 'special';
+      return true;
+    });
+  }
+
   function updateDossier(d) {
     const options = { month: 'long', day: 'numeric', year: 'numeric' };
     selectedDateStr.textContent = d.toLocaleDateString('en-US', options);
 
-    const events = getEventsForDate(d);
+    const events = getFilteredEventsForDate(d);
     const mainEvents  = events.filter(e => !e.rerun);
     const rerunEvents = events.filter(e => e.rerun);
     dossierContent.innerHTML = '';
@@ -7033,7 +7118,7 @@ function renderCalendarPage() {
       let innerHTML = `<span class="cal-cell-num">${dayNum}</span>`;
 
       // Get indicators for this cell — reruns are intentionally excluded from grid dots
-      const events = getEventsForDate(cellDate);
+      const events = getFilteredEventsForDate(cellDate);
       const dotEvents = events.filter(ev => !ev.rerun);
       if (dotEvents.length > 0) {
         cell.classList.add('has-events');
@@ -7074,19 +7159,127 @@ function renderCalendarPage() {
     }
   }
 
+  function renderTimeline() {
+    const year = viewDate.getFullYear();
+    const month = viewDate.getMonth();
+
+    // Set header month title
+    monthTitle.textContent = `${monthNames[month]} ${year}`;
+
+    // Get last date of current month
+    const totalDays = new Date(year, month + 1, 0).getDate();
+
+    calGrid.className = 'cal-timeline-container';
+    calGrid.innerHTML = '<div class="cal-timeline-line"></div>';
+
+    let hasAnyEvents = false;
+
+    // We loop through each day in the selected month
+    for (let dayNum = 1; dayNum <= totalDays; dayNum++) {
+      const cellDate = new Date(year, month, dayNum);
+      const events = getFilteredEventsForDate(cellDate).filter(e => !e.rerun);
+
+      if (events.length > 0) {
+        hasAnyEvents = true;
+        
+        const group = document.createElement('div');
+        group.className = 'cal-timeline-group';
+        
+        const isSelected = selectedDate && 
+                           selectedDate.getFullYear() === year && 
+                           selectedDate.getMonth() === month && 
+                           selectedDate.getDate() === dayNum;
+        if (isSelected) {
+          group.classList.add('selected');
+        }
+
+        group.innerHTML = `
+          <div class="cal-timeline-date-bubble"></div>
+          <div class="cal-timeline-date-label">
+            ${dayNum} ${monthNames[month].substring(0, 3)} – ${cellDate.toLocaleDateString('en-US', { weekday: 'long' })}
+          </div>
+          <div class="cal-timeline-items-list"></div>
+        `;
+
+        const itemsList = group.querySelector('.cal-timeline-items-list');
+
+        events.forEach(ev => {
+          const card = document.createElement('div');
+          card.className = 'cal-timeline-item-card';
+          if (isSelected) card.classList.add('selected');
+          
+          const imgUrl = ev.image || IMG.conan2;
+          
+          card.innerHTML = `
+            <div class="cal-timeline-item-img" style="background-image:url('${imgUrl}')"></div>
+            <div class="cal-timeline-item-body">
+              <div class="cal-timeline-item-header">
+                <span class="cal-event-type-badge ${ev.badgeClass}">${ev.badgeName}</span>
+                <span class="cal-event-time">${ev.time}</span>
+              </div>
+              <div class="cal-timeline-item-title">${ev.title}</div>
+              <div class="cal-timeline-item-desc">${ev.desc}</div>
+            </div>
+          `;
+
+          card.onclick = (e) => {
+            e.stopPropagation();
+            selectedDate = new Date(year, month, dayNum);
+            
+            // Re-render the timeline selected state
+            const allGroups = calGrid.querySelectorAll('.cal-timeline-group');
+            allGroups.forEach(g => g.classList.remove('selected'));
+            group.classList.add('selected');
+
+            const allCards = calGrid.querySelectorAll('.cal-timeline-item-card');
+            allCards.forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            
+            updateDossier(selectedDate);
+          };
+
+          itemsList.appendChild(card);
+        });
+
+        calGrid.appendChild(group);
+      }
+    }
+
+    if (!hasAnyEvents) {
+      calGrid.innerHTML = `
+        <div style="text-align:center;padding:48px 12px;color:var(--muted);width:100%;">
+          <span style="font-size:40px;display:block;margin-bottom:12px;">🕵️‍♂️</span>
+          No scheduled releases match this filter in ${monthNames[month]} ${year}.
+        </div>
+      `;
+    }
+  }
+
+  function refreshView() {
+    if (activeView === 'grid') {
+      document.getElementById('cal-weekdays-container').style.display = 'block';
+      calGrid.className = 'cal-grid';
+      renderGrid();
+    } else {
+      document.getElementById('cal-weekdays-container').style.display = 'none';
+      calGrid.className = 'cal-timeline-container';
+      renderTimeline();
+    }
+  }
+
   // Set up Nav Button Listeners
   document.getElementById('cal-prev-btn').onclick = () => {
     viewDate.setMonth(viewDate.getMonth() - 1);
-    renderGrid();
+    refreshView();
   };
 
   document.getElementById('cal-next-btn').onclick = () => {
     viewDate.setMonth(viewDate.getMonth() + 1);
-    renderGrid();
+    refreshView();
   };
 
   // Initial Load
-  renderGrid();
+  refreshView();
   updateDossier(selectedDate);
 }
 
