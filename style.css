@@ -2304,5 +2304,45 @@ html[data-theme="light"] .theme-icon-light {
   to { opacity: 1; transform: none; }
 }
 
+/* ─── BBDCI MOBILE OVERRIDES (NAVBAR, SCROLLING & LIGHT MODE SEARCH) ─── */
+@media (max-width: 768px) {
+  /* Dynamic safe-area padding for bottom bar */
+  .mobile-bottom-bar {
+    height: calc(64px + env(safe-area-inset-bottom, 12px)) !important;
+    padding-bottom: env(safe-area-inset-bottom, 12px) !important;
+  }
+
+  /* Explore More menu positioning flush above padded bottom bar */
+  .mbb-more-menu {
+    bottom: calc(64px + env(safe-area-inset-bottom, 12px)) !important;
+    padding: 20px 20px 14px !important;
+  }
+
+  /* Recover Search Magnifying Glass Icon Visibility in Light Mode */
+  [data-theme="light"] .mtb-search-btn {
+    color: var(--text) !important;
+    background: rgba(0, 0, 0, 0.05) !important;
+    border-color: rgba(26, 35, 126, 0.1) !important;
+  }
+  [data-theme="light"] .mtb-search-btn:active {
+    background: rgba(0, 0, 0, 0.1) !important;
+  }
+
+  /* Hardware Accelerated Horizontal Kinetic Scroll & Bounce Control */
+  .scroll-row, 
+  .platforms-grid, 
+  .lang-one-row, 
+  .lm-season-scroll, 
+  .lm-movie-scroll {
+    -webkit-overflow-scrolling: touch !important;
+    scroll-behavior: smooth !important;
+    transform: translateZ(0) !important;
+    will-change: transform !important;
+    overscroll-behavior-x: contain !important;
+    backface-visibility: hidden !important;
+  }
+}
+
+
 
 
