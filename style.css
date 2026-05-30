@@ -2072,3 +2072,18 @@ html, body {
   }
 }
 
+/* Dynamic theme icon visibility toggles */
+html[data-theme="dark"] .theme-icon-light {
+  display: none !important;
+}
+html[data-theme="dark"] .theme-icon-dark {
+  display: inline-block !important;
+}
+html[data-theme="light"] .theme-icon-dark {
+  display: none !important;
+}
+html[data-theme="light"] .theme-icon-light {
+  display: inline-block !important;
+}
+
+
