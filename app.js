@@ -990,7 +990,16 @@ const Router = {
       renderAdvocacyPage();
     } else if (path === '/archive') {
       renderHome();
-      setTimeout(() => scrollToSection('archive'), 400);
+      // Wait for home DOM + component renders to settle before scrolling
+      function tryScrollArchive(attemptsLeft) {
+        const el = document.getElementById('archive');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else if (attemptsLeft > 0) {
+          setTimeout(() => tryScrollArchive(attemptsLeft - 1), 150);
+        }
+      }
+      setTimeout(() => tryScrollArchive(5), 450);
     } else {
       renderHome();
     }
@@ -1125,6 +1134,8 @@ const Router = {
     setMeta('canonical-url', ogUrl);
   }
 };
+// Disable browser native scroll restoration — we always scroll to top on navigate
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 window.addEventListener('popstate', () => Router.resolve());
 
 // ─── NAV LINKS ───────────────────────────────────────
@@ -1410,6 +1421,7 @@ function itemMatchesFilter(item, type) {
 
 // ─── RENDER HOME ─────────────────────────────────────
 function renderHome() {
+  window.scrollTo({ top: 0, behavior: 'instant' });
   app.innerHTML = '';
   const home = document.createElement('div');
   home.id = 'home-page';
