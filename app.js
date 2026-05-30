@@ -916,6 +916,14 @@ const Router = {
     }
   },
   resolve() {
+    // Run any active watch guide v2 cleanups to prevent severe memory leaks
+    if (typeof window.wg2CleanupScrubber === 'function') {
+      try {
+        window.wg2CleanupScrubber();
+        window.wg2CleanupScrubber = null;
+      } catch (_) {}
+    }
+
     const isFile = window.location.protocol === 'file:';
     let path;
     if (isFile) {
@@ -1125,7 +1133,7 @@ document.getElementById('nav-logo').addEventListener('click', () => {
   else Router.navigate('/');
 });
 
-const NAV_ROUTES = new Set(['movies', 'tvshows', 'spinoffs', 'events', 'manga', 'languages', 'browse', 'merch', 'archive', 'advocacy', 'guides', 'guide', 'guide/important-episodes', 'guide/canon-episodes', 'ovas', 'magic-kaito', 'calendar', 'platforms']);
+const NAV_ROUTES = new Set(['movies', 'tvshows', 'spinoffs', 'events', 'manga', 'languages', 'browse', 'merch', 'archive', 'advocacy', 'guides', 'guide', 'guide/important-episodes', 'guide/canon-episodes', 'ovas', 'magic-kaito', 'yaiba', 'calendar', 'platforms', 'guide/release-order', 'guide/black-org-guide', 'guide/india']);
 function closeDrawer() {
   document.getElementById('navHamburger').classList.remove('open');
   document.getElementById('navDrawer').classList.remove('open');
@@ -6287,7 +6295,7 @@ async function renderMangaPage() {
        <div class="manga-page-header">
           <div class="manga-page-buy-links">
             <a href="https://www.amazon.in/s?k=case+closed+manga+viz+media" target="_blank" rel="noopener" class="manga-feature-btn" style="font-size:13px;padding:13px 24px">Amazon India &nearr;</a>
-            <a href="https://www.bookwagon.in/search?q=case+closed+detective+conan" target="_blank" rel="noopener" class="manga-feature-btn manga-feature-btn--outline" style="font-size:13px;padding:13px 24px">BookWagon &nearr;</a>
+            <a href="https://www.bookswagon.com/search?q=case+closed+detective+conan" target="_blank" rel="noopener" class="manga-feature-btn manga-feature-btn--outline" style="font-size:13px;padding:13px 24px">BookWagon &nearr;</a>
           </div>
           <div class="manga-page-sort">
             <button class="mpf-btn active" id="sort-asc">Vol 1 &rarr; ${LATEST_VOL}</button>

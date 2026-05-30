@@ -2454,6 +2454,187 @@ body.wg2-is-dragging {
 
 
 /* --- RESTORED MISSING RULER CLASSES --- */
+.wg2-ruler {
+  position: fixed;
+  top: 140px;
+  right: 24px;
+  bottom: 100px;
+  width: 20px;
+  z-index: 990;
+  display: flex;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+  pointer-events: none;
+}
+
+.wg2-ruler.visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.wg2-ruler-track {
+  position: relative;
+  width: 4px;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: width 0.2s ease, background 0.2s ease;
+}
+
+.wg2-ruler-track:hover,
+.wg2-ruler.dragging .wg2-ruler-track {
+  width: 8px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.wg2-ruler-current {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--wg2-red, #CC2233);
+  box-shadow: 0 0 10px var(--wg2-red, #CC2233);
+  pointer-events: none;
+  transition: width 0.2s ease, height 0.2s ease, top 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: top;
+}
+
+.wg2-ruler-track:hover .wg2-ruler-current,
+.wg2-ruler.dragging .wg2-ruler-current {
+  width: 14px;
+  height: 14px;
+}
+
+.wg2-ruler-ticks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.wg2-ruler-major-tick {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.2s var(--spring), background 0.2s ease;
+}
+
+.wg2-ruler-major-tick:hover,
+.wg2-ruler-major-tick.active {
+  transform: translate(-50%, -50%) scale(1.4);
+  background: #fff;
+}
+
+.wg2-ruler-tick-label {
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%) translateX(10px);
+  background: rgba(10, 10, 15, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 6px 12px;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s var(--ease-out), transform 0.25s var(--ease-out), visibility 0.25s;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+
+.wg2-ruler-major-tick:hover .wg2-ruler-tick-label {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-50%) translateX(0);
+}
+
+.wg2-ruler-hover {
+  position: absolute;
+  right: 24px;
+  top: 0;
+  transform: translateY(-50%) scale(0.9);
+  background: var(--wg2-red, #CC2233);
+  padding: 8px 14px;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+  box-shadow: 0 8px 24px rgba(229, 9, 20, 0.35);
+  z-index: 1000;
+}
+
+.wg2-ruler.dragging .wg2-ruler-hover {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-50%) scale(1);
+}
+
+.wg2-ruler-hover-arrow {
+  position: absolute;
+  right: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-left: 6px solid var(--wg2-red, #CC2233);
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+}
+
+/* Light theme overrides for ruler */
+[data-theme="light"] .wg2-ruler-track {
+  background: rgba(13, 21, 71, 0.12);
+}
+
+[data-theme="light"] .wg2-ruler-track:hover,
+[data-theme="light"] .wg2-ruler.dragging .wg2-ruler-track {
+  background: rgba(13, 21, 71, 0.2);
+}
+
+[data-theme="light"] .wg2-ruler-major-tick {
+  background: rgba(13, 21, 71, 0.3);
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+[data-theme="light"] .wg2-ruler-major-tick:hover,
+[data-theme="light"] .wg2-ruler-major-tick.active {
+  background: var(--red);
+}
+
+[data-theme="light"] .wg2-ruler-tick-label {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(26, 35, 126, 0.15);
+  color: #0D1547;
+  box-shadow: 0 4px 16px rgba(26, 35, 126, 0.08);
+}
+
+@media (max-width: 1024px) {
+  .wg2-ruler {
+    display: none !important;
+  }
+}
 
 
 

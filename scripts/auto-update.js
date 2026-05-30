@@ -26,17 +26,17 @@ async function updateNetflixEpisodes() {
   const arrayEndIdx = episodesContent.lastIndexOf(']');
   if (arrayStartIdx === -1 || arrayEndIdx === -1) {
     console.error('Could not locate EPISODES array in episodes.js');
-    return;
+    return false;
   }
 
-  // Parse the existing episodes
+  // Parse the existing episodes safely using JSON.parse
   let EPISODES = [];
   try {
     const rawArray = episodesContent.substring(arrayStartIdx, arrayEndIdx + 1);
-    EPISODES = eval(rawArray);
+    EPISODES = JSON.parse(rawArray);
   } catch (err) {
     console.error('Error parsing episodes array:', err);
-    return;
+    return false;
   }
 
   const latestCatalogedEp = EPISODES[EPISODES.length - 1];
@@ -51,39 +51,80 @@ async function updateNetflixEpisodes() {
     const wikiRes = await fetch(wikiUrl);
     if (!wikiRes.ok) {
       console.error(`Wiki request failed: ${wikiRes.status}`);
-      return;
+      return false;
     }
     const html = await wikiRes.text();
     
     // Custom row-by-row parser for MediaWiki HTML
     const trParts = html.split(/<tr[^>]*>/i);
+    let colIndices = { jpn: 1, title: 3, aired: 4, plot: 6, source: 7 }; // defaults
+    
     for (let i = 1; i < trParts.length; i++) {
       const trHtml = trParts[i].split(/<\/tr>/i)[0];
-      const tdParts = trHtml.split(/<td[^>]*>/i);
       
-      // A standard row has at least 8 elements (first element is empty before the first td split)
-      if (tdParts.length >= 8) {
-        const jpnNumRaw = tdParts[1].replace(/<[^>]*>/g, '').trim();
+      // Check if this is a header row to dynamically determine column indices
+      if (/<th[^>]*>/i.test(trHtml)) {
+        const thParts = trHtml.split(/<th[^>]*>/i);
+        if (thParts.length >= 5) {
+          let tempIndices = { jpn: -1, title: -1, aired: -1, plot: -1, source: -1 };
+          for (let idx = 1; idx < thParts.length; idx++) {
+            const cellContent = thParts[idx].split(/<\/th>/i)[0];
+            const text = cellContent.replace(/<[^>]*>/g, '').trim().toLowerCase();
+            if (text.includes('jpn') || text.includes('japanese') || text === 'no.' || text === '#') {
+              tempIndices.jpn = idx;
+            } else if (text.includes('title')) {
+              tempIndices.title = idx;
+            } else if (text.includes('broadcast') && (text.includes('original') || text.includes('jpn') || (!text.includes('dub') && !text.includes('english')))) {
+              tempIndices.aired = idx;
+            } else if (text.includes('plot')) {
+              tempIndices.plot = idx;
+            } else if (text.includes('source') || text.includes('manga')) {
+              tempIndices.source = idx;
+            }
+          }
+          if (tempIndices.jpn !== -1 && tempIndices.title !== -1 && tempIndices.aired !== -1) {
+            colIndices = {
+              jpn: tempIndices.jpn,
+              title: tempIndices.title,
+              aired: tempIndices.aired,
+              plot: tempIndices.plot !== -1 ? tempIndices.plot : colIndices.plot,
+              source: tempIndices.source !== -1 ? tempIndices.source : colIndices.source
+            };
+          }
+        }
+        continue; // Skip the header row itself
+      }
+      
+      const tdParts = trHtml.split(/<td[^>]*>/i);
+      const getTdContent = (idx) => {
+        if (idx < 0 || idx >= tdParts.length) return "";
+        return tdParts[idx].split(/<\/td>/i)[0];
+      };
+      
+      const maxRequiredIdx = Math.max(colIndices.jpn, colIndices.title, colIndices.aired, colIndices.plot, colIndices.source);
+      if (tdParts.length > maxRequiredIdx) {
+        const jpnNumRaw = getTdContent(colIndices.jpn).replace(/<[^>]*>/g, '').trim();
         const jpnNum = parseInt(jpnNumRaw, 10);
         if (isNaN(jpnNum)) continue;
         
-        // Title cell is index 3
-        const titleMatch = tdParts[3].match(/title="([^"]*)"/);
-        const title = titleMatch ? titleMatch[1] : tdParts[3].replace(/<[^>]*>/g, '').trim();
+        // Title cell
+        const titleCell = getTdContent(colIndices.title);
+        const titleMatch = titleCell.match(/title="([^"]*)"/);
+        const title = titleMatch ? titleMatch[1] : titleCell.replace(/<[^>]*>/g, '').trim();
         
-        // Airdate cell is index 4
-        const dateRaw = tdParts[4].replace(/<[^>]*>/g, '').trim();
+        // Airdate cell
+        const dateRaw = getTdContent(colIndices.aired).replace(/<[^>]*>/g, '').trim();
         
-        // Plot cell is index 6
-        const plotHtml = tdParts[6];
+        // Plot tags cell
+        const plotHtml = getTdContent(colIndices.plot);
         const tags = [];
         if (plotHtml.includes('Plot-BO.png') || plotHtml.includes('Black Organization')) tags.push('main-plot');
         if (plotHtml.includes('Plot-Char.png') || plotHtml.includes('Character development')) tags.push('character');
         if (plotHtml.includes('Plot-Romance.png') || plotHtml.includes('Romance')) tags.push('romance');
         if (plotHtml.includes('Plot-New.png') || plotHtml.includes('New character')) tags.push('character-intro');
         
-        // Manga source cell is index 7
-        const sourceHtml = tdParts[7];
+        // Manga source cell
+        const sourceHtml = getTdContent(colIndices.source);
         const srcRaw = sourceHtml.replace(/<[^>]*>/g, '').trim().split('\n')[0].trim();
         const src = srcRaw || (tags.includes('main-plot') || tags.includes('character') ? "Manga Canon" : "TV Original");
         
@@ -107,7 +148,7 @@ async function updateNetflixEpisodes() {
     console.log(`Parsed ${wikiEpisodes.length} episodes from the fan wiki.`);
   } catch (err) {
     console.error('Error fetching/parsing from fan wiki:', err);
-    return;
+    return false;
   }
 
   // 3. Fetch images and metadata from TMDB Season 1 (Primary source)
@@ -131,7 +172,6 @@ async function updateNetflixEpisodes() {
   }
 
   // 4. Combine sources: Loop from last cataloged episode upwards
-  const todayStr = new Date().toISOString().split('T')[0];
   let newEpisodesAdded = [];
   let currentEpNum = lastEpNum + 1;
   const maxSearchLimit = Math.max(
@@ -151,19 +191,20 @@ async function updateNetflixEpisodes() {
       // Primary: TMDB API
       title = tmdbEp.name || `Episode ${currentEpNum}`;
       airedDate = tmdbEp.air_date;
-      srcLabel = "TV Original"; // TMDB default fallback
+      srcLabel = wikiEp ? wikiEp.src : "TV Original";
     } else if (wikiEp) {
       // Secondary Fallback: Conan World Wiki
       console.log(`Ep ${currentEpNum} not found in TMDB. Falling back to fan wiki metadata!`);
       title = wikiEp.title;
       airedDate = wikiEp.aired;
-      
-      const isTvOriginal = wikiEp.title.includes('Digital Remaster') || wikiEp.title.includes('TV Original');
-      srcLabel = isTvOriginal ? "TV Original" : "Manga Canon";
+      srcLabel = wikiEp.src;
     }
 
     if (title && airedDate) {
-      const airYear = airedDate.substring(2, 4); // YY from YYYY
+      // Calculate correct sequential season ID (S1 = 1996, S2 = 1997... S31 = 2026)
+      const airYearNum = parseInt(airedDate.substring(0, 4), 10);
+      const seasonNum = airYearNum - 1996 + 1;
+      const seasonId = `S${seasonNum}`;
       
       // Determine if it is a television special
       let specialType = null;
@@ -176,7 +217,7 @@ async function updateNetflixEpisodes() {
       const newEp = {
         n: currentEpNum,
         title: title,
-        season: `S${airYear}`,
+        season: seasonId,
         aired: airedDate,
         etv: null,
         netflix: null,       // Direct Calendar Switch for Netflix India Drop Date
@@ -188,7 +229,6 @@ async function updateNetflixEpisodes() {
         newEp.special = specialType;
       }
       
-      const wikiEp = wikiEpisodes.find(x => x.n === currentEpNum);
       if (wikiEp && wikiEp.tags && wikiEp.tags.length > 0) {
         newEp.tags = wikiEp.tags;
       }
@@ -221,6 +261,11 @@ async function updateNetflixEpisodes() {
     );
 
     appContent = appContent.replace(
+      /let nextEpNum = \d+;/,
+      `let nextEpNum = ${newMaxEpNum + 1};`
+    );
+
+    appContent = appContent.replace(
       /let latestEpTitle = ".*";/,
       `let latestEpTitle = "${EPISODES[EPISODES.length - 1].title.replace(/"/g, '\\"')}";`
     );
@@ -237,8 +282,10 @@ async function updateNetflixEpisodes() {
 
     fs.writeFileSync(appFilePath, appContent, 'utf8');
     console.log(`Successfully bumped app.js default fallback to Ep ${newMaxEpNum}!`);
+    return true;
   } else {
     console.log('No new aired episodes found from the fan wiki.');
+    return false;
   }
 }
 
@@ -252,7 +299,7 @@ async function updateMangaReleases() {
   const latestVolMatch = appContent.match(/let LATEST_VOL = (\d+);/);
   if (!latestVolMatch) {
     console.error('Could not parse LATEST_VOL from app.js');
-    return;
+    return false;
   }
   let currentLatestVol = parseInt(latestVolMatch[1], 10);
   console.log(`Current LATEST_VOL limit: Volume ${currentLatestVol}`);
@@ -289,15 +336,15 @@ async function updateMangaReleases() {
       const formattedDate = dateObj.toLocaleDateString('en-US', options); // e.g., "November 13, 2026"
       
       appContent = appContent.replace(
-        /const UPCOMING_RELEASES = \{[\s\S]*?\};/,
-        `const UPCOMING_RELEASES = {\n    ${nextUpcoming.vol}: 'Releasing ${formattedDate}'\n  };`
+        /(\s*)const UPCOMING_RELEASES = \{[\s\S]*?\};/,
+        `$1const UPCOMING_RELEASES = {\n$1  ${nextUpcoming.vol}: 'Releasing ${formattedDate}'\n$1};`
       );
       console.log(`Updated UPCOMING_RELEASES to point to Vol ${nextUpcoming.vol} (Releasing ${formattedDate}).`);
     } else {
       // Clear releases if none are scheduled
       appContent = appContent.replace(
-        /const UPCOMING_RELEASES = \{[\s\S]*?\};/,
-        `const UPCOMING_RELEASES = {};`
+        /(\s*)const UPCOMING_RELEASES = \{[\s\S]*?\};/,
+        `$1const UPCOMING_RELEASES = {};`
       );
     }
     
@@ -307,32 +354,52 @@ async function updateMangaReleases() {
     // 3. Update MANGA_ISBNS in data.js
     let dataContent = fs.readFileSync(dataFilePath, 'utf8');
     
-    // We will append the promoted volume ISBNs to MANGA_ISBNS
-    for (const vol of promotedVols) {
-      const isbnVal = vol.isbn10 || vol.isbn13;
+    const isbnStartIdx = dataContent.indexOf('{', dataContent.indexOf('const MANGA_ISBNS'));
+    const isbnEndIdx = dataContent.indexOf('};', isbnStartIdx);
+    if (isbnStartIdx !== -1 && isbnEndIdx !== -1) {
+      const rawIsbnsContent = dataContent.substring(isbnStartIdx, isbnEndIdx + 1);
       
-      // Let's parse and inject: e.g. target `94:"978..."` or similar at the end
-      // Let's replace the closing brace of MANGA_ISBNS
-      const isbnMatchStr = `  93:"9781974751532",  94:"9781974752393"`;
-      
-      // Find the end of MANGA_ISBNS definition
-      const isbnBlockEndIdx = dataContent.indexOf('};', dataContent.indexOf('const MANGA_ISBNS'));
-      if (isbnBlockEndIdx !== -1) {
-        // Let's rebuild the final lines dynamically
-        let entriesToAppend = promotedVols.map(v => `  ${v.vol}:"${v.isbn10 || v.isbn13}"`).join(',\n');
-        
-        // Find the last entry before the closing brace
-        const lastEntryIndex = dataContent.lastIndexOf('"', isbnBlockEndIdx);
-        const insertionPoint = dataContent.indexOf('\n', lastEntryIndex) + 1;
-        
-        dataContent = dataContent.slice(0, insertionPoint) + entriesToAppend + '\n' + dataContent.slice(isbnBlockEndIdx);
-        console.log(`Appended ISBNs for Volumes ${promotedVols.map(v => v.vol).join(', ')} directly to data.js!`);
+      // Parse the existing key-value pairs using Regex
+      const matches = rawIsbnsContent.matchAll(/(\d+)\s*:\s*"([^"]+)"/g);
+      const isbns = {};
+      for (const match of matches) {
+        isbns[parseInt(match[1], 10)] = match[2];
       }
+      
+      // Add all promoted volume ISBNs
+      for (const vol of promotedVols) {
+        isbns[vol.vol] = vol.isbn13 || vol.isbn10;
+      }
+      
+      // Rebuild and format beautifully (4 items per row)
+      let formattedRows = [];
+      let currentRow = [];
+      const sortedVols = Object.keys(isbns).map(Number).sort((a, b) => a - b);
+      for (const v of sortedVols) {
+        const val = isbns[v];
+        const keyStr = String(v).padStart(4, ' ');
+        currentRow.push(`${keyStr}:"${val}"`);
+        if (currentRow.length === 4) {
+          formattedRows.push(`   ` + currentRow.join(', '));
+          currentRow = [];
+        }
+      }
+      if (currentRow.length > 0) {
+        formattedRows.push(`   ` + currentRow.join(', '));
+      }
+      
+      const newIsbnsBlock = `{\n${formattedRows.join(',\n')}\n}`;
+      dataContent = dataContent.slice(0, isbnStartIdx) + newIsbnsBlock + dataContent.slice(isbnEndIdx + 2);
+      
+      fs.writeFileSync(dataFilePath, dataContent, 'utf8');
+      console.log(`Successfully updated and formatted MANGA_ISBNS in data.js to include Volumes ${promotedVols.map(v => v.vol).join(', ')}!`);
+    } else {
+      console.error('Could not locate MANGA_ISBNS block in data.js');
     }
-
-    fs.writeFileSync(dataFilePath, dataContent, 'utf8');
+    return true;
   } else {
     console.log('No new manga volumes to release today.');
+    return false;
   }
 }
 
@@ -363,12 +430,15 @@ function bumpIndexHtmlVersion() {
 
 async function run() {
   try {
-    // Track if any updates happened
-    await updateNetflixEpisodes();
-    await updateMangaReleases();
+    const episodesUpdated = await updateNetflixEpisodes();
+    const mangaUpdated = await updateMangaReleases();
     
-    // Always bump versions so that updates reflect instantly for clients
-    bumpIndexHtmlVersion();
+    if (episodesUpdated || mangaUpdated) {
+      bumpIndexHtmlVersion();
+      console.log('\nUpdates detected. Cache-busting versions bumped in index.html.');
+    } else {
+      console.log('\nNo updates detected. Skipping cache-busting version bump.');
+    }
     
     console.log('\nAuto-update process complete!');
   } catch (err) {

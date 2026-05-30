@@ -113,12 +113,19 @@ function renderWatchGuideV2(options = {}) {
     return;
   }
   
+  // Clean up any previously registered observers to prevent memory leaks
+  if (typeof window.wg2CleanupScrubber === 'function') {
+    try {
+      window.wg2CleanupScrubber();
+      window.wg2CleanupScrubber = null;
+    } catch (_) {}
+  }
+
   app.innerHTML = '';
   window.scrollTo({ top: 0, behavior: 'instant' });
-  // Reset filter state on each render
-  window.activeFilters = window.activeFilters || new Set();
-  window.activeFilters.clear();
-  window.wg2IndiaOnly = false;
+  // Reset local filter state on each render
+  activeFilters.clear();
+  wg2IndiaOnly = false;
   
   const pg = document.createElement('div');
   pg.className = 'wg2-container page-enter';
@@ -192,6 +199,17 @@ function renderWatchGuideV2(options = {}) {
     ${renderFilterDrawer()}
     ${renderFloatingNav()}
     
+    <div class="wg2-ruler" id="wg2-ruler">
+      <div class="wg2-ruler-track" id="wg2-ruler-track">
+        <div class="wg2-ruler-ticks"></div>
+        <div class="wg2-ruler-current" id="wg2-ruler-current"></div>
+        <div class="wg2-ruler-hover" id="wg2-ruler-hover">
+          <div class="wg2-ruler-hover-text"></div>
+          <div class="wg2-ruler-hover-arrow"></div>
+        </div>
+      </div>
+    </div>
+    
     ${feedHtml}
   `;
   
@@ -224,8 +242,16 @@ function renderWatchGuideV2(options = {}) {
     }
     updateStickyTop();
     window.addEventListener('scroll', updateStickyTop, { passive: true });
-    window.addEventListener('hashchange', function cleanupStickyTop() {
+    
+    // Primary History-route-friendly cleanup hook
+    window.wg2CleanupStickyTop = function() {
       window.removeEventListener('scroll', updateStickyTop);
+      window.wg2CleanupStickyTop = null;
+    };
+    
+    // Hashchange fallback for file:// protocol
+    window.addEventListener('hashchange', function cleanupStickyTop() {
+      if (typeof window.wg2CleanupStickyTop === 'function') window.wg2CleanupStickyTop();
     }, { once: true });
   }
 }
@@ -1095,9 +1121,53 @@ function wg2InitScrubber() {
     // Use getBoundingClientRect for absolute document positioning
     sectionTops = sections.map(s => s.getBoundingClientRect().top + window.scrollY);
     trackHeight = track.offsetHeight;
+    
+    // Dynamically generate tick marks on the track
+    const ticksContainer = ruler.querySelector('.wg2-ruler-ticks');
+    if (ticksContainer) {
+      ticksContainer.innerHTML = sections.map((section, i) => {
+        const titleEl = section.querySelector('.wg2-section-title');
+        const name = titleEl ? titleEl.textContent.trim().replace(/\s+/g, ' ') : `Section ${i + 1}`;
+        const sectionId = section.id;
+        return `
+          <div class="wg2-ruler-major-tick" style="top: ${(i / Math.max(1, sections.length - 1)) * 100}%" data-arc-id="${sectionId}" onclick="wg2ScrubberJump('${sectionId}')">
+            <span class="wg2-ruler-tick-label">${name}</span>
+          </div>
+        `;
+      }).join('');
+    }
   }
   
   updateSections();
+  
+  // ── Hover Tooltip Handlers ──
+  function showHover(clientY) {
+    if (!hover || !track) return;
+    const rect = track.getBoundingClientRect();
+    const percent = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
+    const pos = percent * rect.height;
+    
+    hover.style.top = `${pos}px`;
+    hover.style.opacity = '1';
+    hover.style.visibility = 'visible';
+    
+    let text = '';
+    if (sections.length > 0) {
+      const sectionIndex = Math.min(sections.length - 1, Math.floor(percent * sections.length));
+      const section = sections[sectionIndex];
+      if (section) {
+        const titleEl = section.querySelector('.wg2-section-title');
+        text = titleEl ? titleEl.textContent.trim().replace(/\s+/g, ' ') : `Section ${sectionIndex + 1}`;
+      }
+    }
+    if (hoverText) hoverText.textContent = text;
+  }
+  
+  function hideHover() {
+    if (!hover) return;
+    hover.style.opacity = '0';
+    hover.style.visibility = 'hidden';
+  }
   
   // Get current section index
   function getCurrentSectionIndex() {
@@ -1177,8 +1247,8 @@ function wg2InitScrubber() {
     handleScrub(e.touches[0].clientY);
   }, { passive: false });
 
-  // Move events on window to handle dragging outside the track
-  window.addEventListener('mousemove', (e) => {
+  // Move events on window to handle dragging outside the track (defined as named handlers to prevent leaks)
+  function onWindowMouseMove(e) {
     if (!isDragging) {
       // Normal hover logic if over track
       const rect = track.getBoundingClientRect();
@@ -1191,30 +1261,35 @@ function wg2InitScrubber() {
       return;
     }
     handleScrub(e.clientY);
-  });
+  }
   
-  window.addEventListener('touchmove', (e) => {
+  function onWindowTouchMove(e) {
     if (!isDragging) return;
     e.preventDefault(); // Prevent native scroll while scrubbing
     handleScrub(e.touches[0].clientY);
-  }, { passive: false });
+  }
 
-  // End drag
-  window.addEventListener('mouseup', () => {
+  // End drag (defined as named handlers to prevent leaks)
+  function onWindowMouseUp() {
     if (!isDragging) return;
     isDragging = false;
     ruler.classList.remove('dragging');
     document.body.classList.remove('wg2-is-dragging');
     hideHover();
-  });
+  }
   
-  window.addEventListener('touchend', () => {
+  function onWindowTouchEnd() {
     if (!isDragging) return;
     isDragging = false;
     ruler.classList.remove('dragging');
     document.body.classList.remove('wg2-is-dragging');
     hideHover();
-  });
+  }
+
+  window.addEventListener('mousemove', onWindowMouseMove);
+  window.addEventListener('touchmove', onWindowTouchMove, { passive: false });
+  window.addEventListener('mouseup', onWindowMouseUp);
+  window.addEventListener('touchend', onWindowTouchEnd);
 
   // Scroll sync
   function onScrollSync() {
@@ -1241,11 +1316,29 @@ function wg2InitScrubber() {
   }
   window.addEventListener('resize', onResizeScrubber);
   
-  // Clean up on hashchange to prevent leaks
-  window.addEventListener('hashchange', function cleanupScrubber() {
+  // Primary History-route-friendly cleanup hook
+  window.wg2CleanupScrubber = function() {
+    window.removeEventListener('mousemove', onWindowMouseMove);
+    window.removeEventListener('touchmove', onWindowTouchMove);
+    window.removeEventListener('mouseup', onWindowMouseUp);
+    window.removeEventListener('touchend', onWindowTouchEnd);
     window.removeEventListener('scroll', onScrollSync);
     window.removeEventListener('scroll', onScrollShowRuler);
     window.removeEventListener('resize', onResizeScrubber);
+    
+    // Also trigger sticky controls observer cleanup
+    if (typeof window.wg2CleanupStickyTop === 'function') {
+      try {
+        window.wg2CleanupStickyTop();
+      } catch (_) {}
+    }
+    
+    window.wg2CleanupScrubber = null;
+  };
+  
+  // Hashchange fallback for file:// protocol
+  window.addEventListener('hashchange', function cleanupScrubber() {
+    if (typeof window.wg2CleanupScrubber === 'function') window.wg2CleanupScrubber();
   }, { once: true });
   
   updateCurrent();

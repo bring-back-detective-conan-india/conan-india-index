@@ -98,11 +98,11 @@ function renderFooterHTML(){
         <div>
           <div class="footer-col-title">Content</div>
           <div class="footer-links">
-            <a href="/#series" onclick="event.preventDefault(); scrollToSection('series')">TV Series <span class="footer-link-badge tag tag-netflix">${SEASONS.length} Seasons</span></a>
-            <a href="/#movies" onclick="event.preventDefault(); scrollToSection('movies')">Movies <span class="footer-link-badge tag tag-prime">27 Films</span></a>
-            <a href="/#spinoffs" onclick="event.preventDefault(); scrollToSection('spinoffs')">Spinoffs</a>
+            <a href="/#series" onclick="event.preventDefault(); Router.currentRoute==='/'||Router.currentRoute===''?scrollToSection('series'):(Router.navigate('/'),setTimeout(()=>scrollToSection('series'),400))">TV Series <span class="footer-link-badge tag tag-netflix">${SEASONS.length} Seasons</span></a>
+            <a href="/#movies" onclick="event.preventDefault(); Router.currentRoute==='/'||Router.currentRoute===''?scrollToSection('movies'):(Router.navigate('/'),setTimeout(()=>scrollToSection('movies'),400))">Movies <span class="footer-link-badge tag tag-prime">27 Films</span></a>
+            <a href="/#spinoffs" onclick="event.preventDefault(); Router.currentRoute==='/'||Router.currentRoute===''?scrollToSection('spinoffs'):(Router.navigate('/'),setTimeout(()=>scrollToSection('spinoffs'),400))">Spinoffs</a>
             <a href="/browse" onclick="event.preventDefault(); Router.navigate('/browse')">Browse &amp; Filter</a>
-            <a href="/#manga" onclick="event.preventDefault(); scrollToSection('manga')">Manga</a>
+            <a href="/#manga" onclick="event.preventDefault(); Router.currentRoute==='/'||Router.currentRoute===''?scrollToSection('manga'):(Router.navigate('/'),setTimeout(()=>scrollToSection('manga'),400))">Manga</a>
           </div>
         </div>
         <div>
@@ -110,7 +110,7 @@ function renderFooterHTML(){
           <div class="footer-links">
             <a href="/languages" onclick="event.preventDefault(); Router.navigate('/languages')">Languages Guide</a>
             <a href="/calendar" onclick="event.preventDefault(); Router.navigate('/calendar')">Release Calendar</a>
-            <a href="/#etv" onclick="event.preventDefault(); scrollToSection('etv')">ETV Bal Bharat</a>
+            <a href="/#etv" onclick="event.preventDefault(); Router.currentRoute==='/'||Router.currentRoute===''?scrollToSection('etv'):(Router.navigate('/'),setTimeout(()=>scrollToSection('etv'),400))">ETV Bal Bharat</a>
             <a href="/merch" onclick="event.preventDefault(); Router.navigate('/merch')">Fan Merch India</a>
             <a href="/#archive" onclick="event.preventDefault(); Router.currentRoute==='/'||Router.currentRoute===''?scrollToSection('archive'):(Router.navigate('/'),setTimeout(()=>scrollToSection('archive'),400))">Archive</a>
             <a href="https://www.netflix.com/title/80090370" target="_blank" rel="noopener">Watch on Netflix ↗</a>
