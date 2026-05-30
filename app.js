@@ -6851,7 +6851,18 @@ function renderCalendarPage() {
     </section>
 
     <section class="section-max" style="padding-top:40px;padding-bottom:80px;position:relative;z-index:10;">
-      <div class="calendar-layout">
+      
+      <!-- Interactive Holographic Category Cyber-Filters Bar -->
+      <div class="cal-cyber-filters" id="cal-cyber-filters">
+        <button class="cal-cyber-btn active" data-filter="all">🌐 All Schedule</button>
+        <button class="cal-cyber-btn" data-filter="netflix">🍿 Netflix drops</button>
+        <button class="cal-cyber-btn" data-filter="animetimes">🎥 Anime Times</button>
+        <button class="cal-cyber-btn" data-filter="broadcast">📺 ETV Bal Bharat</button>
+        <button class="cal-cyber-btn" data-filter="manga">📚 Viz Manga</button>
+        <button class="cal-cyber-btn" data-filter="pvr">🎬 PVR Cinema</button>
+      </div>
+
+      <div class="calendar-layout" id="cal-layout" data-cal-theme="all">
         <!-- Calendar Grid Card -->
         <div class="calendar-card">
           <div class="cal-header">
@@ -6889,7 +6900,9 @@ function renderCalendarPage() {
 
         <!-- Dossier Sidebar -->
         <div class="calendar-sidebar">
-          <div class="cal-dossier-card">
+          <div class="cal-dossier-card" id="cal-dossier-card">
+            <!-- Hologram Scanner Sweep Line -->
+            <div class="cal-dossier-scanner"></div>
             <h3 class="cal-dossier-title">Case File: <span id="cal-selected-date-str"></span></h3>
             <div id="cal-dossier-content" style="display:flex;flex-direction:column;gap:12px;"></div>
           </div>
@@ -6911,6 +6924,7 @@ function renderCalendarPage() {
   let selectedDate = new Date(_today.getFullYear(), _today.getMonth(), _today.getDate());
   let activeFilter = 'all';
   let activeView = 'grid';
+  let activeTypewriterTimeout = null;
 
   const monthSelect = document.getElementById('cal-month-select');
   const yearSelect = document.getElementById('cal-year-select');
@@ -6930,6 +6944,23 @@ function renderCalendarPage() {
     opt.textContent = y;
     yearSelect.appendChild(opt);
   }
+
+  // Bind interactive Category Cyber-Filters
+  const calLayout = document.getElementById('cal-layout');
+  const cyberFilterBtns = pg.querySelectorAll('.cal-cyber-btn');
+  cyberFilterBtns.forEach(btn => {
+    btn.onclick = () => {
+      cyberFilterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeFilter = btn.dataset.filter;
+      
+      // Update theme attributes for backing blurs & laser glows
+      calLayout.setAttribute('data-cal-theme', activeFilter);
+      
+      refreshView();
+      updateDossier(selectedDate);
+    };
+  });
 
   monthSelect.onchange = () => {
     viewDate.setMonth(parseInt(monthSelect.value));
@@ -7307,12 +7338,42 @@ function renderCalendarPage() {
 
   function updateDossier(d) {
     const options = { month: 'long', day: 'numeric', year: 'numeric' };
-    selectedDateStr.textContent = d.toLocaleDateString('en-US', options);
+    
+    // Sci-fi typewriter typing animation
+    if (activeTypewriterTimeout) {
+      clearTimeout(activeTypewriterTimeout);
+    }
+    const fullDateText = d.toLocaleDateString('en-US', options);
+    selectedDateStr.textContent = '';
+    let charIdx = 0;
+    function typeDateChar() {
+      if (charIdx < fullDateText.length) {
+        selectedDateStr.textContent += fullDateText.charAt(charIdx);
+        charIdx++;
+        activeTypewriterTimeout = setTimeout(typeDateChar, 20);
+      }
+    }
+    typeDateChar();
+
+    // Trigger scanner sweep visual animation
+    const dossierCard = document.getElementById('cal-dossier-card');
+    if (dossierCard) {
+      dossierCard.classList.remove('scanning');
+      void dossierCard.offsetWidth; // trigger reflow
+      dossierCard.classList.add('scanning');
+    }
 
     const events = getFilteredEventsForDate(d);
     const mainEvents  = events.filter(e => !e.rerun);
     const rerunEvents = events.filter(e => e.rerun);
     dossierContent.innerHTML = '';
+
+    // Shifting Grid layout template transition triggers
+    const hasEvents = (mainEvents.length > 0 || rerunEvents.length > 0);
+    const layout = document.getElementById('cal-layout');
+    if (layout) {
+      layout.classList.toggle('has-active-dossier', hasEvents);
+    }
 
     if (mainEvents.length === 0 && rerunEvents.length === 0) {
       dossierContent.innerHTML = `
@@ -7334,9 +7395,10 @@ function renderCalendarPage() {
     }
 
     // Render main events first, then reruns as a muted footnote
-    mainEvents.forEach(e => {
+    mainEvents.forEach((e, index) => {
       const item = document.createElement('div');
       item.className = 'masked-banner-card';
+      item.style.animationDelay = `${index * 0.08}s`;
       
       // Map event types to bold theme colors for the masked banner background
       let themeColor = '#1a1a2e'; // default dark
@@ -7377,6 +7439,7 @@ function renderCalendarPage() {
     if (rerunEvents.length > 0) {
       const rerunFootnote = document.createElement('div');
       rerunFootnote.className = 'cal-rerun-footnote';
+      rerunFootnote.style.animationDelay = `${mainEvents.length * 0.08}s`;
       rerunFootnote.innerHTML = `
         <span class="cal-rerun-dot"></span>
         <span class="cal-rerun-label">Also on <strong>ETV Bal Bharat</strong> at 11 PM — rerun broadcast</span>

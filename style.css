@@ -2086,4 +2086,223 @@ html[data-theme="light"] .theme-icon-light {
   display: inline-block !important;
 }
 
+/* ==========================================================================
+   FUTURISTIC CASE CALENDAR DASHBOARD REDESIGN
+   ========================================================================== */
+
+/* Shifting Container Layout Sizing Transition */
+.calendar-layout {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 28px;
+  margin-top: 32px;
+  transition: grid-template-columns 0.65s cubic-bezier(0.25, 0.8, 0.25, 1.05);
+}
+.calendar-layout.has-active-dossier {
+  grid-template-columns: 1.38fr 1.32fr !important;
+}
+
+/* Responsive collapse rules */
+@media (max-width: 992px) {
+  .calendar-layout, .calendar-layout.has-active-dossier {
+    grid-template-columns: 1fr !important;
+    gap: 20px;
+  }
+  .cal-dossier-card {
+    position: relative !important;
+    top: 0 !important;
+  }
+}
+
+/* Backing Holographic Aura & Inset highlighting */
+.calendar-card {
+  position: relative;
+  background: rgba(10, 10, 24, 0.68) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: border-color 0.5s var(--ease-in-out), box-shadow 0.5s var(--ease-in-out);
+}
+
+/* Theme-specific dashboard border glows */
+.calendar-layout[data-cal-theme="all"] .calendar-card { border-color: rgba(0, 240, 255, 0.2) !important; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), 0 0 35px rgba(0, 240, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important; }
+.calendar-layout[data-cal-theme="netflix"] .calendar-card { border-color: rgba(229, 9, 20, 0.28) !important; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), 0 0 35px rgba(229, 9, 20, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important; }
+.calendar-layout[data-cal-theme="animetimes"] .calendar-card { border-color: rgba(26, 152, 255, 0.28) !important; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), 0 0 35px rgba(26, 152, 255, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important; }
+.calendar-layout[data-cal-theme="broadcast"] .calendar-card { border-color: rgba(255, 149, 0, 0.28) !important; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), 0 0 35px rgba(255, 149, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important; }
+.calendar-layout[data-cal-theme="manga"] .calendar-card { border-color: rgba(0, 255, 136, 0.28) !important; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), 0 0 35px rgba(0, 255, 136, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important; }
+.calendar-layout[data-cal-theme="pvr"] .calendar-card { border-color: rgba(255, 215, 0, 0.28) !important; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), 0 0 35px rgba(255, 215, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important; }
+
+/* Interactive Category Cyber-Filters Row */
+.cal-cyber-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+  background: rgba(14, 14, 28, 0.45);
+  padding: 6px 8px;
+  border-radius: 100px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  justify-content: flex-start;
+}
+.cal-cyber-btn {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: transparent;
+  color: var(--text2);
+  border-radius: 100px;
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cal-cyber-btn:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateY(-1.5px);
+}
+/* Glowing button states on active categories */
+.cal-cyber-btn.active[data-filter="all"] { background: rgba(0, 240, 255, 0.12) !important; border-color: #00f0ff !important; color: #00f0ff !important; box-shadow: 0 0 15px rgba(0, 240, 255, 0.22); }
+.cal-cyber-btn.active[data-filter="netflix"] { background: rgba(229, 9, 20, 0.12) !important; border-color: #e50914 !important; color: #ff4d58 !important; box-shadow: 0 0 15px rgba(229, 9, 20, 0.22); }
+.cal-cyber-btn.active[data-filter="animetimes"] { background: rgba(26, 152, 255, 0.12) !important; border-color: #1a98ff !important; color: #1a98ff !important; box-shadow: 0 0 15px rgba(26, 152, 255, 0.22); }
+.cal-cyber-btn.active[data-filter="broadcast"] { background: rgba(255, 149, 0, 0.12) !important; border-color: #ff9500 !important; color: #ff9500 !important; box-shadow: 0 0 15px rgba(255, 149, 0, 0.22); }
+.cal-cyber-btn.active[data-filter="manga"] { background: rgba(0, 255, 136, 0.12) !important; border-color: #00ff88 !important; color: #00ff88 !important; box-shadow: 0 0 15px rgba(0, 255, 136, 0.22); }
+.cal-cyber-btn.active[data-filter="pvr"] { background: rgba(255, 215, 0, 0.12) !important; border-color: #ffd700 !important; color: #ffd700 !important; box-shadow: 0 0 15px rgba(255, 215, 0, 0.22); }
+
+@media (max-width: 768px) {
+  .cal-cyber-filters {
+    border-radius: 18px;
+    padding: 8px;
+    gap: 6px;
+  }
+  .cal-cyber-btn {
+    font-size: 10px;
+    padding: 5px 10px;
+  }
+}
+
+/* Holographic Calendar Grid Cell Sweeps & Selections */
+.cal-cell {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+}
+.cal-cell::after {
+  content: '';
+  position: absolute;
+  top: -100%;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom, transparent, rgba(0, 240, 255, 0.12), transparent);
+  pointer-events: none;
+  transition: top 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.cal-cell:hover::after {
+  top: 100%;
+}
+/* Looping Pulse glow around active selected grid cell */
+.cal-cell.selected {
+  transform: scale(1.05) translateY(-3px) !important;
+  border-color: rgba(0, 240, 255, 0.6) !important;
+  box-shadow: 0 8px 30px rgba(0, 240, 255, 0.35) !important;
+}
+.calendar-layout[data-cal-theme="netflix"] .cal-cell.selected { border-color: rgba(229, 9, 20, 0.7) !important; box-shadow: 0 8px 30px rgba(229, 9, 20, 0.35) !important; }
+.calendar-layout[data-cal-theme="animetimes"] .cal-cell.selected { border-color: rgba(26, 152, 255, 0.7) !important; box-shadow: 0 8px 30px rgba(26, 152, 255, 0.35) !important; }
+.calendar-layout[data-cal-theme="broadcast"] .cal-cell.selected { border-color: rgba(255, 149, 0, 0.7) !important; box-shadow: 0 8px 30px rgba(255, 149, 0, 0.35) !important; }
+.calendar-layout[data-cal-theme="manga"] .cal-cell.selected { border-color: rgba(0, 255, 136, 0.7) !important; box-shadow: 0 8px 30px rgba(0, 255, 136, 0.35) !important; }
+.calendar-layout[data-cal-theme="pvr"] .cal-cell.selected { border-color: rgba(255, 215, 0, 0.7) !important; box-shadow: 0 8px 30px rgba(255, 215, 0, 0.35) !important; }
+
+/* Sci-fi Dossier Card Overlays */
+.cal-dossier-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  transition: all 0.5s ease;
+}
+.calendar-layout[data-cal-theme="netflix"] .cal-dossier-card { border-color: rgba(229, 9, 20, 0.22) !important; }
+.calendar-layout[data-cal-theme="animetimes"] .cal-dossier-card { border-color: rgba(26, 152, 255, 0.22) !important; }
+.calendar-layout[data-cal-theme="broadcast"] .cal-dossier-card { border-color: rgba(255, 149, 0, 0.22) !important; }
+.calendar-layout[data-cal-theme="manga"] .cal-dossier-card { border-color: rgba(0, 255, 136, 0.22) !important; }
+.calendar-layout[data-cal-theme="pvr"] .cal-dossier-card { border-color: rgba(255, 215, 0, 0.22) !important; }
+
+/* Hologram Dossier Laser Scanner Sweep Line */
+.cal-dossier-scanner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, #00f0ff, transparent);
+  box-shadow: 0 0 10px #00f0ff;
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0;
+}
+.calendar-layout[data-cal-theme="netflix"] .cal-dossier-scanner { background: linear-gradient(90deg, transparent, #e50914, transparent); box-shadow: 0 0 10px #e50914; }
+.calendar-layout[data-cal-theme="animetimes"] .cal-dossier-scanner { background: linear-gradient(90deg, transparent, #1a98ff, transparent); box-shadow: 0 0 10px #1a98ff; }
+.calendar-layout[data-cal-theme="broadcast"] .cal-dossier-scanner { background: linear-gradient(90deg, transparent, #ff9500, transparent); box-shadow: 0 0 10px #ff9500; }
+.calendar-layout[data-cal-theme="manga"] .cal-dossier-scanner { background: linear-gradient(90deg, transparent, #00ff88, transparent); box-shadow: 0 0 10px #00ff88; }
+.calendar-layout[data-cal-theme="pvr"] .cal-dossier-scanner { background: linear-gradient(90deg, transparent, #ffd700, transparent); box-shadow: 0 0 10px #ffd700; }
+
+@keyframes dossier-scan-swipe {
+  0% { top: 0; opacity: 1; }
+  60% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+.cal-dossier-card.scanning .cal-dossier-scanner {
+  animation: dossier-scan-swipe 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Staggered dossier card reveal scaling */
+.masked-banner-card {
+  opacity: 0;
+  transform: scale(0.96) translateY(12px);
+  animation: dossier-card-reveal 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+@keyframes dossier-card-reveal {
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Neon Timeline Circuit Laser Path */
+.cal-timeline-line {
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+.cal-timeline-line::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 140px;
+  background: linear-gradient(to bottom, transparent, #00f0ff, transparent);
+  animation: timeline-laser-pulse 3.8s linear infinite;
+}
+.calendar-layout[data-cal-theme="netflix"] .cal-timeline-line::after { background: linear-gradient(to bottom, transparent, #e50914, transparent); }
+.calendar-layout[data-cal-theme="animetimes"] .cal-timeline-line::after { background: linear-gradient(to bottom, transparent, #1a98ff, transparent); }
+.calendar-layout[data-cal-theme="broadcast"] .cal-timeline-line::after { background: linear-gradient(to bottom, transparent, #ff9500, transparent); }
+.calendar-layout[data-cal-theme="manga"] .cal-timeline-line::after { background: linear-gradient(to bottom, transparent, #00ff88, transparent); }
+.calendar-layout[data-cal-theme="pvr"] .cal-timeline-line::after { background: linear-gradient(to bottom, transparent, #ffd700, transparent); }
+
+@keyframes timeline-laser-pulse {
+  0% { top: -140px; }
+  100% { top: 100%; }
+}
+
+/* Timeline Group Slide Reveal Keyframes */
+.cal-timeline-group {
+  opacity: 0;
+  transform: translateY(24px) scale(0.98);
+  animation: timeline-group-reveal 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes timeline-group-reveal {
+  to { opacity: 1; transform: none; }
+}
+
+
 
