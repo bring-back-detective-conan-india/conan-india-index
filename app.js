@@ -1623,7 +1623,6 @@ function renderHome() {
           <div class="latest-cinematic-card desktop-card" data-platform="etv" style="cursor:pointer;" onclick="window.location.hash='#platform/etvbalb?tab=episodes'">
             <div class="lcc-img" style="background-image:url('${IMG.etvHero}')"></div>
             <div class="lcc-overlay" style="background: linear-gradient(0deg, rgba(7, 7, 15, 0.95) 0%, rgba(7, 7, 15, 0.4) 40%, transparent 100%);"></div>
-            <div class="lcc-bg-number">11</div>
             <div class="lcc-top-bar">
               <span class="lcc-status-tag" style="background:#cc5200;border:1px solid #ff7700;color:#fff;">ETV Bal Bharat</span>
             </div>
@@ -1651,7 +1650,6 @@ function renderHome() {
           <div class="latest-cinematic-card desktop-card" data-platform="manga" style="cursor:pointer;" onclick="Router.navigate('/manga')">
             <div class="lcc-img" style="background-image:url('${typeof getMangaCover === 'function' ? getMangaCover(latestMangaVol) : IMG.manga96}'); background-size: cover; background-position: center 30%;"></div>
             <div class="lcc-overlay" style="background: linear-gradient(0deg, rgba(7, 7, 15, 0.95) 0%, rgba(7, 7, 15, 0.4) 40%, transparent 100%);"></div>
-            <div class="lcc-bg-number">${latestMangaVol}</div>
             <div class="lcc-top-bar">
               <span class="lcc-status-tag" style="background:#0A633F;border:1px solid #14a36b;color:#fff;">Viz Media</span>
             </div>
@@ -1679,7 +1677,7 @@ function renderHome() {
           <div class="latest-cinematic-card desktop-card" data-platform="manga" style="cursor:pointer;" onclick="Router.navigate('/manga')">
             <div class="lcc-img" style="background-image:url('${typeof getMangaCover === 'function' ? getMangaCover(latestMangaVol + 1) : IMG.manga96}'); background-size: cover; background-position: center 30%;"></div>
             <div class="lcc-overlay" style="background: linear-gradient(0deg, rgba(7, 7, 15, 0.95) 0%, rgba(7, 7, 15, 0.4) 40%, transparent 100%);"></div>
-            <div class="lcc-bg-number">${latestMangaVol + 1}</div>
+            <div class="lcc-bg-number manga-countdown-bg-text" id="manga-countdown-bg">PRE-ORDER</div>
             <div class="lcc-top-bar">
               <span class="lcc-status-tag" style="background:#0A633F;border:1px solid #14a36b;color:#fff;">Upcoming Release</span>
             </div>
@@ -2101,7 +2099,8 @@ function renderHomeMiniCalendar() {
 function initMangaCountdown() {
   const cdMob = document.getElementById('manga-countdown-mob');
   const cdPc = document.getElementById('manga-countdown-pc');
-  if (!cdMob && !cdPc) return;
+  const cdBg = document.getElementById('manga-countdown-bg');
+  if (!cdMob && !cdPc && !cdBg) return;
   
   // Volume 96 and 97 release date: Nov 13, 2026
   const releaseDate = new Date('2026-11-13T00:00:00Z').getTime();
@@ -2112,6 +2111,7 @@ function initMangaCountdown() {
     if (distance < 0) {
       if (cdMob) cdMob.innerHTML = "AVAILABLE NOW";
       if (cdPc) cdPc.innerHTML = "AVAILABLE NOW";
+      if (cdBg) cdBg.innerHTML = "OUT NOW";
       clearInterval(timer);
       return;
     }
@@ -2120,6 +2120,7 @@ function initMangaCountdown() {
     const text = `IN ${days}D ${hours}H`;
     if (cdMob) cdMob.innerHTML = text;
     if (cdPc) cdPc.innerHTML = text;
+    if (cdBg) cdBg.innerHTML = `IN ${days}D`;
   }, 1000);
 }
 

@@ -1861,7 +1861,7 @@ html, body {
 .lcc-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(0deg, rgba(7,7,15,0.98) 0%, rgba(7,7,15,0.45) 50%, rgba(7,7,15,0.15) 100%);
+  background: linear-gradient(225deg, rgba(7, 7, 15, 0.85) 0%, rgba(7, 7, 15, 0.3) 30%, transparent 60%), linear-gradient(0deg, rgba(7, 7, 15, 0.98) 0%, rgba(7, 7, 15, 0.45) 50%, rgba(7, 7, 15, 0.15) 100%);
   z-index: 1;
 }
 
@@ -1874,25 +1874,39 @@ html, body {
   font-weight: 900;
   line-height: 0.8;
   color: transparent;
-  -webkit-text-stroke: 3px rgba(255, 255, 255, 0.85);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.95) 55%, transparent 92%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   pointer-events: none;
   z-index: 1;
   user-select: none;
   letter-spacing: -0.05em;
-  filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.95)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+  filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.95)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 15px rgba(255, 255, 255, 0.25));
 }
 
 [data-platform="netflix"] .lcc-bg-number {
-  filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.95)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 20px rgba(229, 9, 20, 0.55));
+  filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.95)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 15px rgba(255, 255, 255, 0.25)) drop-shadow(0 0 20px rgba(229, 9, 20, 0.55));
 }
 [data-platform="primevideo"] .lcc-bg-number {
-  filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.95)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 20px rgba(0, 168, 225, 0.55));
+  filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.95)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 15px rgba(255, 255, 255, 0.25)) drop-shadow(0 0 20px rgba(0, 168, 225, 0.55));
 }
 [data-platform="etv"] .lcc-bg-number {
-  filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.95)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 20px rgba(255, 119, 0, 0.55));
+  filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.95)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 15px rgba(255, 255, 255, 0.25)) drop-shadow(0 0 20px rgba(255, 119, 0, 0.55));
 }
 [data-platform="manga"] .lcc-bg-number {
-  filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.95)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 20px rgba(20, 163, 107, 0.55));
+  filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.95)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 15px rgba(255, 255, 255, 0.25)) drop-shadow(0 0 20px rgba(20, 163, 107, 0.55));
+}
+
+.lcc-bg-number.manga-countdown-bg-text {
+  font-size: 110px !important;
+  top: 15px !important;
+  right: 10px !important;
+  letter-spacing: -0.06em !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.9) 60%, rgba(255, 255, 255, 0) 95%) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
 }
 
 .lcc-top-bar {
