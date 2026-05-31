@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bbdci-cache-v20';
+const CACHE_NAME = 'bbdci-cache-v21';
 
 self.addEventListener('install', event => {
   self.skipWaiting();

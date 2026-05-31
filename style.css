@@ -1874,7 +1874,7 @@ html, body {
   font-weight: 900;
   line-height: 0.8;
   color: transparent;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.3) 55%, transparent 95%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.35) 55%, transparent 95%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -1882,7 +1882,21 @@ html, body {
   z-index: 1;
   user-select: none;
   letter-spacing: -0.05em;
-  filter: drop-shadow(0 12px 36px rgba(0, 0, 0, 0.45));
+  mix-blend-mode: overlay;
+  transition: filter 0.3s ease;
+}
+
+[data-platform="netflix"] .lcc-bg-number {
+  filter: drop-shadow(0 0 20px rgba(229, 9, 20, 0.65)) drop-shadow(0 0 45px rgba(229, 9, 20, 0.25));
+}
+[data-platform="primevideo"] .lcc-bg-number {
+  filter: drop-shadow(0 0 20px rgba(0, 168, 225, 0.65)) drop-shadow(0 0 45px rgba(0, 168, 225, 0.25));
+}
+[data-platform="etv"] .lcc-bg-number {
+  filter: drop-shadow(0 0 20px rgba(255, 119, 0, 0.65)) drop-shadow(0 0 45px rgba(255, 119, 0, 0.25));
+}
+[data-platform="manga"] .lcc-bg-number {
+  filter: drop-shadow(0 0 20px rgba(20, 163, 107, 0.65)) drop-shadow(0 0 45px rgba(20, 163, 107, 0.25));
 }
 
 .lcc-top-bar {

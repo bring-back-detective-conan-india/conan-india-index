@@ -1620,7 +1620,7 @@ function renderHome() {
           </div>
 
           <!-- Card 4: ETV Bal Bharat Reruns -->
-          <div class="latest-cinematic-card desktop-card" style="cursor:pointer;" onclick="window.location.hash='#platform/etvbalb?tab=episodes'">
+          <div class="latest-cinematic-card desktop-card" data-platform="etv" style="cursor:pointer;" onclick="window.location.hash='#platform/etvbalb?tab=episodes'">
             <div class="lcc-img" style="background-image:url('${IMG.etvHero}')"></div>
             <div class="lcc-overlay" style="background: linear-gradient(0deg, rgba(7, 7, 15, 0.95) 0%, rgba(7, 7, 15, 0.4) 40%, transparent 100%);"></div>
             <div class="lcc-bg-number">11</div>
@@ -1648,7 +1648,7 @@ function renderHome() {
           </div>
 
           <!-- Card 5: Latest Manga Volume -->
-          <div class="latest-cinematic-card desktop-card" style="cursor:pointer;" onclick="Router.navigate('/manga')">
+          <div class="latest-cinematic-card desktop-card" data-platform="manga" style="cursor:pointer;" onclick="Router.navigate('/manga')">
             <div class="lcc-img" style="background-image:url('${typeof getMangaCover === 'function' ? getMangaCover(latestMangaVol) : IMG.manga96}'); background-size: cover; background-position: center 30%;"></div>
             <div class="lcc-overlay" style="background: linear-gradient(0deg, rgba(7, 7, 15, 0.95) 0%, rgba(7, 7, 15, 0.4) 40%, transparent 100%);"></div>
             <div class="lcc-bg-number">${latestMangaVol}</div>
@@ -1676,7 +1676,7 @@ function renderHome() {
           </div>
 
           <!-- Card 6: Upcoming Manga Volume -->
-          <div class="latest-cinematic-card desktop-card" style="cursor:pointer;" onclick="Router.navigate('/manga')">
+          <div class="latest-cinematic-card desktop-card" data-platform="manga" style="cursor:pointer;" onclick="Router.navigate('/manga')">
             <div class="lcc-img" style="background-image:url('${typeof getMangaCover === 'function' ? getMangaCover(latestMangaVol + 1) : IMG.manga96}'); background-size: cover; background-position: center 30%;"></div>
             <div class="lcc-overlay" style="background: linear-gradient(0deg, rgba(7, 7, 15, 0.95) 0%, rgba(7, 7, 15, 0.4) 40%, transparent 100%);"></div>
             <div class="lcc-bg-number">${latestMangaVol + 1}</div>
