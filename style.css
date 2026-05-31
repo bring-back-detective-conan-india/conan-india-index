@@ -1865,6 +1865,26 @@ html, body {
   z-index: 1;
 }
 
+.lcc-bg-number {
+  position: absolute;
+  right: -8px;
+  top: -24px;
+  font-family: var(--font-display);
+  font-size: 190px;
+  font-weight: 900;
+  line-height: 0.8;
+  color: transparent;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.03) 55%, transparent 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  pointer-events: none;
+  z-index: 1;
+  user-select: none;
+  letter-spacing: -0.05em;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
+}
+
 .lcc-top-bar {
   position: absolute;
   top: 16px;

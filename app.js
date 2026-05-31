@@ -645,6 +645,7 @@ async function updateNetflixLatestCard() {
 
   badges.forEach(el => el.textContent = latestEpNum);
   titleEps.forEach(el => el.textContent = latestEpNum);
+  document.querySelectorAll('.netflix-latest-bg-num').forEach(el => el.textContent = latestEpNum);
   if (latestEpTitle) titleTexts.forEach(el => el.textContent = latestEpTitle);
   if (latestEpDate) latestSubtitles.forEach(el => el.textContent = latestEpDate);
   if (latestEpStill) cardImgs.forEach(el => el.style.backgroundImage = `url('https://image.tmdb.org/t/p/w780${latestEpStill}')`);
@@ -656,6 +657,7 @@ async function updateNetflixLatestCard() {
   const nextImgs = document.querySelectorAll('.netflix-next-img');
   
   nextTitleEps.forEach(el => el.textContent = nextEpNum);
+  document.querySelectorAll('.netflix-next-bg-num').forEach(el => el.textContent = nextEpNum);
   if (nextEpTitle) nextTitleTexts.forEach(el => el.textContent = nextEpTitle);
   if (nextEpDate) nextSubtitles.forEach(el => el.textContent = nextEpDate);
   const nextUrl = nextEpStill ? `url('https://image.tmdb.org/t/p/w780${nextEpStill}')` : `url('${IMG.conan8}')`;
@@ -1493,6 +1495,7 @@ function renderHome() {
           <div class="latest-cinematic-card desktop-card" data-platform="netflix" onclick="window.open('https://www.netflix.com/title/80090370', '_blank', 'noopener')">
             <div class="lcc-img netflix-latest-img" style="background-image:url('${window.optimizeImage('https://image.tmdb.org/t/p/w780/hlOn0BETlASlpLThKu2gXn9ae1H.jpg')}')"></div>
             <div class="lcc-overlay"></div>
+            <div class="lcc-bg-number netflix-latest-bg-num">1201</div>
             <div class="lcc-top-bar">
               <div class="lcc-logo-badge"><img src="${PLATFORM_LOGOS.netflix}" alt="Netflix" class="lcc-logo-img"></div>
               <span class="lcc-status-tag lcc-status-tag--netflix">Simulcast</span>
@@ -1524,6 +1527,7 @@ function renderHome() {
           <div class="latest-cinematic-card desktop-card" data-platform="netflix" onclick="window.location.hash='#guides/simulcast'">
             <div class="lcc-img netflix-next-img" style="background-image:url('${IMG.conan8}')"></div>
             <div class="lcc-overlay"></div>
+            <div class="lcc-bg-number netflix-next-bg-num">1202</div>
             <div class="lcc-top-bar">
               <div class="lcc-logo-badge"><img src="${PLATFORM_LOGOS.netflix}" alt="Netflix" class="lcc-logo-img"></div>
               <span class="lcc-status-tag lcc-status-tag--netflix">Upcoming Simulcast</span>
@@ -1554,6 +1558,7 @@ function renderHome() {
           <div class="latest-cinematic-card desktop-card" data-platform="primevideo" onclick="window.open('https://www.primevideo.com/region/eu/detail/0HIFDMYH3JG6WFIM4I7XI2EU96/', '_blank', 'noopener')">
             <div class="lcc-img" style="background-image:url('${IMG.ep96}')"></div>
             <div class="lcc-overlay"></div>
+            <div class="lcc-bg-number">${(typeof PLATFORMS !== 'undefined') ? (PLATFORMS.find(x => x.id === 'primevideo')?.seriesRange[1] || 96) : 96}</div>
             <div class="lcc-top-bar">
               <div class="lcc-logo-badge"><img src="${PLATFORM_LOGOS.primevideo}" alt="Prime Video" class="lcc-logo-img"></div>
               <span class="lcc-status-tag lcc-status-tag--prime">New Hindi Dub</span>
@@ -1583,6 +1588,7 @@ function renderHome() {
           <div class="latest-cinematic-card desktop-card" style="cursor:pointer;" onclick="window.location.hash='#platform/etvbalb?tab=episodes'">
             <div class="lcc-img" style="background-image:url('${IMG.etvHero}')"></div>
             <div class="lcc-overlay" style="background: linear-gradient(0deg, rgba(7, 7, 15, 0.95) 0%, rgba(7, 7, 15, 0.4) 40%, transparent 100%);"></div>
+            <div class="lcc-bg-number">11</div>
             <div class="lcc-top-bar">
               <span class="lcc-status-tag" style="background:#cc5200;border:1px solid #ff7700;color:#fff;">ETV Bal Bharat</span>
             </div>
@@ -1610,6 +1616,7 @@ function renderHome() {
           <div class="latest-cinematic-card desktop-card" style="cursor:pointer;" onclick="Router.navigate('/manga')">
             <div class="lcc-img" style="background-image:url('${typeof getMangaCover === 'function' ? getMangaCover(latestMangaVol) : IMG.manga96}'); background-size: cover; background-position: center 30%;"></div>
             <div class="lcc-overlay" style="background: linear-gradient(0deg, rgba(7, 7, 15, 0.95) 0%, rgba(7, 7, 15, 0.4) 40%, transparent 100%);"></div>
+            <div class="lcc-bg-number">${latestMangaVol}</div>
             <div class="lcc-top-bar">
               <span class="lcc-status-tag" style="background:#0A633F;border:1px solid #14a36b;color:#fff;">Viz Media</span>
             </div>
@@ -1637,6 +1644,7 @@ function renderHome() {
           <div class="latest-cinematic-card desktop-card" style="cursor:pointer;" onclick="Router.navigate('/manga')">
             <div class="lcc-img" style="background-image:url('${typeof getMangaCover === 'function' ? getMangaCover(latestMangaVol + 1) : IMG.manga96}'); background-size: cover; background-position: center 30%;"></div>
             <div class="lcc-overlay" style="background: linear-gradient(0deg, rgba(7, 7, 15, 0.95) 0%, rgba(7, 7, 15, 0.4) 40%, transparent 100%);"></div>
+            <div class="lcc-bg-number">${latestMangaVol + 1}</div>
             <div class="lcc-top-bar">
               <span class="lcc-status-tag" style="background:#0A633F;border:1px solid #14a36b;color:#fff;">Upcoming Release</span>
             </div>
