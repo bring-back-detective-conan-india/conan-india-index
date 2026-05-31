@@ -1022,6 +1022,7 @@ function wg2IsAvailableInIndia(ep) {
     // Check if any streaming platform covers this episode
     if (typeof PLATFORMS !== 'undefined') {
       const hasPlatform = PLATFORMS.some(p => {
+        if (p.id === 'etvbalb' && !epData.etv) return false;
         if (Array.isArray(p.seriesSeasons) && p.seriesSeasons.includes(epData.season)) return true;
         if (Array.isArray(p.seriesRange) && typeof epData.n === 'number') {
           const [a, b] = p.seriesRange;
@@ -1059,7 +1060,7 @@ function wg2IsAvailableInIndia(ep) {
     }
     return false;
   }
-  if (ep.type === 'magic-kaito') return true; // Amasian TV
+  if (ep.type === 'magic-kaito') return false; // Not available in India
   if (ep.type === 'yaiba') return true; // Netflix + Anime Times
   return false;
 }

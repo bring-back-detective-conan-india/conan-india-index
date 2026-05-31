@@ -1483,7 +1483,10 @@ function renderHome() {
     <!-- LATEST & UPCOMING RELEASES -->
     <section id="latest" style="padding-top:40px;">
       <div class="section-max">
-        <h2 class="section-title reveal-left" style="margin-bottom: 24px;">Latest &amp; Upcoming <em>Releases</em></h2>
+        <div class="section-title-row">
+          <h2 class="section-title reveal-left" style="margin-bottom: 24px;">Latest &amp; Upcoming <em>Releases</em></h2>
+          <button class="section-view-all" onclick="Router.navigate('/calendar')">View Calendar &rarr;</button>
+        </div>
         <div class="latest-cards-container stagger" style="padding-bottom: 20px;">
           
           <!-- Card 1: Netflix India Simulcast -->
@@ -1690,6 +1693,8 @@ function renderHome() {
         <div class="scroll-row stagger" id="movies-row"></div>
       </div>
     </section>
+
+
 
     <!-- MANGA -->
     <section id="manga">
@@ -1916,6 +1921,135 @@ function renderHome() {
   initMangaCountdown();
 
   setTimeout(() => { observeAll(); refreshHover(); }, 80);
+}
+
+function renderHomeMiniCalendar() {
+  const timelineEl = document.getElementById('home-cal-timeline');
+  const briefingTitleEl = document.getElementById('home-cal-selected-date');
+  const briefingContentEl = document.getElementById('home-cal-briefing-content');
+  if (!timelineEl || !briefingTitleEl || !briefingContentEl) return;
+
+  const today = new Date();
+
+  // Generate timeline only for days with active releases in the next 30 days
+  const days = [];
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
+    
+    // Get events for this day using the Date object directly
+    const events = window.getCalendarEventsForDate ? window.getCalendarEventsForDate(d) : [];
+    
+    // Keep only days with at least one active premiere/release event (ignoring reruns for dot/timeline card inclusion)
+    const activeEvents = events.filter(e => e.type !== 'rerun');
+    if (activeEvents.length > 0) {
+      days.push({ dateObj: d, events });
+      if (days.length === 7) break; // Limit to a max of 7 active day cards
+    }
+  }
+
+  // Fallback: If absolutely no active days are found in the next 30 days, generate consecutive 7 days
+  if (days.length === 0) {
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
+      const events = window.getCalendarEventsForDate ? window.getCalendarEventsForDate(d) : [];
+      days.push({ dateObj: d, events });
+    }
+  }
+
+  // Render days
+  timelineEl.innerHTML = days.map((day, index) => {
+    const d = day.dateObj;
+    const isSelected = index === 0 ? 'selected' : '';
+    const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+    const dayNum = d.getDate();
+    
+    // Since we filtered before, hasDot is always true for non-fallback days
+    const activeEvents = day.events.filter(e => e.type !== 'rerun');
+    const hasDot = activeEvents.length > 0 ? '<span class="home-cal-dot"></span>' : '';
+
+    return `
+      <div class="home-cal-day-card ${isSelected}" data-index="${index}">
+        <span class="home-cal-day-name">${dayName}</span>
+        <span class="home-cal-day-num">${dayNum}</span>
+        ${hasDot}
+      </div>
+    `;
+  }).join('');
+
+  // Timeline Day clicks
+  timelineEl.querySelectorAll('.home-cal-day-card').forEach(card => {
+    card.onclick = () => {
+      timelineEl.querySelectorAll('.home-cal-day-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      const idx = Number(card.dataset.index);
+      updateBriefing(idx);
+    };
+  });
+
+  // Briefing update function
+  function updateBriefing(idx) {
+    const day = days[idx];
+    if (!day) return;
+    const dateObj = day.dateObj;
+    const options = { month: 'long', day: 'numeric', year: 'numeric' };
+    const dateStr = dateObj.toLocaleDateString('en-US', options);
+    briefingTitleEl.textContent = dateStr;
+
+    const events = day.events || [];
+    if (!events.length) {
+      briefingContentEl.innerHTML = `
+        <div class="home-cal-empty">
+          <div class="home-cal-empty-icon">🔍</div>
+          <div class="home-cal-empty-text">No major releases scheduled for this day. Click another date in the timeline above!</div>
+        </div>
+      `;
+      return;
+    }
+
+    briefingContentEl.innerHTML = events.map(ev => {
+      // Platform/Icon indicator
+      let icon = '📅';
+      if (ev.type === 'netflix') icon = '🍿';
+      else if (ev.type === 'animetimes') icon = '🔵';
+      else if (ev.type === 'broadcast') icon = '📺';
+      else if (ev.type === 'manga') icon = '📚';
+      else if (ev.type === 'pvr') icon = '🎬';
+
+      // Detail link actions
+      const clickAction = ev.movieId 
+        ? `onclick="openMovieModal('${ev.movieId}')" style="cursor:pointer;"`
+        : (ev.episodeNumber 
+          ? `onclick="openEpisodeModal(${ev.episodeNumber})" style="cursor:pointer;"`
+          : (ev.spinoffId 
+            ? `onclick="openSpinoffModal('${ev.spinoffId}')" style="cursor:pointer;"`
+            : (ev.url ? `onclick="window.open('${ev.url}', '_blank', 'noopener')"` : '')
+          )
+        );
+
+      const actionText = ev.movieId ? 'Open Dossier' : (ev.episodeNumber ? 'View Episode Details' : (ev.spinoffId ? 'View Spinoff' : (ev.url ? 'Go to Source' : '')));
+      const actionBtn = actionText ? `<button class="home-cal-card-btn">${actionText}</button>` : '';
+
+      return `
+        <div class="home-cal-card stagger" ${clickAction}>
+          <div class="home-cal-card-indicator" style="background-color: var(--cal-indicator-color, #CC2233);"></div>
+          <div class="home-cal-card-body">
+            <div class="home-cal-card-meta">
+              <span class="home-cal-card-badge ${ev.badgeClass || ''}">${icon} ${ev.badgeName || 'Event'}</span>
+              <span class="home-cal-card-time">${ev.time || ''}</span>
+            </div>
+            <h4 class="home-cal-card-title">${ev.title}</h4>
+            <p class="home-cal-card-desc">${ev.desc}</p>
+            ${actionBtn}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Select first day by default
+  if (days.length > 0) {
+    updateBriefing(0);
+  }
 }
 
 function initMangaCountdown() {
@@ -6844,6 +6978,335 @@ function renderBrowsePage() {
   }
 }
 
+// ─── CALENDAR GLOBAL ENGINE & DATA ────────────────────
+// ── Viz Media Case Closed Manga Release Schedule (verified dates) ─────────
+// Vols 95 & 96 already published. Vol 97+ are upcoming.
+const MANGA_SCHEDULE = [
+  { vol: 95, date: "2025-07-08",  isbn: "9781974758531" },
+  { vol: 96, date: "2025-10-14",  isbn: "9781974755400" },
+  { vol: 97, date: "2026-11-13",  isbn: "9781974761843" }   // upcoming
+];
+
+// ── Netflix India Collection / Season release schedule ────────────────────
+// Monthly drops on the 25th; Season 31 weekly simulcast from May 23 2026
+const NETFLIX_COLLECTION_SCHEDULE = [
+  { label: "Collection 1 + 23", date: "2025-04-25", detail: "Collections 1 & 23 now streaming on Netflix India." },
+  { label: "Collection 2 + 24", date: "2025-05-25", detail: "Collections 2 & 24 now streaming on Netflix India." },
+  { label: "Collection 3 + 25", date: "2025-06-25", detail: "Collections 3 & 25 now streaming on Netflix India." },
+  { label: "Collection 4 + 26", date: "2025-07-25", detail: "Collections 4 & 26 now streaming on Netflix India." },
+  { label: "Collection 5 + 27", date: "2025-08-25", detail: "Collections 5 & 27 now streaming on Netflix India." },
+  { label: "Collection 6 + 28", date: "2025-09-25", detail: "Collections 6 & 28 now streaming on Netflix India." },
+  { label: "Collection 7",      date: "2025-10-25", detail: "Collection 7 now streaming on Netflix India." },
+  { label: "Collection 8",      date: "2025-11-25", detail: "Collection 8 now streaming on Netflix India." },
+  { label: "Collection 9",      date: "2025-12-25", detail: "Collection 9 now streaming on Netflix India." },
+  { label: "Collection 10",     date: "2026-01-25", detail: "Collection 10 now streaming on Netflix India." },
+  { label: "Season 31 Premiere",date: "2026-05-23", detail: "Season 31 weekly simulcast begins on Netflix India. New episodes every Saturday." }
+];
+
+// ── Anime Times (Prime Video) Hindi-dub batch releases ────────────────────
+// 3 episodes per week; Eps 1–96. First batch Sep 20 2025, final Apr 16 2026.
+// First batch released on Saturday Sep 20, then weekly on Thursdays.
+(function buildAnimeTimes() {
+  const batches = [];
+  // Batch 1: Saturday Sep 20 2025 (Eps 1-3)
+  batches.push({
+    date: "2025-09-20",
+    epFrom: 1,
+    epTo: 3
+  });
+  // Subsequent batches: Thursdays starting Sep 25 2025
+  let ep = 4;
+  let cur = new Date(2025, 8, 25); // Sep 25 2025 (Thursday)
+  while (ep <= 96) {
+    const y = cur.getFullYear();
+    const m = String(cur.getMonth() + 1).padStart(2, '0');
+    const d = String(cur.getDate()).padStart(2, '0');
+    batches.push({
+      date: `${y}-${m}-${d}`,
+      epFrom: ep,
+      epTo: Math.min(ep + 2, 96)
+    });
+    ep += 3;
+    cur.setDate(cur.getDate() + 7);
+  }
+  window._ANIME_TIMES_BATCHES = batches;
+})();
+
+// ── PVR INOX Theatrical Releases ──────────────────────────────────────────
+const PVR_CALENDAR_EVENTS = [
+  { date: "2023-08-04", title: "Story of Ai Haibara ~Black Iron Mystery Train~", detail: "Theatrical recap film at PVR INOX cinemas across India. A companion piece to Black Iron Submarine.", url: "https://www.pvrinox.com", image: IMG.haibara },
+  { date: "2023-08-25", title: "Movie 26: Black Iron Submarine", detail: "Indian theatrical premiere at PVR INOX cinemas. Dubbed in Hindi. Directed by Hirokazu Sato.", url: "https://www.pvrinox.com", image: IMG.conan6 },
+  { date: "2024-09-06", title: "Detective Conan vs. Kid the Phantom Thief", detail: "Theatrical recap compilation at PVR INOX cinemas India — Kaitou Kid's greatest confrontations with Conan.", url: "https://www.pvrinox.com", image: IMG.kid },
+  { date: "2024-10-04", title: "Movie 27: The Million-Dollar Pentagram", detail: "Indian theatrical premiere at PVR INOX cinemas. Directed by Chika Nagaoka. Features Heiji Hattori in Hokkaido.", url: "https://www.pvrinox.com", image: IMG.heiji }
+];
+
+// ── ETV Bal Bharat Movie Releases ─────────────────────────────────────────
+const ETV_MOVIE_CALENDAR_EVENTS = [
+  { date: "2023-10-23", title: "Movie 1: The Time-Bombed Skyscraper", detail: "ETV Bal Bharat television premiere in multiple regional language dubs.", url: "https://www.instagram.com/etvbalbharat/", image: IMG.conan1 },
+  { date: "2023-10-24", title: "Movie 6: The Phantom of Baker Street", detail: "ETV Bal Bharat television premiere in multiple regional language dubs.", url: "https://www.instagram.com/etvbalbharat/", image: IMG.conan6 },
+  { date: "2023-11-12", title: "Movie 18: Dimensional Sniper", detail: "ETV Bal Bharat television premiere in multiple regional language dubs.", url: "https://www.instagram.com/etvbalbharat/", image: IMG.conan2 },
+  { date: "2023-12-23", title: "Movie 16: The Eleventh Striker", detail: "ETV Bal Bharat television premiere in multiple regional language dubs.", url: "https://www.instagram.com/etvbalbharat/", image: IMG.conan6 },
+  { date: "2023-12-24", title: "Movie 2: The Fourteenth Target", detail: "ETV Bal Bharat television premiere in multiple regional language dubs.", url: "https://www.instagram.com/etvbalbharat/", image: IMG.conan2 },
+  { date: "2023-12-31", title: "Movie 4: Captured in Her Eyes", detail: "ETV Bal Bharat television premiere in multiple regional language dubs.", url: "https://www.instagram.com/etvbalbharat/", image: IMG.conan3 },
+  { date: "2023-12-31", title: "Movie 19: Sunflowers of Inferno", detail: "ETV Bal Bharat television premiere in multiple regional language dubs.", url: "https://www.instagram.com/etvbalbharat/", image: IMG.conan5 },
+  { date: "2024-01-01", title: "Movie 5: Countdown to Heaven", detail: "ETV Bal Bharat television premiere in multiple regional language dubs.", url: "https://www.instagram.com/etvbalbharat/", image: IMG.conan4 },
+  { date: "2024-01-01", title: "Movie 20: The Darkest Nightmare", detail: "ETV Bal Bharat television premiere in multiple regional language dubs.", url: "https://www.instagram.com/etvbalbharat/", image: IMG.conan9 },
+  { date: "2024-01-06", title: "Movie 3: The Last Wizard of the Century", detail: "ETV Bal Bharat television premiere in multiple regional language dubs.", url: "https://www.instagram.com/etvbalbharat/", image: IMG.conan10 },
+  { date: "2024-01-07", title: "Movie 7: Crossroad in the Ancient Capital", detail: "ETV Bal Bharat television premiere in multiple regional language dubs.", url: "https://www.instagram.com/etvbalbharat/", image: IMG.conan7 },
+  { date: "2024-01-20", title: "Movie 22: Zero the Enforcer", detail: "ETV Bal Bharat television premiere in multiple regional language dubs.", url: "https://www.instagram.com/etvbalbharat/", image: IMG.conan9 },
+  { date: "2024-01-21", title: "Movie 24: The Scarlet Bullet", detail: "ETV Bal Bharat television premiere in multiple regional language dubs.", url: "https://www.instagram.com/etvbalbharat/", image: IMG.conan5 },
+  { date: "2024-01-27", title: "Movie 17: Private Eye in the Distant Sea", detail: "ETV Bal Bharat television premiere in multiple regional language dubs.", url: "https://www.instagram.com/etvbalbharat/", image: IMG.conan2 },
+  { date: "2024-01-28", title: "Movie 21: The Crimson Love Letter", detail: "ETV Bal Bharat television premiere in multiple regional language dubs.", url: "https://www.instagram.com/etvbalbharat/", image: IMG.heiji },
+  { date: "2024-10-31", title: "Movie 25: The Bride of Halloween", detail: "ETV Bal Bharat television premiere in multiple regional language dubs.", url: "https://www.instagram.com/etvbalbharat/", image: IMG.conan2 }
+];
+
+function getCalendarEventsForDate(d) {
+  let dateObj;
+  let dateStr;
+  if (typeof d === 'string') {
+    dateStr = d;
+    const [y, m, day] = d.split('-').map(Number);
+    dateObj = new Date(y, m - 1, day);
+  } else {
+    dateObj = d;
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const date = String(d.getDate()).padStart(2, '0');
+    dateStr = `${year}-${month}-${date}`;
+  }
+  const dayOfWeek = dateObj.getDay(); // 0 = Sun, 6 = Sat
+
+  const events = [];
+
+  // ── 1. PVR INOX Theatrical Releases (historical archive) ─────────────────
+  const pvrEvent = PVR_CALENDAR_EVENTS.find(e => e.date === dateStr);
+  if (pvrEvent) {
+    const match = pvrEvent.title.match(/Movie\s+(\d+)/i);
+    const mNum = match ? parseInt(match[1]) : null;
+    const movieObj = mNum ? (typeof MOVIES !== 'undefined' ? MOVIES : []).find(m => m.n === mNum) : null;
+    const mId = movieObj ? movieObj.id : (pvrEvent.title.includes("Ai Haibara") ? "ai-haibara-recap" : (pvrEvent.title.includes("Kid") ? "kid-phantom-thief" : null));
+    const posterImg = movieObj && window.MOVIE_POSTERS ? (window.MOVIE_POSTERS.get(movieObj.id) || pvrEvent.image) : pvrEvent.image;
+    
+    events.push({
+      type: 'pvr',
+      badgeClass: 'cal-event-type-badge--pvr',
+      badgeName: '🎬 Cinema',
+      time: 'Theatrical Release',
+      title: pvrEvent.title,
+      desc: pvrEvent.detail,
+      url: pvrEvent.url,
+      image: posterImg,
+      movieId: movieObj ? mId : null,
+      spinoffId: !movieObj && mId ? mId : null
+    });
+  }
+
+  // ── 1b. ETV Bal Bharat Movie Premieres (weekend blockbusters) ────────────
+  const etvMovie = ETV_MOVIE_CALENDAR_EVENTS.filter(e => e.date === dateStr);
+  if (etvMovie.length > 0) {
+    etvMovie.forEach(em => {
+      const match = em.title.match(/Movie\s+(\d+)/i);
+      const mNum = match ? parseInt(match[1]) : null;
+      const movieObj = mNum ? (typeof MOVIES !== 'undefined' ? MOVIES : []).find(m => m.n === mNum) : null;
+      const mId = movieObj ? movieObj.id : null;
+      const posterImg = movieObj && window.MOVIE_POSTERS ? (window.MOVIE_POSTERS.get(movieObj.id) || em.image) : em.image;
+
+      events.push({
+        type: 'broadcast',
+        badgeClass: 'cal-event-type-badge--broadcast',
+        badgeName: 'ETV Movie',
+        time: 'Movie Premiere',
+        title: em.title,
+        desc: em.detail,
+        url: em.url,
+        image: posterImg,
+        movieId: mId
+      });
+    });
+  }
+
+  // ── 1c. Anime Times Movie Releases ──────────────────────────────────────
+  if (dateStr === "2025-12-20") {
+    events.push({
+      type: 'animetimes',
+      badgeClass: 'cal-event-type-badge--animetimes',
+      badgeName: 'Anime Times',
+      time: 'Movie Premiere',
+      title: "Movie 27: The Million Dollar Pentagram",
+      desc: "The blockbuster 27th Detective Conan film premieres on Anime Times (Prime Video channel) in India! Available in Hindi dub and Japanese with English subtitles.",
+      url: 'https://www.primevideo.com/detail/Detective-Conan-The-Movie-The-Million-dollar-Pentagram/0TNZYG7W823R6Q2LSX1JXVAOJQ',
+      image: (window.MOVIE_POSTERS && window.MOVIE_POSTERS.get("milliondollar")) || IMG.heiji,
+      movieId: "milliondollar"
+    });
+  }
+
+  // ── 2. Netflix Collection drop (25th of each month, Apr 2025 – Jan 2026) ─
+  const netflixColl = NETFLIX_COLLECTION_SCHEDULE.find(e => e.date === dateStr);
+  if (netflixColl) {
+    events.push({
+      type: 'netflix',
+      badgeClass: 'cal-event-type-badge--netflix',
+      badgeName: 'Netflix',
+      time: 'New Content Drop',
+      title: `Detective Conan – ${netflixColl.label}`,
+      desc: netflixColl.detail,
+      url: 'https://www.netflix.com/title/80090370',
+      image: PLAT_BG.netflix
+    });
+  }
+
+  // ── 3. Netflix Season 31 weekly Saturday simulcast (India premiere May 23, 2026) ─
+  // Ep 1201 premiered on May 23. From May 30 (Ep 1202) onwards, episodes air on the same day as Japan.
+  if (dayOfWeek === 6 && dateObj >= new Date(2026, 4, 23)) {
+    let simulcastEpStr = null;
+    if (dateStr === '2026-05-23') {
+      // Hardcode ep 1201 for May 23 launch
+      const ep1201 = (typeof EPISODES !== 'undefined' ? EPISODES : []).find(e => e.n === 1201);
+      if (ep1201) simulcastEpStr = ep1201.aired;
+    } else if (dateStr >= '2026-05-30') {
+      // Simulcast is same day as Japan air date
+      simulcastEpStr = dateStr;
+    }
+
+    if (simulcastEpStr) {
+      const catalogedEp = (typeof EPISODES !== 'undefined' ? EPISODES : []).find(e => e.aired === simulcastEpStr && e.season === 'S31');
+      if (catalogedEp) {
+        const meta = window.EPISODE_META && window.EPISODE_META.get(catalogedEp.n);
+        const epImg = (meta && meta.still) || IMG.ep96;
+        const epDesc = (meta && meta.overview) || 'Season 31 simulcast on Netflix India. Japanese audio with English subtitles.';
+        events.push({
+          type: 'netflix',
+          badgeClass: 'cal-event-type-badge--netflix',
+          badgeName: 'Netflix',
+          time: '4:30 PM IST',
+          title: `Ep ${catalogedEp.n}: "${catalogedEp.title}"`,
+          desc: epDesc,
+          url: 'https://www.netflix.com/title/80090370',
+          image: epImg,
+          episodeNumber: catalogedEp.n
+        });
+      }
+    }
+  }
+
+  // ── 4. Anime Times (Prime Video) Hindi Dub batches ───────────────────────
+  const atBatch = (window._ANIME_TIMES_BATCHES || []).find(b => b.date === dateStr);
+  if (atBatch) {
+    for (let epNum = atBatch.epFrom; epNum <= atBatch.epTo; epNum++) {
+      const meta = window.EPISODE_META && window.EPISODE_META.get(epNum);
+      const epImg = (meta && meta.still) || PLAT_BG.primevideo;
+      const epTitle = (meta && meta.title) || `Episode ${epNum}`;
+      const epDesc = (meta && meta.overview) || `Episode ${epNum} now streaming in Hindi dub on Anime Times (Amazon Prime Video).`;
+      events.push({
+        type: 'animetimes',
+        badgeClass: 'cal-event-type-badge--animetimes',
+        badgeName: 'Anime Times',
+        time: 'New Episode Drop',
+        title: `Ep ${epNum}: "${epTitle}" (Hindi Dub)`,
+        desc: epDesc,
+        url: 'https://www.primevideo.com/detail/0MVCS1X42CJKXIIGFZL0EXI39Q',
+        image: epImg,
+        episodeNumber: epNum
+      });
+    }
+  }
+
+  // ── 5. Viz Media Manga Volume releases ───────────────────────────────────
+  const mangaRelease = MANGA_SCHEDULE.find(m => m.date === dateStr);
+  if (mangaRelease) {
+    events.push({
+      type: 'manga',
+      badgeClass: 'cal-event-type-badge--manga',
+      badgeName: 'Viz Manga',
+      time: 'Physical / Digital',
+      title: `Case Closed, Vol. ${mangaRelease.vol}`,
+      desc: `English publication of Case Closed (Detective Conan) Volume ${mangaRelease.vol} by Viz Media. Available at Amazon India, Flipkart, and major bookstores.`,
+      url: `https://www.amazon.in/s?k=Case+Closed+Volume+${mangaRelease.vol}+Gosho+Aoyama`,
+      image: IMG.manga96
+    });
+  }
+
+  // ── 6. Real ETV Bal Bharat Broadcast Dates (historical archive 2023-2024) ──
+  const etvEps = (typeof EPISODES !== 'undefined' ? EPISODES : []).filter(e => e.etv === dateStr);
+  etvEps.forEach(e => {
+    const meta = window.EPISODE_META && window.EPISODE_META.get(e.n);
+    const epImg = (meta && meta.still) || IMG.etvHero;
+    const epDesc = (meta && meta.overview) || `Episode ${e.n} airing on ETV Bal Bharat with regional dubs (Hindi, Tamil, Telugu, Kannada, etc.).`;
+    events.push({
+      type: 'broadcast',
+      badgeClass: 'cal-event-type-badge--broadcast',
+      badgeName: 'ETV Bal Bharat',
+      time: '11:00 PM IST',
+      title: `Ep ${e.n}: "${e.title}"`,
+      desc: epDesc,
+      url: 'https://www.instagram.com/etvbalbharat/',
+      image: epImg,
+      episodeNumber: e.n
+    });
+  });
+
+  // ── 6b. Direct Netflix India Releases (Database-Driven Calendar Switch) ──
+  const dbNetflixEps = (typeof EPISODES !== 'undefined' ? EPISODES : []).filter(e => e.netflix === dateStr);
+  dbNetflixEps.forEach(e => {
+    const meta = window.EPISODE_META && window.EPISODE_META.get(e.n);
+    const epImg = (meta && meta.still) || IMG.ep96;
+    const epDesc = (meta && meta.overview) || `Episode ${e.n} premieres on Netflix India. Japanese audio with English subtitles.`;
+    events.push({
+      type: 'netflix',
+      badgeClass: 'cal-event-type-badge--netflix',
+      badgeName: 'Netflix',
+      time: '4:30 PM IST',
+      title: `Ep ${e.n}: "${e.title}"`,
+      desc: epDesc,
+      url: 'https://www.netflix.com/title/80090370',
+      image: epImg,
+      episodeNumber: e.n
+    });
+  });
+
+  // ── 6c. Direct Anime Times Premieres (Database-Driven Calendar Switch) ──
+  const dbAnimeTimesEps = (typeof EPISODES !== 'undefined' ? EPISODES : []).filter(e => e.animetimes === dateStr);
+  dbAnimeTimesEps.forEach(e => {
+    const meta = window.EPISODE_META && window.EPISODE_META.get(e.n);
+    const epImg = (meta && meta.still) || PLAT_BG.primevideo;
+    const epDesc = (meta && meta.overview) || `Episode ${e.n} now streaming in Hindi dub on Anime Times (Amazon Prime Video).`;
+    events.push({
+      type: 'animetimes',
+      badgeClass: 'cal-event-type-badge--animetimes',
+      badgeName: 'Anime Times',
+      time: 'New Episode Drop',
+      title: `Ep ${e.n}: "${e.title}" (Hindi Dub)`,
+      desc: epDesc,
+      url: 'https://www.primevideo.com/detail/0MVCS1X42CJKXIIGFZL0EXI39Q',
+      image: epImg,
+      episodeNumber: e.n
+    });
+  });
+
+  // ── 7. ETV Bal Bharat Reruns (subtle — only within known airing windows) ──
+  // Window 1: Sep 20 – Oct 20, 2025 | Window 2: Apr 3, 2026 – ongoing
+  const dMs   = dateObj.getTime();
+  const w1s   = new Date(2025, 8, 20).getTime();  // Sep 20 2025
+  const w1e   = new Date(2025, 9, 20).getTime();  // Oct 20 2025
+  const w2s   = new Date(2026, 3, 3).getTime();   // Apr 3  2026
+  const isEtvWindow = (dMs >= w1s && dMs <= w1e) || (dMs >= w2s);
+  if (isEtvWindow) {
+    events.push({
+      type: 'rerun',
+      rerun: true,
+      badgeClass: 'cal-event-type-badge--rerun',
+      badgeName: 'ETV Reruns',
+      time: '11:00 PM IST',
+      title: 'Rerun Broadcast',
+      desc: 'Classic dubbed episodes airing nightly on ETV Bal Bharat (reruns). Available in Hindi, Tamil, Telugu, Malayalam, Kannada, and other regional languages on cable/DTH.',
+      url: 'https://www.instagram.com/etvbalbharat/'
+    });
+  }
+
+  return events;
+}
+window.getCalendarEventsForDate = getCalendarEventsForDate;
+
 // ─── CASE CALENDAR PAGE ──────────────────────────────
 function renderCalendarPage() {
   app.innerHTML = '';
@@ -9443,7 +9906,10 @@ function syncMobileContextUI(route) {
 
 // ─── OVA PAGE ───────────────────────────────────────
 function renderOVAsPage() {
-  const pg = document.getElementById('page');
+  window.scrollTo({ top: 0, behavior: 'instant' });
+  app.innerHTML = '';
+  const pg = document.createElement('div');
+  pg.className = 'page-enter';
   pg.innerHTML = `
     <section class="movies-page-hero">
       <div class="movies-page-hero-bg" style="background-image:url('${IMG.conan3}')"></div>
@@ -9459,7 +9925,6 @@ function renderOVAsPage() {
     <div class="movies-page-content">
       <div class="movies-grid">
         ${OVAS.map((ova, index) => {
-    // Use hardcoded still if available, otherwise fallback to character images
     const fallbackImages = [IMG.haibara, IMG.ran, IMG.heiji, IMG.kid];
     const imageUrl = ova.still || fallbackImages[index % 4];
     return `
@@ -9467,7 +9932,7 @@ function renderOVAsPage() {
               <div class="movie-poster">
                 <img src="${imageUrl}" alt="${ova.title}" loading="lazy">
                 <div class="movie-overlay">
-                  <div class="movie-play-icon">▶</div>
+                  <div class="movie-play-icon">&#9654;</div>
                 </div>
               </div>
               <div class="movie-info">
@@ -9481,14 +9946,18 @@ function renderOVAsPage() {
   }).join('')}
       </div>
     </div>
+    ${renderFooterHTML()}
   `;
-  revealElements();
+  app.appendChild(pg);
+  setTimeout(() => { observeAll(); refreshHover(); }, 80);
 }
 
 // ─── MAGIC KAITO PAGE ───────────────────────────────────
 function renderMagicKaitoPage() {
-  const pg = document.getElementById('page');
-
+  window.scrollTo({ top: 0, behavior: 'instant' });
+  app.innerHTML = '';
+  const pg = document.createElement('div');
+  pg.className = 'page-enter';
   pg.innerHTML = `
     <section class="movies-page-hero">
       <div class="movies-page-hero-bg" style="background-image:url('${IMG.kid}')"></div>
@@ -9520,7 +9989,7 @@ function renderMagicKaitoPage() {
               <div class="episode-poster">
                 <img src="${imageUrl}" alt="Episode ${epNum}" loading="lazy">
                 <div class="episode-overlay">
-                  <div class="episode-play-icon">▶</div>
+                  <div class="episode-play-icon">&#9654;</div>
                 </div>
               </div>
               <div class="episode-info">
@@ -9533,8 +10002,10 @@ function renderMagicKaitoPage() {
   }).join('')}
       </div>
     </div>
+    ${renderFooterHTML()}
   `;
-  revealElements();
+  app.appendChild(pg);
+  setTimeout(() => { observeAll(); refreshHover(); }, 80);
 }
 
 // ─── TMDB API INTEGRATION ───────────────────────────────

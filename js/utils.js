@@ -6,7 +6,7 @@ function openModal(html,opts={}){
   if(!modal||!modalPanel) return;
   modalPanel.innerHTML=html;
   modal.classList.add('open');
-  if(opts.fullpage) modal.classList.add('modal-fullpage');
+  if(opts.fullPage || opts.fullpage) modal.classList.add('modal-fullpage');
   document.body.classList.add('modal-open');
 }
 

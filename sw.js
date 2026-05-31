@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bbdci-cache-v13';
+const CACHE_NAME = 'bbdci-cache-v14';
 
 self.addEventListener('install', event => {
   self.skipWaiting();
@@ -38,7 +38,10 @@ self.addEventListener('fetch', event => {
         }
         return networkResponse;
       }).catch(err => {
-        // Network failed (offline), do nothing since we already return cachedResponse if it exists
+        // Network failed (offline). If we have a cached response, we can swallow the error.
+        // Otherwise, we must rethrow the error so the fetch fails naturally.
+        if (cachedResponse) return;
+        throw err;
       });
 
       // Return cached immediately if available, otherwise wait for network
