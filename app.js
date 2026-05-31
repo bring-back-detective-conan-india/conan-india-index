@@ -1524,7 +1524,9 @@ function renderHome() {
           <h2 class="section-title reveal-left" style="margin-bottom: 24px;">Latest &amp; Upcoming <em>Releases</em></h2>
           <button class="section-view-all" onclick="Router.navigate('/calendar')">View Calendar &rarr;</button>
         </div>
-        <div class="latest-cards-container stagger" style="padding-bottom: 20px;">
+        <div class="latest-cards-row-wrap reveal">
+          <button class="releases-scroll-btn releases-scroll-btn--left" id="latest-scroll-left" aria-label="Scroll releases left">‹</button>
+          <div class="latest-cards-container stagger" style="padding-bottom: 20px;">
           
           <!-- Card 1: Netflix India Simulcast -->
           <div class="latest-cinematic-card desktop-card" data-platform="netflix" onclick="window.open('https://www.netflix.com/title/80090370', '_blank', 'noopener')">
@@ -1702,7 +1704,9 @@ function renderHome() {
           </div>
 
         </div>
+        <button class="releases-scroll-btn releases-scroll-btn--right" id="latest-scroll-right" aria-label="Scroll releases right">›</button>
       </div>
+    </div>
     </section>
 
     <!-- LANGUAGES -->
@@ -2417,6 +2421,17 @@ function initLatestAutoScroll() {
     return Array.from(container.children).filter(c => getComputedStyle(c).display !== 'none');
   }
 
+  const leftBtn = document.getElementById('latest-scroll-left');
+  const rightBtn = document.getElementById('latest-scroll-right');
+
+  function updateScrollButtons() {
+    const visibleCards = getVisibleCards();
+    if (leftBtn && rightBtn) {
+      leftBtn.disabled = currentIndex === 0;
+      rightBtn.disabled = currentIndex === visibleCards.length - 1;
+    }
+  }
+
   function goTo(index) {
     const visibleCards = getVisibleCards();
     if (index < 0) index = 0;
@@ -2427,6 +2442,7 @@ function initLatestAutoScroll() {
       left: card.offsetLeft - container.offsetLeft,
       behavior: 'smooth'
     });
+    updateScrollButtons();
   }
 
   function scrollNext() {
@@ -2496,6 +2512,22 @@ function initLatestAutoScroll() {
   container.addEventListener('touchstart', e => onStart(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
   window.addEventListener('touchmove', e => { if (isDown) onMove(e.touches[0].clientX); }, { passive: true });
   window.addEventListener('touchend', e => { if (isDown) onEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY); }, { passive: true });
+
+  if (leftBtn && rightBtn) {
+    leftBtn.onclick = (e) => {
+      e.stopPropagation();
+      stopTimer();
+      goTo(currentIndex - 1);
+      startTimer();
+    };
+    rightBtn.onclick = (e) => {
+      e.stopPropagation();
+      stopTimer();
+      goTo(currentIndex + 1);
+      startTimer();
+    };
+    updateScrollButtons();
+  }
 
   startTimer();
 }

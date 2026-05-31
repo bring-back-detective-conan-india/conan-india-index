@@ -2713,6 +2713,69 @@ html[data-theme="light"] .theme-icon-light {
   line-height: 1.5;
 }
 
+/* Releases Scroll Wrapper */
+.latest-cards-row-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+/* Releases Scroll Buttons */
+.releases-scroll-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(14, 14, 28, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.releases-scroll-btn:hover:not(:disabled) {
+  background: rgba(229, 9, 20, 0.85);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 8px 25px rgba(229, 9, 20, 0.4);
+}
+
+.releases-scroll-btn:active:not(:disabled) {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.releases-scroll-btn:disabled {
+  opacity: 0;
+  visibility: hidden;
+  cursor: not-allowed;
+}
+
+.releases-scroll-btn--left {
+  left: -22px;
+}
+
+.releases-scroll-btn--right {
+  right: -22px;
+}
+
+/* On mobile viewports, hide these floating buttons since they can just native swipe */
+@media (max-width: 768px) {
+  .releases-scroll-btn {
+    display: none !important;
+  }
+}
+
 
 
 
