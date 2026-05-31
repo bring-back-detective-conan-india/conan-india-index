@@ -1504,7 +1504,7 @@ function renderHome() {
             <div class="lcc-content">
               <div class="lcc-info-left">
                 <span class="netflix-latest-ep-badge" style="display:none;">1201</span>
-                <h3 class="lcc-card-title">Ep <span class="netflix-latest-title-ep">1201</span>: <span class="netflix-latest-title-text">I'm the Culprit</span></h3>
+                <h3 class="lcc-card-title netflix-latest-title-text">I'm the Culprit</h3>
                 <div class="lcc-meta-line" style="margin-top:4px;font-weight:700;color:var(--text);">Season 31 Simulcast</div>
                 <div class="lcc-meta-line netflix-latest-subtitle" style="margin-top:2px;opacity:0.8;">NOW STREAMING</div>
               </div>
@@ -1535,7 +1535,7 @@ function renderHome() {
             <div class="lcc-play-overlay"><div class="lcc-play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>
             <div class="lcc-content">
               <div class="lcc-info-left">
-                <h3 class="lcc-card-title">Ep <span class="netflix-next-title-ep">1202</span>: <span class="netflix-next-title-text">Next Episode</span></h3>
+                <h3 class="lcc-card-title netflix-next-title-text">Next Episode</h3>
                 <div class="lcc-meta-line" style="margin-top:4px;font-weight:700;color:var(--text);">Season 31 Simulcast</div>
                 <div class="lcc-meta-line netflix-next-subtitle" style="margin-top:2px;opacity:0.8;">AIRS SATURDAY</div>
               </div>
@@ -1566,7 +1566,7 @@ function renderHome() {
             <div class="lcc-play-overlay"><div class="lcc-play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>
             <div class="lcc-content">
               <div class="lcc-info-left">
-                <h3 class="lcc-card-title">Ep ${(typeof PLATFORMS !== 'undefined') ? (PLATFORMS.find(x => x.id === 'primevideo')?.seriesRange[1] || 96) : 96}: The Cornered Famous Detective!</h3>
+                <h3 class="lcc-card-title">The Cornered Famous Detective!</h3>
                 <div class="lcc-meta-line" style="margin-top:2px;opacity:0.8;">RELEASED APR 23, 2026</div>
               </div>
               <div class="lcc-info-right"><button class="lcc-action-btn" aria-label="Watch on Prime Video"><span>Watch on Prime Video</span><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button></div>
