@@ -596,7 +596,7 @@ async function updateNetflixLatestCard() {
       airedS31.sort((a, b) => b.n - a.n);
       const localLatest = airedS31[0];
       latestEpNum = localLatest.n;
-      latestEpTitle = localLatest.title;
+      latestEpTitle = localLatest.title.replace(/\s*\(tentative\s*title\)/gi, '').replace(/\s*\(tentative\)/gi, '');
       const d = new Date(localLatest.aired + 'T12:00:00'); // avoid timezone shifts
       latestEpDate = `AIRED ${d.toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}`.toUpperCase();
     }
@@ -607,7 +607,7 @@ async function updateNetflixLatestCard() {
       upcomingS31.sort((a, b) => a.n - b.n);
       const localNext = upcomingS31[0];
       nextEpNum = localNext.n;
-      nextEpTitle = localNext.title;
+      nextEpTitle = localNext.title.replace(/\s*\(tentative\s*title\)/gi, '').replace(/\s*\(tentative\)/gi, '');
       const airDate = new Date(localNext.aired + 'T12:00:00');
       nextEpDate = `AIRS ${airDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}`.toUpperCase();
     } else {

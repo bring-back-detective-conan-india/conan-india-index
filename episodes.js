@@ -9855,7 +9855,7 @@ const EPISODES = [
   },
   {
     "n": 1202,
-    "title": "You can't Lie in Archery (tentative title)",
+    "title": "You can't Lie in Archery",
     "season": "S31",
     "aired": "2026-05-30",
     "etv": null,
