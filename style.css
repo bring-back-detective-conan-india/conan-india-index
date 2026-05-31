@@ -1867,20 +1867,14 @@ html, body {
 
 .lcc-bg-number {
   position: absolute;
-  right: 12px;
-  top: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  right: -12px;
+  top: -35px;
   font-family: var(--font-display);
-  font-size: 90px;
+  font-size: 230px;
   font-weight: 900;
-  line-height: 1;
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
+  line-height: 0.8;
   color: transparent;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.1) 60%, transparent 100%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.35) 60%, transparent 95%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -1889,20 +1883,20 @@ html, body {
   user-select: none;
   letter-spacing: -0.05em;
   mix-blend-mode: overlay;
-  transition: filter 0.3s ease;
+  filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.95)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
 }
 
 [data-platform="netflix"] .lcc-bg-number {
-  filter: drop-shadow(0 0 20px rgba(229, 9, 20, 0.65)) drop-shadow(0 0 45px rgba(229, 9, 20, 0.25));
+  filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.95)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 20px rgba(229, 9, 20, 0.55));
 }
 [data-platform="primevideo"] .lcc-bg-number {
-  filter: drop-shadow(0 0 20px rgba(0, 168, 225, 0.65)) drop-shadow(0 0 45px rgba(0, 168, 225, 0.25));
+  filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.95)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 20px rgba(0, 168, 225, 0.55));
 }
 [data-platform="etv"] .lcc-bg-number {
-  filter: drop-shadow(0 0 20px rgba(255, 119, 0, 0.65)) drop-shadow(0 0 45px rgba(255, 119, 0, 0.25));
+  filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.95)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 20px rgba(255, 119, 0, 0.55));
 }
 [data-platform="manga"] .lcc-bg-number {
-  filter: drop-shadow(0 0 20px rgba(20, 163, 107, 0.65)) drop-shadow(0 0 45px rgba(20, 163, 107, 0.25));
+  filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.95)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 20px rgba(20, 163, 107, 0.55));
 }
 
 .lcc-top-bar {
