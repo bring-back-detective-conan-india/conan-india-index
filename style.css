@@ -1873,7 +1873,8 @@ html, body {
   font-size: 230px;
   font-weight: 900;
   line-height: 0.8;
-  color: #ffffff;
+  color: transparent;
+  -webkit-text-stroke: 3px rgba(255, 255, 255, 0.85);
   pointer-events: none;
   z-index: 1;
   user-select: none;
