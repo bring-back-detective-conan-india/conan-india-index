@@ -568,22 +568,68 @@ async function fetchTMDBEpisodeMeta() {
 }
 
 async function updateNetflixLatestCard() {
-  const CACHE_KEY = 'latest_netflix_ep_v6';
-  const CACHE_TTL = 12 * 60 * 60 * 1000; // 12 hours
+  const CACHE_KEY = 'latest_netflix_ep_v8';
+  const CACHE_TTL = 1 * 60 * 60 * 1000; // 1 hour for high-responsiveness
 
-  let latestEpNum = 1203; // Default fallback
-  let latestEpTitle = "The Perfect Answer";
-  let latestEpStill = "/nzp4EeAgVxLx9bnQS2Z43Xgj0q3.jpg"; // Default Ep 1203 fallback still
+  // 1. Proactive Local Database Scheduling Calculation (100% Reliable Auto-Rollover)
+  let latestEpNum = 1202; // Default fallback to archery
+  let latestEpTitle = "You can't Lie in Archery";
+  let latestEpStill = "/hlOn0BETlASlpLThKu2gXn9ae1H.jpg";
   let latestEpDate = "NOW STREAMING";
   
-  let nextEpNum = 1204;
-  let nextEpTitle = "Next Episode";
+  let nextEpNum = 1203;
+  let nextEpTitle = "The Perfect Answer";
   let nextEpDate = "AIRS SATURDAY";
-  let nextEpStill = null;
+  let nextEpStill = "/nzp4EeAgVxLx9bnQS2Z43Xgj0q3.jpg";
+
+  if (typeof EPISODES !== 'undefined' && EPISODES.length > 0) {
+    const now = new Date();
+    // Get current local date YYYY-MM-DD
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
+
+    // Filter S31 episodes that have aired
+    const airedS31 = EPISODES.filter(e => e.season === 'S31' && e.aired && e.aired <= todayStr);
+    if (airedS31.length > 0) {
+      airedS31.sort((a, b) => b.n - a.n);
+      const localLatest = airedS31[0];
+      latestEpNum = localLatest.n;
+      latestEpTitle = localLatest.title;
+      const d = new Date(localLatest.aired + 'T12:00:00'); // avoid timezone shifts
+      latestEpDate = `AIRED ${d.toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}`.toUpperCase();
+    }
+
+    // Filter S31 episodes that are upcoming
+    const upcomingS31 = EPISODES.filter(e => e.season === 'S31' && e.aired && e.aired > todayStr);
+    if (upcomingS31.length > 0) {
+      upcomingS31.sort((a, b) => a.n - b.n);
+      const localNext = upcomingS31[0];
+      nextEpNum = localNext.n;
+      nextEpTitle = localNext.title;
+      const airDate = new Date(localNext.aired + 'T12:00:00');
+      nextEpDate = `AIRS ${airDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}`.toUpperCase();
+    } else {
+      nextEpNum = latestEpNum + 1;
+      nextEpTitle = "Next Episode";
+      nextEpDate = "AIRS SATURDAY";
+    }
+
+    // Attempt to pull high-res image stills from loaded metadata map
+    if (window.EPISODE_META) {
+      const latestMeta = window.EPISODE_META.get(latestEpNum);
+      if (latestMeta && latestMeta.still) latestEpStill = latestMeta.still;
+
+      const nextMeta = window.EPISODE_META.get(nextEpNum);
+      if (nextMeta && nextMeta.still) nextEpStill = nextMeta.still;
+    }
+  }
 
   try {
     const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
-    if (cached && (Date.now() - cached.ts) < CACHE_TTL) {
+    // If cached is available, within TTL, and aligns with current calculated numbers, use it
+    if (cached && (Date.now() - cached.ts) < CACHE_TTL && cached.number === latestEpNum) {
       latestEpNum = cached.number;
       latestEpTitle = cached.title;
       latestEpStill = cached.still || latestEpStill;
@@ -591,34 +637,23 @@ async function updateNetflixLatestCard() {
       nextEpNum = cached.nextNumber || nextEpNum;
       nextEpTitle = cached.nextTitle || nextEpTitle;
       nextEpDate = cached.nextDate || nextEpDate;
-      nextEpStill = cached.nextStill || null;
+      nextEpStill = cached.nextStill || nextEpStill;
     } else {
-      const r = await fetch(`https://api.themoviedb.org/3/tv/${TMDB_TV_ID}?api_key=${TMDB_KEY}&language=en-US`);
+      // Supplement our local database calculation with official high-res stills and titles from TMDB API
+      const r = await fetch(`https://api.themoviedb.org/3/tv/${TMDB_TV_ID}/season/31?api_key=${TMDB_KEY}&language=en-US`);
       if (r.ok) {
-        const j = await r.json();
-        const lastEp = j.last_episode_to_air;
-        if (lastEp && lastEp.episode_number) {
-          latestEpNum = lastEp.episode_number;
-          latestEpTitle = lastEp.name || latestEpTitle;
-          latestEpStill = lastEp.still_path || latestEpStill;
-          if (lastEp.air_date) {
-            const d = new Date(lastEp.air_date);
-            latestEpDate = `AIRED ${d.toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}`.toUpperCase();
-          }
+        const s31Data = await r.json();
+        const tmdbLatest = s31Data.episodes.find(e => e.episode_number === (latestEpNum - 1200) || e.episode_number === latestEpNum);
+        if (tmdbLatest) {
+          latestEpTitle = tmdbLatest.name || latestEpTitle;
+          latestEpStill = tmdbLatest.still_path || latestEpStill;
         }
-        const nextEp = j.next_episode_to_air;
-        if (nextEp && nextEp.episode_number) {
-          nextEpNum = nextEp.episode_number;
-          nextEpTitle = nextEp.name || nextEpTitle;
-          if (nextEp.air_date) {
-             const airDate = new Date(nextEp.air_date);
-             nextEpDate = `AIRS ${airDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}`.toUpperCase();
-          }
-          nextEpStill = nextEp.still_path || null;
-        } else {
-          nextEpNum = latestEpNum + 1;
+        const tmdbNext = s31Data.episodes.find(e => e.episode_number === (nextEpNum - 1200) || e.episode_number === nextEpNum);
+        if (tmdbNext) {
+          nextEpTitle = tmdbNext.name || nextEpTitle;
+          nextEpStill = tmdbNext.still_path || nextEpStill;
         }
-        
+
         localStorage.setItem(CACHE_KEY, JSON.stringify({
           number: latestEpNum,
           title: latestEpTitle,
@@ -633,10 +668,10 @@ async function updateNetflixLatestCard() {
       }
     }
   } catch (err) {
-    console.error("Error fetching latest Netflix episode:", err);
+    console.error("Error supplementing latest Netflix episode from TMDB:", err);
   }
 
-  // Update Latest
+  // Update UI Elements for Latest
   const badges = document.querySelectorAll('.netflix-latest-ep-badge');
   const titleEps = document.querySelectorAll('.netflix-latest-title-ep');
   const cardImgs = document.querySelectorAll('.netflix-latest-img');
@@ -650,7 +685,7 @@ async function updateNetflixLatestCard() {
   if (latestEpDate) latestSubtitles.forEach(el => el.textContent = latestEpDate);
   if (latestEpStill) cardImgs.forEach(el => el.style.backgroundImage = `url('https://image.tmdb.org/t/p/w780${latestEpStill}')`);
   
-  // Update Next
+  // Update UI Elements for Next
   const nextTitleEps = document.querySelectorAll('.netflix-next-title-ep');
   const nextTitleTexts = document.querySelectorAll('.netflix-next-title-text');
   const nextSubtitles = document.querySelectorAll('.netflix-next-subtitle');
@@ -1927,6 +1962,9 @@ function renderHome() {
 
   initLatestAutoScroll();
   initMangaCountdown();
+  if (typeof updateNetflixLatestCard === 'function') {
+    updateNetflixLatestCard();
+  }
 
   setTimeout(() => { observeAll(); refreshHover(); }, 80);
 }
