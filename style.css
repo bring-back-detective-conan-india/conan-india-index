@@ -1873,16 +1873,11 @@ html, body {
   font-size: 230px;
   font-weight: 900;
   line-height: 0.8;
-  color: transparent;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.35) 60%, transparent 95%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #ffffff;
   pointer-events: none;
   z-index: 1;
   user-select: none;
   letter-spacing: -0.05em;
-  mix-blend-mode: overlay;
   filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.95)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
 }
 
