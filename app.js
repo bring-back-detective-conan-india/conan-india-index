@@ -576,6 +576,7 @@ async function updateNetflixLatestCard() {
   let latestEpTitle = "You can't Lie in Archery";
   let latestEpStill = "/hlOn0BETlASlpLThKu2gXn9ae1H.jpg";
   let latestEpDate = "NOW STREAMING";
+  let nextEpAirDate = null;
   
   let nextEpNum = 1203;
   let nextEpTitle = "The Perfect Answer";
@@ -610,6 +611,7 @@ async function updateNetflixLatestCard() {
       nextEpTitle = localNext.title.replace(/\s*\(tentative\s*title\)/gi, '').replace(/\s*\(tentative\)/gi, '');
       const airDate = new Date(localNext.aired + 'T12:00:00');
       nextEpDate = `AIRS ${airDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}`.toUpperCase();
+      nextEpAirDate = localNext.aired;
     } else {
       nextEpNum = latestEpNum + 1;
       nextEpTitle = "Next Episode";
@@ -638,6 +640,7 @@ async function updateNetflixLatestCard() {
       nextEpTitle = cached.nextTitle || nextEpTitle;
       nextEpDate = cached.nextDate || nextEpDate;
       nextEpStill = cached.nextStill || nextEpStill;
+      nextEpAirDate = cached.nextAirDate || nextEpAirDate;
     } else {
       // Supplement our local database calculation with official high-res stills and titles from TMDB API
       const r = await fetch(`https://api.themoviedb.org/3/tv/${TMDB_TV_ID}/season/31?api_key=${TMDB_KEY}&language=en-US`);
@@ -663,6 +666,7 @@ async function updateNetflixLatestCard() {
           nextTitle: nextEpTitle,
           nextDate: nextEpDate,
           nextStill: nextEpStill,
+          nextAirDate: nextEpAirDate,
           ts: Date.now()
         }));
       }
@@ -697,6 +701,24 @@ async function updateNetflixLatestCard() {
   if (nextEpDate) nextSubtitles.forEach(el => el.textContent = nextEpDate);
   const nextUrl = nextEpStill ? `url('https://image.tmdb.org/t/p/w780${nextEpStill}')` : `url('${IMG.conan8}')`;
   nextImgs.forEach(el => el.style.backgroundImage = nextUrl);
+
+  // Update countdown attribute
+  const cd = document.getElementById('netflix-upcoming-countdown');
+  if (cd) {
+    if (nextEpAirDate) {
+      cd.setAttribute('data-aired', nextEpAirDate);
+    } else {
+      // Calculate next Saturday
+      const now = new Date();
+      const nextSat = new Date(now.getTime());
+      nextSat.setDate(now.getDate() + (6 - now.getDay()) % 7);
+      const y = nextSat.getFullYear();
+      const m = String(nextSat.getMonth() + 1).padStart(2, '0');
+      const d = String(nextSat.getDate()).padStart(2, '0');
+      cd.setAttribute('data-aired', `${y}-${m}-${d}`);
+    }
+    initNetflixCountdown();
+  }
 }
 
 function processMagicKaitoEpisodes(episodes) {
@@ -1542,8 +1564,7 @@ function renderHome() {
               <div class="lcc-info-left">
                 <span class="netflix-latest-ep-badge" style="display:none;">1201</span>
                 <h3 class="lcc-card-title netflix-latest-title-text">I'm the Culprit</h3>
-                <div class="lcc-meta-line" style="margin-top:4px;font-weight:700;color:var(--text);">Season 31 Simulcast</div>
-                <div class="lcc-meta-line netflix-latest-subtitle" style="margin-top:2px;opacity:0.8;">NOW STREAMING</div>
+                <div class="lcc-meta-line netflix-latest-subtitle" style="margin-top:2px;opacity:0.8;font-weight:700;">NOW STREAMING</div>
               </div>
               <div class="lcc-info-right"><button class="lcc-action-btn" aria-label="Watch on Netflix"><span>Watch on Netflix</span><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button></div>
             </div>
@@ -1573,8 +1594,8 @@ function renderHome() {
             <div class="lcc-content">
               <div class="lcc-info-left">
                 <h3 class="lcc-card-title netflix-next-title-text">Next Episode</h3>
-                <div class="lcc-meta-line" style="margin-top:4px;font-weight:700;color:var(--text);">Season 31 Simulcast</div>
-                <div class="lcc-meta-line netflix-next-subtitle" style="margin-top:2px;opacity:0.8;">AIRS SATURDAY</div>
+                <div class="lcc-meta-line netflix-next-subtitle" style="margin-top:2px;opacity:0.8;font-weight:700;margin-bottom:6px;">AIRS SATURDAY</div>
+                <div class="lcc-meta-line" style="margin-top:4px;"><span id="netflix-upcoming-countdown" class="manga-countdown-text" style="background:rgba(229, 9, 20, 0.08) !important; border-color:rgba(229, 9, 20, 0.35) !important; color:#ff4d58 !important; padding:4px 10px !important; font-size:11px !important;">CALCULATING...</span></div>
               </div>
               <div class="lcc-info-right"><button class="lcc-action-btn" aria-label="View Details"><span>View Details</span><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button></div>
             </div>
@@ -2126,6 +2147,43 @@ function initMangaCountdown() {
     if (cdPc) cdPc.innerHTML = text;
     if (cdBg) cdBg.innerHTML = `IN ${days}D`;
   }, 1000);
+}
+
+let netflixTimer = null;
+function initNetflixCountdown() {
+  const cd = document.getElementById('netflix-upcoming-countdown');
+  if (!cd) return;
+
+  const rawAired = cd.getAttribute('data-aired');
+  if (!rawAired) return;
+
+  // Airs Saturday 5:00 PM IST (GMT+5:30)
+  const airTime = new Date(`${rawAired}T17:00:00+05:30`).getTime();
+
+  if (netflixTimer) clearInterval(netflixTimer);
+
+  const update = () => {
+    const now = new Date().getTime();
+    const distance = airTime - now;
+    if (distance < 0) {
+      cd.innerHTML = "STREAMING NOW";
+      if (netflixTimer) clearInterval(netflixTimer);
+      return;
+    }
+    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const mins = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    const secs = Math.floor((distance % (1000 * 60)) / 1000);
+
+    if (days > 0) {
+      cd.innerHTML = `IN ${days}D ${hours}H ${mins}M`;
+    } else {
+      cd.innerHTML = `IN ${hours}H ${mins}M ${secs}S`;
+    }
+  };
+
+  update();
+  netflixTimer = setInterval(update, 1000);
 }
 
 // ─── PLATFORM LOGO MARQUEE ────────────────────────────
