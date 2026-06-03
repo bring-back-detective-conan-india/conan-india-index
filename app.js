@@ -684,6 +684,7 @@ async function updateNetflixLatestCard() {
 
   badges.forEach(el => el.textContent = latestEpNum);
   titleEps.forEach(el => el.textContent = latestEpNum);
+  document.querySelectorAll('.netflix-latest-title-ep-label').forEach(el => el.textContent = latestEpNum);
   document.querySelectorAll('.netflix-latest-bg-num').forEach(el => el.textContent = latestEpNum);
   if (latestEpTitle) titleTexts.forEach(el => el.textContent = latestEpTitle);
   if (latestEpDate) latestSubtitles.forEach(el => el.textContent = latestEpDate);
@@ -696,6 +697,7 @@ async function updateNetflixLatestCard() {
   const nextImgs = document.querySelectorAll('.netflix-next-img');
   
   nextTitleEps.forEach(el => el.textContent = nextEpNum);
+  document.querySelectorAll('.netflix-next-title-ep-label').forEach(el => el.textContent = nextEpNum);
   document.querySelectorAll('.netflix-next-bg-num').forEach(el => el.textContent = nextEpNum);
   if (nextEpTitle) nextTitleTexts.forEach(el => el.textContent = nextEpTitle);
   if (nextEpDate) nextSubtitles.forEach(el => el.textContent = nextEpDate);
@@ -1563,6 +1565,7 @@ function renderHome() {
             <div class="lcc-content">
               <div class="lcc-info-left">
                 <span class="netflix-latest-ep-badge" style="display:none;">1201</span>
+                <div class="lcc-ep-label" style="font-size: 11px; font-weight: 800; color: #ff4d58; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;">Episode <span class="netflix-latest-title-ep-label">1201</span></div>
                 <h3 class="lcc-card-title netflix-latest-title-text">I'm the Culprit</h3>
                 <div class="lcc-meta-line netflix-latest-subtitle" style="margin-top:2px;opacity:0.8;font-weight:700;">NOW STREAMING</div>
               </div>
@@ -1593,6 +1596,7 @@ function renderHome() {
             <div class="lcc-play-overlay"><div class="lcc-play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>
             <div class="lcc-content">
               <div class="lcc-info-left">
+                <div class="lcc-ep-label" style="font-size: 11px; font-weight: 800; color: #ff4d58; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;">Episode <span class="netflix-next-title-ep-label">1202</span></div>
                 <h3 class="lcc-card-title netflix-next-title-text">Next Episode</h3>
                 <div class="lcc-meta-line netflix-next-subtitle" style="margin-top:2px;opacity:0.8;font-weight:700;margin-bottom:6px;">AIRS SATURDAY</div>
                 <div class="lcc-meta-line" style="margin-top:4px;"><span id="netflix-upcoming-countdown" class="manga-countdown-text" style="background:rgba(229, 9, 20, 0.08) !important; border-color:rgba(229, 9, 20, 0.35) !important; color:#ff4d58 !important; padding:4px 10px !important; font-size:11px !important;">CALCULATING...</span></div>
@@ -1624,6 +1628,7 @@ function renderHome() {
             <div class="lcc-play-overlay"><div class="lcc-play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>
             <div class="lcc-content">
               <div class="lcc-info-left">
+                <div class="lcc-ep-label" style="font-size: 11px; font-weight: 800; color: #ff4d58; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;">Episode ${(typeof PLATFORMS !== 'undefined') ? (PLATFORMS.find(x => x.id === 'primevideo')?.seriesRange[1] || 96) : 96}</div>
                 <h3 class="lcc-card-title">The Cornered Famous Detective!</h3>
                 <div class="lcc-meta-line" style="margin-top:2px;opacity:0.8;">RELEASED APR 23, 2026</div>
               </div>
@@ -1678,6 +1683,7 @@ function renderHome() {
             </div>
             <div class="lcc-content">
               <div class="lcc-info-left">
+                <div class="lcc-ep-label" style="font-size: 11px; font-weight: 800; color: #ff4d58; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;">Volume ${latestMangaVol}</div>
                 <h3 class="lcc-card-title">Case Closed: Vol ${latestMangaVol}</h3>
                 <div class="lcc-meta-line" style="margin-top:4px;font-weight:700;color:var(--text);">Latest English Release</div>
                 <div class="lcc-meta-line" style="margin-top:2px;opacity:0.8;">AVAILABLE NOW</div>
@@ -1706,6 +1712,7 @@ function renderHome() {
             </div>
             <div class="lcc-content">
               <div class="lcc-info-left">
+                <div class="lcc-ep-label" style="font-size: 11px; font-weight: 800; color: #ff4d58; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;">Volume ${latestMangaVol + 1}</div>
                 <h3 class="lcc-card-title">Case Closed: Vol ${latestMangaVol + 1}</h3>
                 <div class="lcc-meta-line" style="margin-top:4px;font-weight:700;color:var(--text);">Next English Release</div>
                 <div class="lcc-meta-line" style="margin-top:2px;opacity:0.8;color:#ff4d58;font-weight:700;"><span id="manga-countdown-pc" class="manga-countdown-text">PRE-ORDER NOW</span></div>
