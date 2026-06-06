@@ -572,13 +572,13 @@ async function updateNetflixLatestCard() {
   const CACHE_TTL = 1 * 60 * 60 * 1000; // 1 hour for high-responsiveness
 
   // 1. Proactive Local Database Scheduling Calculation (100% Reliable Auto-Rollover)
-  let latestEpNum = 1202; // Default fallback to archery
-  let latestEpTitle = "You can't Lie in Archery";
+  let latestEpNum = 1265; // Default fallback to archery
+  let latestEpTitle = "Episode 1265";
   let latestEpStill = "/hlOn0BETlASlpLThKu2gXn9ae1H.jpg";
   let latestEpDate = "NOW STREAMING";
   let nextEpAirDate = null;
   
-  let nextEpNum = 1203;
+  let nextEpNum = 1266;
   let nextEpTitle = "The Perfect Answer";
   let nextEpDate = "AIRS SATURDAY";
   let nextEpStill = "/nzp4EeAgVxLx9bnQS2Z43Xgj0q3.jpg";

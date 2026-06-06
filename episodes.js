@@ -1,9 +1,3 @@
-// episodes.js — auto-generated, year-based seasons
-// 1221 episodes · Do not edit by hand
-// Seasons are year-based: S1=1996, S2=1997 … S31=2026
-// etv: YYYY-MM-DD = aired on ETV Bal Bharat · null = not aired
-// ★ = 1hr special · ★★ = 2hr special
-
 const EPISODES = [
   {
     "n": 1,
@@ -9868,6 +9862,626 @@ const EPISODES = [
     "title": "The Perfect Answer",
     "season": "S31",
     "aired": "2026-06-06",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1204,
+    "title": "Episode 1204",
+    "season": "S31",
+    "aired": "2026-06-08",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1205,
+    "title": "Episode 1205",
+    "season": "S31",
+    "aired": "2026-06-13",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1206,
+    "title": "Episode 1206",
+    "season": "S31",
+    "aired": "2026-06-15",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1207,
+    "title": "Episode 1207",
+    "season": "S31",
+    "aired": "2026-06-20",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1208,
+    "title": "Episode 1208",
+    "season": "S31",
+    "aired": "2026-06-22",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1209,
+    "title": "Episode 1209",
+    "season": "S31",
+    "aired": "2026-06-27",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1210,
+    "title": "Episode 1210",
+    "season": "S31",
+    "aired": "2026-06-29",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1211,
+    "title": "Episode 1211",
+    "season": "S31",
+    "aired": "2026-07-04",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1212,
+    "title": "Episode 1212",
+    "season": "S31",
+    "aired": "2026-07-06",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1213,
+    "title": "Episode 1213",
+    "season": "S31",
+    "aired": "2026-07-11",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1214,
+    "title": "Episode 1214",
+    "season": "S31",
+    "aired": "2026-07-13",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1215,
+    "title": "Episode 1215",
+    "season": "S31",
+    "aired": "2026-07-18",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1216,
+    "title": "Episode 1216",
+    "season": "S31",
+    "aired": "2026-07-20",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1217,
+    "title": "Episode 1217",
+    "season": "S31",
+    "aired": "2026-07-25",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1218,
+    "title": "Episode 1218",
+    "season": "S31",
+    "aired": "2026-07-27",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1219,
+    "title": "Episode 1219",
+    "season": "S31",
+    "aired": "2026-08-01",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1220,
+    "title": "Episode 1220",
+    "season": "S31",
+    "aired": "2026-08-03",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1221,
+    "title": "Episode 1221",
+    "season": "S31",
+    "aired": "2026-08-08",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1222,
+    "title": "Episode 1222",
+    "season": "S31",
+    "aired": "2026-08-10",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1223,
+    "title": "Episode 1223",
+    "season": "S31",
+    "aired": "2026-08-15",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1224,
+    "title": "Episode 1224",
+    "season": "S31",
+    "aired": "2026-08-17",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1225,
+    "title": "Episode 1225",
+    "season": "S31",
+    "aired": "2026-08-22",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1226,
+    "title": "Episode 1226",
+    "season": "S31",
+    "aired": "2026-08-24",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1227,
+    "title": "Episode 1227",
+    "season": "S31",
+    "aired": "2026-08-29",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1228,
+    "title": "Episode 1228",
+    "season": "S31",
+    "aired": "2026-08-31",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1229,
+    "title": "Episode 1229",
+    "season": "S31",
+    "aired": "2026-09-05",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1230,
+    "title": "Episode 1230",
+    "season": "S31",
+    "aired": "2026-09-07",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1231,
+    "title": "Episode 1231",
+    "season": "S31",
+    "aired": "2026-09-12",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1232,
+    "title": "Episode 1232",
+    "season": "S31",
+    "aired": "2026-09-14",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1233,
+    "title": "Episode 1233",
+    "season": "S31",
+    "aired": "2026-09-19",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1234,
+    "title": "Episode 1234",
+    "season": "S31",
+    "aired": "2026-09-21",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1235,
+    "title": "Episode 1235",
+    "season": "S31",
+    "aired": "2026-09-26",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1236,
+    "title": "Episode 1236",
+    "season": "S31",
+    "aired": "2026-09-28",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1237,
+    "title": "Episode 1237",
+    "season": "S31",
+    "aired": "2026-10-03",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1238,
+    "title": "Episode 1238",
+    "season": "S31",
+    "aired": "2026-10-05",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1239,
+    "title": "Episode 1239",
+    "season": "S31",
+    "aired": "2026-10-10",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1240,
+    "title": "Episode 1240",
+    "season": "S31",
+    "aired": "2026-10-12",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1241,
+    "title": "Episode 1241",
+    "season": "S31",
+    "aired": "2026-10-17",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1242,
+    "title": "Episode 1242",
+    "season": "S31",
+    "aired": "2026-10-19",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1243,
+    "title": "Episode 1243",
+    "season": "S31",
+    "aired": "2026-10-24",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1244,
+    "title": "Episode 1244",
+    "season": "S31",
+    "aired": "2026-10-26",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1245,
+    "title": "Episode 1245",
+    "season": "S31",
+    "aired": "2026-10-31",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1246,
+    "title": "Episode 1246",
+    "season": "S31",
+    "aired": "2026-11-02",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1247,
+    "title": "Episode 1247",
+    "season": "S31",
+    "aired": "2026-11-07",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1248,
+    "title": "Episode 1248",
+    "season": "S31",
+    "aired": "2026-11-09",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1249,
+    "title": "Episode 1249",
+    "season": "S31",
+    "aired": "2026-11-14",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1250,
+    "title": "Episode 1250",
+    "season": "S31",
+    "aired": "2026-11-16",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1251,
+    "title": "Episode 1251",
+    "season": "S31",
+    "aired": "2026-11-21",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1252,
+    "title": "Episode 1252",
+    "season": "S31",
+    "aired": "2026-11-23",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1253,
+    "title": "Episode 1253",
+    "season": "S31",
+    "aired": "2026-11-28",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1254,
+    "title": "Episode 1254",
+    "season": "S31",
+    "aired": "2026-11-30",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1255,
+    "title": "Episode 1255",
+    "season": "S31",
+    "aired": "2026-12-05",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1256,
+    "title": "Episode 1256",
+    "season": "S31",
+    "aired": "2026-12-07",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1257,
+    "title": "Episode 1257",
+    "season": "S31",
+    "aired": "2026-12-12",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1258,
+    "title": "Episode 1258",
+    "season": "S31",
+    "aired": "2026-12-14",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1259,
+    "title": "Episode 1259",
+    "season": "S31",
+    "aired": "2026-12-19",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1260,
+    "title": "Episode 1260",
+    "season": "S31",
+    "aired": "2026-12-21",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1261,
+    "title": "Episode 1261",
+    "season": "S31",
+    "aired": "2026-12-26",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1262,
+    "title": "Episode 1262",
+    "season": "S31",
+    "aired": "2026-12-28",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1263,
+    "title": "Episode 1263",
+    "season": "S32",
+    "aired": "2027-01-02",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1264,
+    "title": "Episode 1264",
+    "season": "S32",
+    "aired": "2027-01-04",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1265,
+    "title": "Episode 1265",
+    "season": "S32",
+    "aired": "2027-01-09",
     "etv": null,
     "netflix": null,
     "animetimes": null,
