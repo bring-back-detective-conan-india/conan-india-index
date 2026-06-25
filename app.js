@@ -568,21 +568,22 @@ async function fetchTMDBEpisodeMeta() {
 }
 
 async function updateNetflixLatestCard() {
-  const CACHE_KEY = 'latest_netflix_ep_v8';
+  const CACHE_KEY = 'latest_netflix_ep_v9';
   const CACHE_TTL = 1 * 60 * 60 * 1000; // 1 hour for high-responsiveness
 
-  // 1. Proactive Local Database Scheduling Calculation (100% Reliable Auto-Rollover)
-  let latestEpNum = 1265; // Default fallback to archery
-  let latestEpTitle = "Episode 1265";
-  let latestEpStill = "/hlOn0BETlASlpLThKu2gXn9ae1H.jpg";
+  // Default fallback values computed dynamically if TMDB fails
+  // These variables are also updated by scripts/auto-update.js during server sync
+  let latestEpNum = 1204; // Default fallback
+  let nextEpNum = 1205;
+  let latestEpTitle = "Who Kidnapped Conan and Azusa? (1)";
+  let latestEpStill = "/z5ZR3Bmzq9lfNSPLhOLvQ09cUT8.jpg";
   let latestEpDate = "NOW STREAMING";
   let nextEpAirDate = null;
-  
-  let nextEpNum = 1266;
-  let nextEpTitle = "The Perfect Answer";
+  let nextEpTitle = "Who Kidnapped Conan and Azusa? (2)";
   let nextEpDate = "AIRS SATURDAY";
-  let nextEpStill = "/nzp4EeAgVxLx9bnQS2Z43Xgj0q3.jpg";
+  let nextEpStill = "/zshDIny9vvaeLUKRSWeID8Hxrz0.jpg";
 
+  // 1. Proactive Local Database Scheduling Calculation (100% Reliable Auto-Rollover Fallback)
   if (typeof EPISODES !== 'undefined' && EPISODES.length > 0) {
     const now = new Date();
     // Get current local date YYYY-MM-DD
@@ -628,51 +629,82 @@ async function updateNetflixLatestCard() {
     }
   }
 
+  // 2. Fetch and process actual TMDB Season 1 data (Completely TMDB Dependent)
   try {
+    let tmdbEpisodes = [];
     const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
-    // If cached is available, within TTL, and aligns with current calculated numbers, use it
-    if (cached && (Date.now() - cached.ts) < CACHE_TTL && cached.number === latestEpNum) {
-      latestEpNum = cached.number;
-      latestEpTitle = cached.title;
-      latestEpStill = cached.still || latestEpStill;
-      latestEpDate = cached.date || latestEpDate;
-      nextEpNum = cached.nextNumber || nextEpNum;
-      nextEpTitle = cached.nextTitle || nextEpTitle;
-      nextEpDate = cached.nextDate || nextEpDate;
-      nextEpStill = cached.nextStill || nextEpStill;
-      nextEpAirDate = cached.nextAirDate || nextEpAirDate;
+    
+    if (cached && (Date.now() - cached.ts) < CACHE_TTL && Array.isArray(cached.episodes)) {
+      tmdbEpisodes = cached.episodes;
     } else {
-      // Supplement our local database calculation with official high-res stills and titles from TMDB API
-      const r = await fetch(`https://api.themoviedb.org/3/tv/${TMDB_TV_ID}/season/31?api_key=${TMDB_KEY}&language=en-US`);
+      const r = await fetch(`https://api.themoviedb.org/3/tv/${TMDB_TV_ID}/season/1?api_key=${TMDB_KEY}&language=en-US`);
       if (r.ok) {
-        const s31Data = await r.json();
-        const tmdbLatest = s31Data.episodes.find(e => e.episode_number === (latestEpNum - 1200) || e.episode_number === latestEpNum);
-        if (tmdbLatest) {
-          latestEpTitle = tmdbLatest.name || latestEpTitle;
-          latestEpStill = tmdbLatest.still_path || latestEpStill;
+        const data = await r.json();
+        if (data && Array.isArray(data.episodes)) {
+          tmdbEpisodes = data.episodes;
+          try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify({
+              episodes: tmdbEpisodes,
+              ts: Date.now()
+            }));
+          } catch (_) {}
         }
-        const tmdbNext = s31Data.episodes.find(e => e.episode_number === (nextEpNum - 1200) || e.episode_number === nextEpNum);
-        if (tmdbNext) {
-          nextEpTitle = tmdbNext.name || nextEpTitle;
-          nextEpStill = tmdbNext.still_path || nextEpStill;
-        }
+      }
+    }
 
-        localStorage.setItem(CACHE_KEY, JSON.stringify({
-          number: latestEpNum,
-          title: latestEpTitle,
-          still: latestEpStill,
-          date: latestEpDate,
-          nextNumber: nextEpNum,
-          nextTitle: nextEpTitle,
-          nextDate: nextEpDate,
-          nextStill: nextEpStill,
-          nextAirDate: nextEpAirDate,
-          ts: Date.now()
-        }));
+    if (tmdbEpisodes.length > 0) {
+      const now = Date.now();
+      const validEps = tmdbEpisodes.filter(e => e.air_date);
+      // Filter for Netflix Simulcast episodes (episode_number >= 1201)
+      const simulcastEps = validEps.filter(e => e.episode_number >= 1201);
+      
+      if (simulcastEps.length > 0) {
+        const aired = [];
+        const upcoming = [];
+        
+        simulcastEps.forEach(e => {
+          // Release time is 4:30 PM IST (GMT+05:30) on the air date specifies
+          const releaseTime = new Date(`${e.air_date}T16:30:00+05:30`).getTime();
+          if (now >= releaseTime) {
+            aired.push(e);
+          } else {
+            upcoming.push(e);
+          }
+        });
+        
+        // Latest aired episode has the highest episode_number in aired list
+        if (aired.length > 0) {
+          aired.sort((a, b) => b.episode_number - a.episode_number);
+          const latest = aired[0];
+          latestEpNum = latest.episode_number;
+          latestEpTitle = (latest.name || `Episode ${latestEpNum}`).replace(/\s*\(tentative\s*title\)/gi, '').replace(/\s*\(tentative\)/gi, '');
+          latestEpStill = latest.still_path || null;
+          const airDate = new Date(`${latest.air_date}T12:00:00`);
+          latestEpDate = `AIRED ${airDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}`.toUpperCase();
+        }
+        
+        // Next upcoming episode has the lowest episode_number in upcoming list
+        if (upcoming.length > 0) {
+          upcoming.sort((a, b) => a.episode_number - b.episode_number);
+          const next = upcoming[0];
+          nextEpNum = next.episode_number;
+          nextEpTitle = (next.name || `Episode ${nextEpNum}`).replace(/\s*\(tentative\s*title\)/gi, '').replace(/\s*\(tentative\)/gi, '');
+          nextEpStill = next.still_path || null;
+          const airDate = new Date(`${next.air_date}T12:00:00`);
+          nextEpDate = `AIRS ${airDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}`.toUpperCase();
+          nextEpAirDate = next.air_date;
+        } else {
+          // If no upcoming episode is found in TMDB data
+          nextEpNum = latestEpNum + 1;
+          nextEpTitle = "Next Episode";
+          nextEpDate = "AIRS SATURDAY";
+          nextEpStill = null;
+          nextEpAirDate = null;
+        }
       }
     }
   } catch (err) {
-    console.error("Error supplementing latest Netflix episode from TMDB:", err);
+    console.error("Error updating Netflix latest card from TMDB Season 1:", err);
   }
 
   // Update UI Elements for Latest
@@ -688,7 +720,15 @@ async function updateNetflixLatestCard() {
   document.querySelectorAll('.netflix-latest-bg-num').forEach(el => el.textContent = latestEpNum);
   if (latestEpTitle) titleTexts.forEach(el => el.textContent = latestEpTitle);
   if (latestEpDate) latestSubtitles.forEach(el => el.textContent = latestEpDate);
-  if (latestEpStill) cardImgs.forEach(el => el.style.backgroundImage = `url('https://image.tmdb.org/t/p/w780${latestEpStill}')`);
+  
+  if (latestEpStill) {
+    const stillUrl = (latestEpStill.startsWith('http') || latestEpStill.startsWith('data:')) 
+      ? latestEpStill 
+      : `https://image.tmdb.org/t/p/w780${latestEpStill}`;
+    cardImgs.forEach(el => el.style.backgroundImage = `url('${stillUrl}')`);
+  } else {
+    cardImgs.forEach(el => el.style.backgroundImage = 'none');
+  }
   
   // Update UI Elements for Next
   const nextTitleEps = document.querySelectorAll('.netflix-next-title-ep');
@@ -701,8 +741,15 @@ async function updateNetflixLatestCard() {
   document.querySelectorAll('.netflix-next-bg-num').forEach(el => el.textContent = nextEpNum);
   if (nextEpTitle) nextTitleTexts.forEach(el => el.textContent = nextEpTitle);
   if (nextEpDate) nextSubtitles.forEach(el => el.textContent = nextEpDate);
-  const nextUrl = nextEpStill ? `url('https://image.tmdb.org/t/p/w780${nextEpStill}')` : `url('${IMG.conan8}')`;
-  nextImgs.forEach(el => el.style.backgroundImage = nextUrl);
+  
+  if (nextEpStill) {
+    const stillUrl = (nextEpStill.startsWith('http') || nextEpStill.startsWith('data:')) 
+      ? nextEpStill 
+      : `https://image.tmdb.org/t/p/w780${nextEpStill}`;
+    nextImgs.forEach(el => el.style.backgroundImage = `url('${stillUrl}')`);
+  } else {
+    nextImgs.forEach(el => el.style.backgroundImage = 'none');
+  }
 
   // Update countdown attribute
   const cd = document.getElementById('netflix-upcoming-countdown');
@@ -1554,7 +1601,7 @@ function renderHome() {
           
           <!-- Card 1: Netflix India Simulcast -->
           <div class="latest-cinematic-card desktop-card" data-platform="netflix" onclick="window.open('https://www.netflix.com/title/80090370', '_blank', 'noopener')">
-            <div class="lcc-img netflix-latest-img" style="background-image:url('${window.optimizeImage('https://image.tmdb.org/t/p/w780/hlOn0BETlASlpLThKu2gXn9ae1H.jpg')}')"></div>
+            <div class="lcc-img netflix-latest-img"></div>
             <div class="lcc-overlay"></div>
             <div class="lcc-bg-number netflix-latest-bg-num">1201</div>
             <div class="lcc-top-bar">
@@ -1580,13 +1627,13 @@ function renderHome() {
             </div>
             <div class="mbc-image-wrapper">
               <div class="mbc-gradient-mask"></div>
-              <div class="mbc-image netflix-latest-img" style="background-image:url('${window.optimizeImage('https://image.tmdb.org/t/p/w780/hlOn0BETlASlpLThKu2gXn9ae1H.jpg')}'); background-size: cover; background-position: center;"></div>
+              <div class="mbc-image netflix-latest-img" style="background-size: cover; background-position: center;"></div>
             </div>
           </div>
 
           <!-- Card 2: Upcoming Netflix Episode -->
           <div class="latest-cinematic-card desktop-card" data-platform="netflix" onclick="window.location.hash='#guides/simulcast'">
-            <div class="lcc-img netflix-next-img" style="background-image:url('${IMG.conan8}')"></div>
+            <div class="lcc-img netflix-next-img"></div>
             <div class="lcc-overlay"></div>
             <div class="lcc-bg-number netflix-next-bg-num">1202</div>
             <div class="lcc-top-bar">
@@ -1612,7 +1659,7 @@ function renderHome() {
             </div>
             <div class="mbc-image-wrapper">
               <div class="mbc-gradient-mask"></div>
-              <div class="mbc-image netflix-next-img" style="background-image: url('${IMG.conan8}'); background-size: cover; background-position: center 20%;"></div>
+              <div class="mbc-image netflix-next-img" style="background-size: cover; background-position: center 20%;"></div>
             </div>
           </div>
 
@@ -2164,8 +2211,8 @@ function initNetflixCountdown() {
   const rawAired = cd.getAttribute('data-aired');
   if (!rawAired) return;
 
-  // Airs Saturday 5:00 PM IST (GMT+5:30)
-  const airTime = new Date(`${rawAired}T17:00:00+05:30`).getTime();
+  // Airs Saturday 4:30 PM IST (GMT+5:30)
+  const airTime = new Date(`${rawAired}T16:30:00+05:30`).getTime();
 
   if (netflixTimer) clearInterval(netflixTimer);
 
@@ -2370,12 +2417,15 @@ function initHeroCarousel() {
   HERO_SLIDES.forEach((slide, i) => {
     const el = document.createElement('div');
     el.className = 'hero-slide' + (i === 0 ? ' active slide-reset' : '');
+    
+    const imgFit = (slide.imgMode === 'contain-right' || slide.imgMode === 'contain') ? 'contain' : 'cover';
+    const imgPos = slide.bgPosition || 'center center';
+    const hasRightGrad = (slide.imgMode === 'contain-right') ? '<div class="hero-slide-img-right-grad"></div>' : '';
+
     el.innerHTML = `
-      ${slide.imgMode === 'contain-right'
-        ? `<div class="hero-slide-bg" style="background-image:url('${window.optimizeImage(slide.img)}');background-color:${slide.bgColor};background-size:cover;background-position:center center"></div>
-      <img class="hero-slide-img-right" src="${window.optimizeImage(slide.img)}" alt="" draggable="false" decoding="async" ${i === 0 ? 'fetchpriority="high"' : 'loading="lazy"'}>
-      <div class="hero-slide-img-right-grad"></div>`
-        : `<div class="hero-slide-bg" style="background-image:url('${window.optimizeImage(slide.img)}');background-color:${slide.bgColor};background-position:${slide.bgPosition || 'center 20%'};background-size:cover"></div>`}
+      <div class="hero-slide-bg-solid" style="background: radial-gradient(circle at 20% 50%, ${slide.accent}14 0%, #07070f 70%)"></div>
+      <img class="hero-slide-img-right" style="object-fit:${imgFit}; object-position:${imgPos};" src="${window.optimizeImage(slide.img)}" alt="" draggable="false" decoding="async" ${i === 0 ? 'fetchpriority="high"' : 'loading="lazy"'}>
+      ${hasRightGrad}
       <div class="hero-slide-content">
         <div class="hero-tag" style="--accent:${slide.accent};color:${slide.accent};border-color:${slide.accent}">
           <span class="hero-emoji">${slide.emoji}</span>${slide.tag}
@@ -7299,36 +7349,58 @@ function getCalendarEventsForDate(d) {
     });
   }
 
-  // ── 3. Netflix Season 31 weekly Saturday simulcast (India premiere May 23, 2026) ─
-  // Ep 1201 premiered on May 23. From May 30 (Ep 1202) onwards, episodes air on the same day as Japan.
-  if (dayOfWeek === 6 && dateObj >= new Date(2026, 4, 23)) {
-    let simulcastEpStr = null;
-    if (dateStr === '2026-05-23') {
-      // Hardcode ep 1201 for May 23 launch
-      const ep1201 = (typeof EPISODES !== 'undefined' ? EPISODES : []).find(e => e.n === 1201);
-      if (ep1201) simulcastEpStr = ep1201.aired;
-    } else if (dateStr >= '2026-05-30') {
-      // Simulcast is same day as Japan air date
-      simulcastEpStr = dateStr;
-    }
-
-    if (simulcastEpStr) {
-      const catalogedEp = (typeof EPISODES !== 'undefined' ? EPISODES : []).find(e => e.aired === simulcastEpStr && e.season === 'S31');
-      if (catalogedEp) {
-        const meta = window.EPISODE_META && window.EPISODE_META.get(catalogedEp.n);
-        const epImg = (meta && meta.still) || IMG.ep96;
-        const epDesc = (meta && meta.overview) || 'Season 31 simulcast on Netflix India. Japanese audio with English subtitles.';
+  // ── 3. Netflix Season 31 weekly Saturday simulcast (Totally TMDB Dependent) ─
+  let netflixEventAdded = false;
+  try {
+    const cached = JSON.parse(localStorage.getItem('latest_netflix_ep_v9') || 'null');
+    if (cached && Array.isArray(cached.episodes)) {
+      const tmdbEp = cached.episodes.find(e => e.air_date === dateStr && e.episode_number >= 1201);
+      if (tmdbEp) {
         events.push({
           type: 'netflix',
           badgeClass: 'cal-event-type-badge--netflix',
           badgeName: 'Netflix',
           time: '4:30 PM IST',
-          title: `Ep ${catalogedEp.n}: "${catalogedEp.title}"`,
-          desc: epDesc,
+          title: `Ep ${tmdbEp.episode_number}: "${tmdbEp.name || `Episode ${tmdbEp.episode_number}`}"`,
+          desc: tmdbEp.overview || 'Season 31 simulcast on Netflix India. Japanese audio with English subtitles.',
           url: 'https://www.netflix.com/title/80090370',
-          image: epImg,
-          episodeNumber: catalogedEp.n
+          image: tmdbEp.still_path ? `https://image.tmdb.org/t/p/w780${tmdbEp.still_path}` : IMG.ep96,
+          episodeNumber: tmdbEp.episode_number
         });
+        netflixEventAdded = true;
+      }
+    }
+  } catch (_) {}
+
+  // Fallback to local DB cataloged scheduling if not in TMDB cache
+  if (!netflixEventAdded) {
+    if (dayOfWeek === 6 && dateObj >= new Date(2026, 4, 23)) {
+      let simulcastEpStr = null;
+      if (dateStr === '2026-05-23') {
+        const ep1201 = (typeof EPISODES !== 'undefined' ? EPISODES : []).find(e => e.n === 1201);
+        if (ep1201) simulcastEpStr = ep1201.aired;
+      } else if (dateStr >= '2026-05-30') {
+        simulcastEpStr = dateStr;
+      }
+
+      if (simulcastEpStr) {
+        const catalogedEp = (typeof EPISODES !== 'undefined' ? EPISODES : []).find(e => e.aired === simulcastEpStr && e.season === 'S31');
+        if (catalogedEp) {
+          const meta = window.EPISODE_META && window.EPISODE_META.get(catalogedEp.n);
+          const epImg = (meta && meta.still) || IMG.ep96;
+          const epDesc = (meta && meta.overview) || 'Season 31 simulcast on Netflix India. Japanese audio with English subtitles.';
+          events.push({
+            type: 'netflix',
+            badgeClass: 'cal-event-type-badge--netflix',
+            badgeName: 'Netflix',
+            time: '4:30 PM IST',
+            title: `Ep ${catalogedEp.n}: "${catalogedEp.title}"`,
+            desc: epDesc,
+            url: 'https://www.netflix.com/title/80090370',
+            image: epImg,
+            episodeNumber: catalogedEp.n
+          });
+        }
       }
     }
   }
@@ -7788,36 +7860,58 @@ function renderCalendarPage() {
       });
     }
 
-    // ── 3. Netflix Season 31 weekly Saturday simulcast (India premiere May 23, 2026) ─
-    // Ep 1201 premiered on May 23. From May 30 (Ep 1202) onwards, episodes air on the same day as Japan.
-    if (dayOfWeek === 6 && d >= new Date(2026, 4, 23)) {
-      let simulcastEpStr = null;
-      if (dateStr === '2026-05-23') {
-        // Hardcode ep 1201 for May 23 launch
-        const ep1201 = (typeof EPISODES !== 'undefined' ? EPISODES : []).find(e => e.n === 1201);
-        if (ep1201) simulcastEpStr = ep1201.aired;
-      } else if (dateStr >= '2026-05-30') {
-        // Simulcast is same day as Japan air date
-        simulcastEpStr = dateStr;
-      }
-
-      if (simulcastEpStr) {
-        const catalogedEp = (typeof EPISODES !== 'undefined' ? EPISODES : []).find(e => e.aired === simulcastEpStr && e.season === 'S31');
-        if (catalogedEp) {
-          const meta = window.EPISODE_META && window.EPISODE_META.get(catalogedEp.n);
-          const epImg = (meta && meta.still) || IMG.ep96;
-          const epDesc = (meta && meta.overview) || 'Season 31 simulcast on Netflix India. Japanese audio with English subtitles.';
+    // ── 3. Netflix Season 31 weekly Saturday simulcast (Totally TMDB Dependent) ─
+    let netflixEventAdded = false;
+    try {
+      const cached = JSON.parse(localStorage.getItem('latest_netflix_ep_v9') || 'null');
+      if (cached && Array.isArray(cached.episodes)) {
+        const tmdbEp = cached.episodes.find(e => e.air_date === dateStr && e.episode_number >= 1201);
+        if (tmdbEp) {
           events.push({
             type: 'netflix',
             badgeClass: 'cal-event-type-badge--netflix',
             badgeName: 'Netflix',
             time: '4:30 PM IST',
-            title: `Ep ${catalogedEp.n}: "${catalogedEp.title}"`,
-            desc: epDesc,
+            title: `Ep ${tmdbEp.episode_number}: "${tmdbEp.name || `Episode ${tmdbEp.episode_number}`}"`,
+            desc: tmdbEp.overview || 'Season 31 simulcast on Netflix India. Japanese audio with English subtitles.',
             url: 'https://www.netflix.com/title/80090370',
-            image: epImg,
-            episodeNumber: catalogedEp.n
+            image: tmdbEp.still_path ? `https://image.tmdb.org/t/p/w780${tmdbEp.still_path}` : IMG.ep96,
+            episodeNumber: tmdbEp.episode_number
           });
+          netflixEventAdded = true;
+        }
+      }
+    } catch (_) {}
+
+    // Fallback to local DB cataloged scheduling if not in TMDB cache
+    if (!netflixEventAdded) {
+      if (dayOfWeek === 6 && d >= new Date(2026, 4, 23)) {
+        let simulcastEpStr = null;
+        if (dateStr === '2026-05-23') {
+          const ep1201 = (typeof EPISODES !== 'undefined' ? EPISODES : []).find(e => e.n === 1201);
+          if (ep1201) simulcastEpStr = ep1201.aired;
+        } else if (dateStr >= '2026-05-30') {
+          simulcastEpStr = dateStr;
+        }
+
+        if (simulcastEpStr) {
+          const catalogedEp = (typeof EPISODES !== 'undefined' ? EPISODES : []).find(e => e.aired === simulcastEpStr && e.season === 'S31');
+          if (catalogedEp) {
+            const meta = window.EPISODE_META && window.EPISODE_META.get(catalogedEp.n);
+            const epImg = (meta && meta.still) || IMG.ep96;
+            const epDesc = (meta && meta.overview) || 'Season 31 simulcast on Netflix India. Japanese audio with English subtitles.';
+            events.push({
+              type: 'netflix',
+              badgeClass: 'cal-event-type-badge--netflix',
+              badgeName: 'Netflix',
+              time: '4:30 PM IST',
+              title: `Ep ${catalogedEp.n}: "${catalogedEp.title}"`,
+              desc: epDesc,
+              url: 'https://www.netflix.com/title/80090370',
+              image: epImg,
+              episodeNumber: catalogedEp.n
+            });
+          }
         }
       }
     }
@@ -8377,6 +8471,28 @@ function renderCalendarPage() {
   // Initial Load
   refreshView();
   updateDossier(selectedDate);
+
+  // Prefetch TMDB data to update local cache for Season 31 weekly release calendar
+  (async function prefetchTMDBForCalendar() {
+    const CACHE_KEY = 'latest_netflix_ep_v9';
+    try {
+      const response = await fetch(`https://api.themoviedb.org/3/tv/${TMDB_TV_ID}/season/1?api_key=${TMDB_KEY}&language=en-US`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data && Array.isArray(data.episodes)) {
+          localStorage.setItem(CACHE_KEY, JSON.stringify({
+            episodes: data.episodes,
+            ts: Date.now()
+          }));
+          // Refresh the calendar view with the updated TMDB episodes
+          refreshView();
+          updateDossier(selectedDate);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to prefetch TMDB for calendar:", e);
+    }
+  })();
 }
 
 // ─── LANGUAGES PAGE ──────────────────────────────────
