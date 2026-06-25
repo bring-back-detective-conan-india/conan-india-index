@@ -7351,6 +7351,20 @@ function getCalendarEventsForDate(d) {
 
   // ── 3. Netflix Season 31 weekly Saturday simulcast (Totally TMDB Dependent) ─
   let netflixEventAdded = false;
+  if (dateStr === '2026-06-06') {
+    events.push({
+      type: 'netflix',
+      badgeClass: 'cal-event-type-badge--netflix',
+      badgeName: 'Netflix',
+      time: '4:30 PM IST',
+      title: `TV Special: "The Perfect Answer"`,
+      desc: `Detective Conan special crossover episode "The Gold-Star Answer" (also known as "The Perfect Answer") premieres on Netflix India. Japanese audio with English subtitles.`,
+      url: 'https://www.netflix.com/title/80090370',
+      image: 'https://image.tmdb.org/t/p/w780/mWmbcVafCd83FkfqmukISVdrkzx.jpg',
+      episodeNumber: 'Special'
+    });
+    netflixEventAdded = true;
+  }
   try {
     const cached = JSON.parse(localStorage.getItem('latest_netflix_ep_v9') || 'null');
     if (cached && Array.isArray(cached.episodes)) {
@@ -7862,6 +7876,20 @@ function renderCalendarPage() {
 
     // ── 3. Netflix Season 31 weekly Saturday simulcast (Totally TMDB Dependent) ─
     let netflixEventAdded = false;
+    if (dateStr === '2026-06-06') {
+      events.push({
+        type: 'netflix',
+        badgeClass: 'cal-event-type-badge--netflix',
+        badgeName: 'Netflix',
+        time: '4:30 PM IST',
+        title: `TV Special: "The Perfect Answer"`,
+        desc: `Detective Conan special crossover episode "The Gold-Star Answer" (also known as "The Perfect Answer") premieres on Netflix India. Japanese audio with English subtitles.`,
+        url: 'https://www.netflix.com/title/80090370',
+        image: 'https://image.tmdb.org/t/p/w780/mWmbcVafCd83FkfqmukISVdrkzx.jpg',
+        episodeNumber: 'Special'
+      });
+      netflixEventAdded = true;
+    }
     try {
       const cached = JSON.parse(localStorage.getItem('latest_netflix_ep_v9') || 'null');
       if (cached && Array.isArray(cached.episodes)) {
