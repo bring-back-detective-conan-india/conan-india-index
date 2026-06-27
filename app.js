@@ -573,9 +573,9 @@ async function updateNetflixLatestCard() {
 
   // Default fallback values computed dynamically if TMDB fails
   // These variables are also updated by scripts/auto-update.js during server sync
-  let latestEpNum = 1204; // Default fallback
-  let nextEpNum = 1205;
-  let latestEpTitle = "Who Kidnapped Conan and Azusa? (1)";
+  let latestEpNum = 1206; // Default fallback
+  let nextEpNum = 1207;
+  let latestEpTitle = "The Man Who Came Falling Down (page does not exist)";
   let latestEpStill = "/z5ZR3Bmzq9lfNSPLhOLvQ09cUT8.jpg";
   let latestEpDate = "NOW STREAMING";
   let nextEpAirDate = null;
