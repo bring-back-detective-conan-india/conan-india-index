@@ -110,7 +110,13 @@ async function updateNetflixEpisodes() {
         // Title cell
         const titleCell = getTdContent(colIndices.title);
         const titleMatch = titleCell.match(/title="([^"]*)"/);
-        const title = titleMatch ? titleMatch[1] : titleCell.replace(/<[^>]*>/g, '').trim();
+        const rawTitle = titleMatch ? titleMatch[1] : titleCell.replace(/<[^>]*>/g, '').trim();
+        // Strip wiki red-link artifacts (e.g. "(page does not exist)")
+        const title = rawTitle
+          .replace(/\s*\(tentative\s*title\)/gi, '')
+          .replace(/\s*\(tentative\)/gi, '')
+          .replace(/\s*\(page\s+does\s+not\s+exist\)/gi, '')
+          .trim();
         
         // Airdate cell
         const dateRaw = getTdContent(colIndices.aired).replace(/<[^>]*>/g, '').trim();
@@ -263,25 +269,54 @@ async function updateNetflixEpisodes() {
       `let latestEpNum = ${newMaxEpNum}; // Default fallback`
     );
 
+    // nextEpNum: only set if there's a confirmed upcoming episode in episodes.js
+    const upcomingEps = EPISODES.filter(e => e.season === 'S31' && e.aired && e.aired > new Date().toISOString().split('T')[0]);
+    upcomingEps.sort((a, b) => a.n - b.n);
+    const nextConfirmedEp = upcomingEps[0] || null;
+    const nextEpNumVal = nextConfirmedEp ? nextConfirmedEp.n : 'null';
     appContent = appContent.replace(
-      /let nextEpNum = \d+;/,
-      `let nextEpNum = ${newMaxEpNum + 1};`
+      /let nextEpNum = [^;]+;/,
+      `let nextEpNum = ${nextEpNumVal};`
     );
 
+    const cleanTitle = (EPISODES[EPISODES.length - 1].title || '')
+      .replace(/\s*\(tentative\s*title\)/gi, '')
+      .replace(/\s*\(tentative\)/gi, '')
+      .replace(/\s*\(page\s+does\s+not\s+exist\)/gi, '')
+      .replace(/"/g, '\\"');
     appContent = appContent.replace(
       /let latestEpTitle = ".*";/,
-      `let latestEpTitle = "${EPISODES[EPISODES.length - 1].title.replace(/"/g, '\\"')}";`
+      `let latestEpTitle = "${cleanTitle}";`
     );
     
     // Retrieve still backdrop from TMDB map for the latest bumped episode
     const latestStillObj = tmdbMap.get(newMaxEpNum);
     const latestStillPath = latestStillObj ? latestStillObj.still_path : null;
-    if (latestStillPath) {
-      appContent = appContent.replace(
-        /let latestEpStill = ".*";/,
-        `let latestEpStill = "${latestStillPath}";`
-      );
-    }
+    appContent = appContent.replace(
+      /let latestEpStill = [^;\n]+;/,
+      `let latestEpStill = ${latestStillPath ? `"${latestStillPath}"` : 'null'};`
+    );
+
+    // Clear out stale next episode defaults
+    const nextTitle = nextConfirmedEp
+      ? (nextConfirmedEp.title || '')
+          .replace(/\s*\(tentative\s*title\)/gi, '')
+          .replace(/\s*\(tentative\)/gi, '')
+          .replace(/\s*\(page\s+does\s+not\s+exist\)/gi, '')
+          .replace(/"/g, '\\"')
+      : null;
+    appContent = appContent.replace(
+      /let nextEpTitle = [^;\n]+;/,
+      `let nextEpTitle = ${nextTitle ? `"${nextTitle}"` : 'null'};`
+    );
+    appContent = appContent.replace(
+      /let nextEpDate = [^;\n]+;/,
+      `let nextEpDate = null;`
+    );
+    appContent = appContent.replace(
+      /let nextEpStill = [^;\n]+;/,
+      `let nextEpStill = null;`
+    );
 
     fs.writeFileSync(appFilePath, appContent, 'utf8');
     console.log(`Successfully bumped app.js default fallback to Ep ${newMaxEpNum}!`);
