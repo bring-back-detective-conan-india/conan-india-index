@@ -189,7 +189,10 @@ async function updateNetflixEpisodes() {
 
     if (tmdbEp) {
       // Primary: TMDB API
-      title = tmdbEp.name || `Episode ${currentEpNum}`;
+      title = (tmdbEp.name || `Episode ${currentEpNum}`)
+        .replace(/\s*\(tentative\s*title\)/gi, '')
+        .replace(/\s*\(tentative\)/gi, '')
+        .replace(/\s*\(page\s+does\s+not\s+exist\)/gi, '');
       airedDate = tmdbEp.air_date;
       srcLabel = wikiEp ? wikiEp.src : "TV Original";
     } else if (wikiEp) {

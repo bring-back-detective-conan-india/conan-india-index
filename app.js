@@ -603,20 +603,24 @@ async function updateNetflixLatestCard() {
       latestEpDate = `AIRED ${d.toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}`.toUpperCase();
     }
 
+    let hasUpcoming = false;
     // Filter S31 episodes that are upcoming
     const upcomingS31 = EPISODES.filter(e => e.season === 'S31' && e.aired && e.aired > todayStr);
     if (upcomingS31.length > 0) {
       upcomingS31.sort((a, b) => a.n - b.n);
       const localNext = upcomingS31[0];
       nextEpNum = localNext.n;
-      nextEpTitle = localNext.title.replace(/\s*\(tentative\s*title\)/gi, '').replace(/\s*\(tentative\)/gi, '');
+      nextEpTitle = localNext.title.replace(/\s*\(tentative\s*title\)/gi, '').replace(/\s*\(tentative\)/gi, '').replace(/\s*\(page\s+does\s+not\s+exist\)/gi, '');
       const airDate = new Date(localNext.aired + 'T12:00:00');
       nextEpDate = `AIRS ${airDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}`.toUpperCase();
       nextEpAirDate = localNext.aired;
+      hasUpcoming = true;
     } else {
-      nextEpNum = latestEpNum + 1;
-      nextEpTitle = "Next Episode";
-      nextEpDate = "AIRS SATURDAY";
+      nextEpNum = null;
+      nextEpTitle = null;
+      nextEpDate = null;
+      nextEpAirDate = null;
+      hasUpcoming = false;
     }
 
     // Attempt to pull high-res image stills from loaded metadata map
@@ -624,8 +628,10 @@ async function updateNetflixLatestCard() {
       const latestMeta = window.EPISODE_META.get(latestEpNum);
       if (latestMeta && latestMeta.still) latestEpStill = latestMeta.still;
 
-      const nextMeta = window.EPISODE_META.get(nextEpNum);
-      if (nextMeta && nextMeta.still) nextEpStill = nextMeta.still;
+      if (hasUpcoming && nextEpNum) {
+        const nextMeta = window.EPISODE_META.get(nextEpNum);
+        if (nextMeta && nextMeta.still) nextEpStill = nextMeta.still;
+      }
     }
   }
 
@@ -677,7 +683,10 @@ async function updateNetflixLatestCard() {
           aired.sort((a, b) => b.episode_number - a.episode_number);
           const latest = aired[0];
           latestEpNum = latest.episode_number;
-          latestEpTitle = (latest.name || `Episode ${latestEpNum}`).replace(/\s*\(tentative\s*title\)/gi, '').replace(/\s*\(tentative\)/gi, '');
+          latestEpTitle = (latest.name || `Episode ${latestEpNum}`)
+            .replace(/\s*\(tentative\s*title\)/gi, '')
+            .replace(/\s*\(tentative\)/gi, '')
+            .replace(/\s*\(page\s+does\s+not\s+exist\)/gi, '');
           latestEpStill = latest.still_path || null;
           const airDate = new Date(`${latest.air_date}T12:00:00`);
           latestEpDate = `AIRED ${airDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}`.toUpperCase();
@@ -688,18 +697,24 @@ async function updateNetflixLatestCard() {
           upcoming.sort((a, b) => a.episode_number - b.episode_number);
           const next = upcoming[0];
           nextEpNum = next.episode_number;
-          nextEpTitle = (next.name || `Episode ${nextEpNum}`).replace(/\s*\(tentative\s*title\)/gi, '').replace(/\s*\(tentative\)/gi, '');
+          nextEpTitle = (next.name || `Episode ${nextEpNum}`)
+            .replace(/\s*\(tentative\s*title\)/gi, '')
+            .replace(/\s*\(tentative\)/gi, '')
+            .replace(/\s*\(page\s+does\s+not\s+exist\)/gi, '');
           nextEpStill = next.still_path || null;
           const airDate = new Date(`${next.air_date}T12:00:00`);
           nextEpDate = `AIRS ${airDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}`.toUpperCase();
           nextEpAirDate = next.air_date;
+          hasUpcoming = true;
         } else {
-          // If no upcoming episode is found in TMDB data
-          nextEpNum = latestEpNum + 1;
-          nextEpTitle = "Next Episode";
-          nextEpDate = "AIRS SATURDAY";
-          nextEpStill = null;
-          nextEpAirDate = null;
+          // If no upcoming episode is found in TMDB data and not in local fallback
+          if (!hasUpcoming) {
+            nextEpNum = null;
+            nextEpTitle = null;
+            nextEpDate = null;
+            nextEpStill = null;
+            nextEpAirDate = null;
+          }
         }
       }
     }
@@ -731,42 +746,53 @@ async function updateNetflixLatestCard() {
   }
   
   // Update UI Elements for Next
-  const nextTitleEps = document.querySelectorAll('.netflix-next-title-ep');
-  const nextTitleTexts = document.querySelectorAll('.netflix-next-title-text');
-  const nextSubtitles = document.querySelectorAll('.netflix-next-subtitle');
-  const nextImgs = document.querySelectorAll('.netflix-next-img');
+  const nextDesktopCard = document.querySelector('.latest-cinematic-card[onclick*="simulcast"]');
+  const nextMobileCard = document.querySelector('.masked-banner-card[onclick*="simulcast"]');
   
-  nextTitleEps.forEach(el => el.textContent = nextEpNum);
-  document.querySelectorAll('.netflix-next-title-ep-label').forEach(el => el.textContent = nextEpNum);
-  document.querySelectorAll('.netflix-next-bg-num').forEach(el => el.textContent = nextEpNum);
-  if (nextEpTitle) nextTitleTexts.forEach(el => el.textContent = nextEpTitle);
-  if (nextEpDate) nextSubtitles.forEach(el => el.textContent = nextEpDate);
-  
-  if (nextEpStill) {
-    const stillUrl = (nextEpStill.startsWith('http') || nextEpStill.startsWith('data:')) 
-      ? nextEpStill 
-      : `https://image.tmdb.org/t/p/w780${nextEpStill}`;
-    nextImgs.forEach(el => el.style.backgroundImage = `url('${stillUrl}')`);
+  if (nextEpNum === null) {
+    if (nextDesktopCard) nextDesktopCard.style.display = 'none';
+    if (nextMobileCard) nextMobileCard.style.display = 'none';
   } else {
-    nextImgs.forEach(el => el.style.backgroundImage = 'none');
-  }
+    if (nextDesktopCard) nextDesktopCard.style.display = 'flex';
+    if (nextMobileCard) nextMobileCard.style.display = 'flex';
 
-  // Update countdown attribute
-  const cd = document.getElementById('netflix-upcoming-countdown');
-  if (cd) {
-    if (nextEpAirDate) {
-      cd.setAttribute('data-aired', nextEpAirDate);
+    const nextTitleEps = document.querySelectorAll('.netflix-next-title-ep');
+    const nextTitleTexts = document.querySelectorAll('.netflix-next-title-text');
+    const nextSubtitles = document.querySelectorAll('.netflix-next-subtitle');
+    const nextImgs = document.querySelectorAll('.netflix-next-img');
+    
+    nextTitleEps.forEach(el => el.textContent = nextEpNum);
+    document.querySelectorAll('.netflix-next-title-ep-label').forEach(el => el.textContent = nextEpNum);
+    document.querySelectorAll('.netflix-next-bg-num').forEach(el => el.textContent = nextEpNum);
+    if (nextEpTitle) nextTitleTexts.forEach(el => el.textContent = nextEpTitle);
+    if (nextEpDate) nextSubtitles.forEach(el => el.textContent = nextEpDate);
+    
+    if (nextEpStill) {
+      const stillUrl = (nextEpStill.startsWith('http') || nextEpStill.startsWith('data:')) 
+        ? nextEpStill 
+        : `https://image.tmdb.org/t/p/w780${nextEpStill}`;
+      nextImgs.forEach(el => el.style.backgroundImage = `url('${stillUrl}')`);
     } else {
-      // Calculate next Saturday
-      const now = new Date();
-      const nextSat = new Date(now.getTime());
-      nextSat.setDate(now.getDate() + (6 - now.getDay()) % 7);
-      const y = nextSat.getFullYear();
-      const m = String(nextSat.getMonth() + 1).padStart(2, '0');
-      const d = String(nextSat.getDate()).padStart(2, '0');
-      cd.setAttribute('data-aired', `${y}-${m}-${d}`);
+      nextImgs.forEach(el => el.style.backgroundImage = "url('https://imgsrv.crunchyroll.com/cdn-cgi/image/fit=cover,format=auto,quality=50,width=1920/keyart/G6JQVM3ER-backdrop_wide')");
     }
-    initNetflixCountdown();
+
+    // Update countdown attribute
+    const cd = document.getElementById('netflix-upcoming-countdown');
+    if (cd) {
+      if (nextEpAirDate) {
+        cd.setAttribute('data-aired', nextEpAirDate);
+      } else {
+        // Calculate next Saturday
+        const now = new Date();
+        const nextSat = new Date(now.getTime());
+        nextSat.setDate(now.getDate() + (6 - now.getDay()) % 7);
+        const y = nextSat.getFullYear();
+        const m = String(nextSat.getMonth() + 1).padStart(2, '0');
+        const d = String(nextSat.getDate()).padStart(2, '0');
+        cd.setAttribute('data-aired', `${y}-${m}-${d}`);
+      }
+      initNetflixCountdown();
+    }
   }
 }
 
@@ -1640,7 +1666,6 @@ function renderHome() {
               <div class="lcc-logo-badge"><img src="${PLATFORM_LOGOS.netflix}" alt="Netflix" class="lcc-logo-img"></div>
               <span class="lcc-status-tag lcc-status-tag--netflix">Upcoming Simulcast</span>
             </div>
-            <div class="lcc-play-overlay"><div class="lcc-play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>
             <div class="lcc-content">
               <div class="lcc-info-left">
                 <div class="lcc-ep-label" style="font-size: 11px; font-weight: 800; color: #ff4d58; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;">Episode <span class="netflix-next-title-ep-label">1202</span></div>
@@ -7370,15 +7395,25 @@ function getCalendarEventsForDate(d) {
     if (cached && Array.isArray(cached.episodes)) {
       const tmdbEp = cached.episodes.find(e => e.air_date === dateStr && e.episode_number >= 1201);
       if (tmdbEp) {
+        const cleanName = (tmdbEp.name || `Episode ${tmdbEp.episode_number}`)
+          .replace(/\s*\(tentative\s*title\)/gi, '')
+          .replace(/\s*\(tentative\)/gi, '')
+          .replace(/\s*\(page\s+does\s+not\s+exist\)/gi, '');
+        const releaseTime = new Date(`${tmdbEp.air_date}T16:30:00+05:30`).getTime();
+        const isUpcoming = Date.now() < releaseTime;
+        const fallbackImage = isUpcoming 
+          ? 'https://imgsrv.crunchyroll.com/cdn-cgi/image/fit=cover,format=auto,quality=50,width=1920/keyart/G6JQVM3ER-backdrop_wide' 
+          : IMG.ep96;
+
         events.push({
           type: 'netflix',
           badgeClass: 'cal-event-type-badge--netflix',
           badgeName: 'Netflix',
           time: '4:30 PM IST',
-          title: `Ep ${tmdbEp.episode_number}: "${tmdbEp.name || `Episode ${tmdbEp.episode_number}`}"`,
+          title: `Ep ${tmdbEp.episode_number}: "${cleanName}"`,
           desc: tmdbEp.overview || 'Season 31 simulcast on Netflix India. Japanese audio with English subtitles.',
           url: 'https://www.netflix.com/title/80090370',
-          image: tmdbEp.still_path ? `https://image.tmdb.org/t/p/w780${tmdbEp.still_path}` : IMG.ep96,
+          image: tmdbEp.still_path ? `https://image.tmdb.org/t/p/w780${tmdbEp.still_path}` : fallbackImage,
           episodeNumber: tmdbEp.episode_number
         });
         netflixEventAdded = true;
@@ -7895,15 +7930,25 @@ function renderCalendarPage() {
       if (cached && Array.isArray(cached.episodes)) {
         const tmdbEp = cached.episodes.find(e => e.air_date === dateStr && e.episode_number >= 1201);
         if (tmdbEp) {
+          const cleanName = (tmdbEp.name || `Episode ${tmdbEp.episode_number}`)
+            .replace(/\s*\(tentative\s*title\)/gi, '')
+            .replace(/\s*\(tentative\)/gi, '')
+            .replace(/\s*\(page\s+does\s+not\s+exist\)/gi, '');
+          const releaseTime = new Date(`${tmdbEp.air_date}T16:30:00+05:30`).getTime();
+          const isUpcoming = Date.now() < releaseTime;
+          const fallbackImage = isUpcoming 
+            ? 'https://imgsrv.crunchyroll.com/cdn-cgi/image/fit=cover,format=auto,quality=50,width=1920/keyart/G6JQVM3ER-backdrop_wide' 
+            : IMG.ep96;
+
           events.push({
             type: 'netflix',
             badgeClass: 'cal-event-type-badge--netflix',
             badgeName: 'Netflix',
             time: '4:30 PM IST',
-            title: `Ep ${tmdbEp.episode_number}: "${tmdbEp.name || `Episode ${tmdbEp.episode_number}`}"`,
+            title: `Ep ${tmdbEp.episode_number}: "${cleanName}"`,
             desc: tmdbEp.overview || 'Season 31 simulcast on Netflix India. Japanese audio with English subtitles.',
             url: 'https://www.netflix.com/title/80090370',
-            image: tmdbEp.still_path ? `https://image.tmdb.org/t/p/w780${tmdbEp.still_path}` : IMG.ep96,
+            image: tmdbEp.still_path ? `https://image.tmdb.org/t/p/w780${tmdbEp.still_path}` : fallbackImage,
             episodeNumber: tmdbEp.episode_number
           });
           netflixEventAdded = true;
