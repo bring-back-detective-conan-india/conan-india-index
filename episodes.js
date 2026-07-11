@@ -9897,5 +9897,15 @@ const EPISODES = [
     "netflix": null,
     "animetimes": null,
     "src": "TV Original"
+  },
+  {
+    "n": 1207,
+    "title": "The J League Opening Whistle",
+    "season": "S31",
+    "aired": "2026-07-18",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
   }
 ];

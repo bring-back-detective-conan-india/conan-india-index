@@ -573,13 +573,13 @@ async function updateNetflixLatestCard() {
 
   // Default fallback values computed dynamically if TMDB fails
   // These variables are also updated by scripts/auto-update.js during server sync
-  let latestEpNum = 1205; // Default fallback
-  let nextEpNum = null;
-  let latestEpTitle = "Who Kidnapped Conan and Azusa? (2)";
-  let latestEpStill = null;
+  let latestEpNum = 1207; // Default fallback
+  let nextEpNum = 1207;
+  let latestEpTitle = "The J League Opening Whistle";
+  let latestEpStill = "/l2iv4D6u8FUIcEGUF4lqKri0OEU.jpg";
   let latestEpDate = "NOW STREAMING";
   let nextEpAirDate = null;
-  let nextEpTitle = null;
+  let nextEpTitle = "The J League Opening Whistle";
   let nextEpDate = null;
   let nextEpStill = null;
 
