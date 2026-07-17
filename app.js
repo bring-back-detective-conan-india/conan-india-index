@@ -236,6 +236,13 @@ function getMoviePoster(m, fallbackIdx) {
   return window.optimizeImage(getImg(fallbackIdx !== undefined ? fallbackIdx : m.n));
 }
 
+function getMovieBackdrop(m, fallbackIdx) {
+  const cached = window.MOVIE_BACKDROPS && window.MOVIE_BACKDROPS.get(m.id);
+  if (cached) return window.optimizeImage(cached);
+  return window.optimizeImage(getImg(fallbackIdx !== undefined ? fallbackIdx : m.n));
+}
+window.getMovieBackdrop = getMovieBackdrop;
+
 function getPVREventPoster(ev, fallbackIdx) {
   if (ev.poster) return window.optimizeImage(ev.poster); // hardcoded (e.g. JFF)
   if (ev.movieId) {
@@ -582,6 +589,7 @@ async function updateNetflixLatestCard() {
   let nextEpTitle = "The J League Opening Whistle";
   let nextEpDate = null;
   let nextEpStill = null;
+  let hasUpcoming = false; // Declared at function scope so TMDB block can read/write it
 
   // 1. Proactive Local Database Scheduling Calculation (100% Reliable Auto-Rollover Fallback)
   if (typeof EPISODES !== 'undefined' && EPISODES.length > 0) {
@@ -603,7 +611,6 @@ async function updateNetflixLatestCard() {
       latestEpDate = `AIRED ${d.toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}`.toUpperCase();
     }
 
-    let hasUpcoming = false;
     // Filter S31 episodes that are upcoming
     const upcomingS31 = EPISODES.filter(e => e.season === 'S31' && e.aired && e.aired > todayStr);
     if (upcomingS31.length > 0) {
@@ -753,8 +760,10 @@ async function updateNetflixLatestCard() {
     if (nextDesktopCard) nextDesktopCard.style.display = 'none';
     if (nextMobileCard) nextMobileCard.style.display = 'none';
   } else {
-    if (nextDesktopCard) nextDesktopCard.style.display = 'flex';
-    if (nextMobileCard) nextMobileCard.style.display = 'flex';
+    // Remove the inline override so the CSS breakpoint classes (.desktop-card / .mobile-card)
+    // control which card is visible at each screen size instead of forcing flex on both.
+    if (nextDesktopCard) nextDesktopCard.style.removeProperty('display');
+    if (nextMobileCard) nextMobileCard.style.removeProperty('display');
 
     const nextTitleEps = document.querySelectorAll('.netflix-next-title-ep');
     const nextTitleTexts = document.querySelectorAll('.netflix-next-title-text');
@@ -1561,7 +1570,7 @@ function renderHome() {
   home.id = 'home-page';
   home.className = 'page-enter';
 
-  const latestMangaVol = 96;
+  const latestMangaVol = typeof getLatestMangaVolume === 'function' ? getLatestMangaVolume() : 99;
 
   home.innerHTML = `
     <!-- HERO -->
@@ -1849,10 +1858,10 @@ function renderHome() {
           <button class="section-view-all" onclick="Router.navigate('/manga')">View All Volumes &rarr;</button>
         </div>
         <div class="manga-teaser reveal" onclick="Router.navigate('/manga')" style="cursor:pointer">
-          <div class="manga-teaser-img" style="background-image:url('${IMG.manga96}')"></div>
+          <div class="manga-teaser-img" style="background-image:url('${typeof getMangaCover === 'function' ? getMangaCover(latestMangaVol) : IMG.manga96}')"></div>
           <div class="manga-teaser-body">
-            <div class="manga-teaser-label">Case Closed · Viz Media · 96+ Volumes</div>
-            <div class="manga-teaser-title">Volume 96 <em>available now</em></div>
+            <div class="manga-teaser-label">Case Closed · Viz Media · ${latestMangaVol}+ Volumes</div>
+            <div class="manga-teaser-title">Volume ${latestMangaVol} <em>available now</em></div>
             <p class="manga-teaser-desc">The original manga by Gosho Aoyama — over 100 volumes and still ongoing. English editions available on Amazon India and BookWagon.</p>
             <div class="manga-teaser-btns">
               <a href="https://www.amazon.in/dp/B07JK3BJGK?binding=paperback" target="_blank" rel="noopener" class="manga-feature-btn" style="font-size:12px;padding:10px 20px">Amazon India &nearr;</a>
@@ -2206,8 +2215,13 @@ function initMangaCountdown() {
   const cdBg = document.getElementById('manga-countdown-bg');
   if (!cdMob && !cdPc && !cdBg) return;
   
-  // Volume 96 and 97 release date: Nov 13, 2026
-  const releaseDate = new Date('2026-11-13T00:00:00Z').getTime();
+  const nextVol = (typeof getLatestMangaVolume === 'function' ? getLatestMangaVolume() : 99) + 1;
+  const upcoming = typeof UPCOMING_MANGA_RELEASES !== 'undefined'
+    ? UPCOMING_MANGA_RELEASES.find(r => r.vol === nextVol)
+    : null;
+  const releaseDate = upcoming
+    ? new Date(upcoming.date).getTime()
+    : new Date('2026-11-19T00:00:00Z').getTime();
   
   const timer = setInterval(() => {
     const now = new Date().getTime();
@@ -6594,10 +6608,15 @@ async function renderMangaPage() {
   loading.textContent = 'Fetching manga data…';
   app.appendChild(loading);
   // Jikan API — free, no key needed. MAL ID 1 = Detective Conan manga
-  let LATEST_VOL = 96; // Official Viz Media latest volume limit in India
-  const UPCOMING_RELEASES = {
-    97: 'Releasing Nov 13, 2026'
-  };
+  let LATEST_VOL = typeof getLatestMangaVolume === 'function' ? getLatestMangaVolume() : 99;
+  const UPCOMING_RELEASES = {};
+  if (typeof UPCOMING_MANGA_RELEASES !== 'undefined') {
+    UPCOMING_MANGA_RELEASES.forEach(r => {
+      UPCOMING_RELEASES[r.vol] = r.label;
+    });
+  } else {
+    UPCOMING_RELEASES[100] = 'Releasing Nov 19, 2026';
+  }
   let heroCover = IMG.manga96;
   try {
     const res = await fetch('https://api.jikan.moe/v4/manga/1061');
@@ -6622,7 +6641,7 @@ async function renderMangaPage() {
       <div class="movies-page-hero-content">
         <div class="section-eyebrow">Read the Original</div>
         <h1 class="movies-page-title">The <em>Manga</em></h1>
-        <p class="movies-page-sub">Case Closed (Detective Conan) · Viz Media · ${LATEST_VOL} Volumes · Available in India</p>
+        <p class="movies-page-sub">Case Closed (Detective Conan) · Viz Media · ${LATEST_VOL} Volumes Available in India</p>
       </div>
     </section>
     <section class="movies-page-body">
@@ -6653,6 +6672,32 @@ async function renderMangaPage() {
               <h3 class="manga-featured-vol">Volume ${LATEST_VOL}</h3>
               <p class="manga-featured-desc">Conan Edogawa continues his relentless quest to uncover the secrets of the syndicate! Dive into the latest high-stakes cases and mind-bending riddles in VIZ's newest volume.</p>
               <a href="https://www.amazon.in/s?k=case+closed+volume+${LATEST_VOL}+viz+media" target="_blank" rel="noopener" class="manga-featured-buy manga-featured-buy--latest">Buy Vol ${LATEST_VOL} &nearr;</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- OMNIBOOK / 3-IN-1 SECTION -->
+        <div class="manga-omnibook-section reveal" style="margin: 40px 0;">
+          <div class="manga-omnibook-header">
+            <span class="manga-omnibook-eyebrow">New Format</span>
+            <h2 class="manga-omnibook-title">Detective Conan <em>3-in-1 Edition</em></h2>
+            <p class="manga-omnibook-desc">Viz Media's new omnibus format collects three volumes into one, using the original <strong>Detective Conan</strong> title — bringing the series back to its Japanese roots. Each 3-in-1 edition packs triple the mystery into a single volume.</p>
+          </div>
+          <div class="manga-omnibook-grid">
+            <div class="manga-omnibook-card reveal">
+              <div class="manga-omnibook-img-wrap">
+                <div class="manga-omnibook-img-placeholder">
+                  <span class="manga-omnibook-vol-num">3-in-1</span>
+                  <span class="manga-omnibook-vol-label">Vol. 1</span>
+                </div>
+              </div>
+              <div class="manga-omnibook-info">
+                <div class="manga-omnibook-badge manga-omnibook-badge--upcoming">Pre-Order</div>
+                <div class="manga-omnibook-subtitle">Detective Conan (3-in-1 Edition), Vol. 1</div>
+                <div class="manga-omnibook-contains">Contains: Volumes 1 · 2 · 3</div>
+                <div class="manga-omnibook-date">📅 Releasing February 9, 2027</div>
+                <a href="https://www.amazon.in/gp/product/B0H5FWN6BM?ref_=dbs_m_mng_rwt_calw_tkin_0&storeType=ebooks&qid=1781643167&sr=1-4" target="_blank" rel="noopener" class="manga-featured-buy">Pre-Order on Amazon &nearr;</a>
+              </div>
             </div>
           </div>
         </div>

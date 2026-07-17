@@ -23,7 +23,7 @@ const PLATFORMS = [
     note:"Anime Times is a standalone add-on, not included with Prime Video. Check @animetimes_in on Instagram for offers and updates.",
     socialUrl:"https://www.instagram.com/animetimes_in/",
     seriesRange:[1,96],
-    movies:["crossroad","magiciansilver","privateeyesreq","lostship","sunflowers","crimsonlove","fistblue","bridehalloween","blackiron","milliondollar"],
+    movies:["crossroad","magiciansilver","privateeyesreq","lostship","sunflowers","crimsonlove","fistblue"],
     languages:{sub:["English"],dub:["Hindi"]}
   },
   {
@@ -56,7 +56,7 @@ const PLATFORMS = [
     description:"Access Anime Times through Apple TV as a channel add-on subscription (Apple TV+ subscription not required). Watch episodes 1–96 with Hindi dub and English subtitles — same content as Prime Video.",
     note:"Anime Times is a channel add-on on Apple TV — you subscribe to Anime Times through the Apple TV app, not Apple TV+ itself.",
     seriesRange:[1,96],
-    movies:["crossroad","magiciansilver","privateeyesreq","lostship","sunflowers","crimsonlove","fistblue","bridehalloween","blackiron","milliondollar"],
+    movies:["crossroad","magiciansilver","privateeyesreq","lostship","sunflowers","crimsonlove","fistblue"],
     languages:{sub:["English"],dub:["Hindi"]}
   },
   {
@@ -173,24 +173,20 @@ const MOVIES = [
    animetimesUrl:'https://www.primevideo.com/detail/0QPIKJ3SI05KQFII0HYLLZ4G0Q/ref=atv_dp_amz_c_TS5124c5_1_10?jic=16%7CCgNhbGwSA2FsbA%3D%3D',
    desc:"Kaitou Kid steals the legendary Blue Sapphire in Singapore, and Conan gives chase across the city."},
   {n:24, id:"scarletbullet",     tmdb:662638,  title:"The Scarlet Bullet",               year:2021, colors:["#3D0000","#FF1744"],
-   netflix:true,  etv:true,  pvr:false, animetimes:true,  etvwin:false,
+   netflix:true,  etv:true,  pvr:false, animetimes:false, etvwin:false,
    netflixUrl:'https://www.netflix.com/watch/81757619', youtubeId:'iGttkujuIVQ',
-   animetimesUrl:'https://www.primevideo.com/detail/0U8UFG6SAHZFTE2I47SAPXI8R0/ref=atv_dp_amz_c_TS5124c5_1_8?jic=16%7CCgNhbGwSA2FsbA%3D%3D',
    desc:"A wave of kidnappings at Tokyo's World Sports Games leads Conan to a shocking conspiracy."},
   {n:25, id:"bridehalloween",    tmdb:903939,  title:"The Bride of Halloween",           year:2022, colors:["#2A0A3A","#7B1FA2"],
-   netflix:true,  etv:true,  pvr:false, animetimes:true,  etvwin:false,
+   netflix:true,  etv:true,  pvr:false, animetimes:false, etvwin:false,
    netflixUrl:'https://www.netflix.com/watch/81757621', youtubeId:'HTRrw7S7KoI',
-   animetimesUrl:'https://www.primevideo.com/detail/0G9HOB7I3OLR0IKFGEKTHQKY8S/ref=atv_dp_amz_c_TS5124c5_1_9?jic=16%7CCgNhbGwSA2FsbA%3D%3D',
    desc:"Murders targeting police officers' partners put the entire Tokyo MPD on edge before Halloween."},
   {n:26, id:"blackiron",         tmdb:1047041,  title:"Black Iron Submarine",             year:2023, colors:["#0A1A1A","#006064"],
-   netflix:true,  etv:false, pvr:true,  animetimes:true,  etvwin:false,
+   netflix:true,  etv:false, pvr:true,  animetimes:false, etvwin:false,
    netflixUrl:'https://www.netflix.com/watch/81757620', youtubeId:'YKx9O6qsG-E',
-   animetimesUrl:'https://www.primevideo.com/detail/Detective-Conan-The-Movie-Black-Iron-Submarine/0LOT9J6JU00WTVYLY7R7CUWI7K',
    pvrDetail:"Screened at PVR Cinemas India",
    desc:"A remote island prison holding the world's most dangerous criminals — and a plot to free them all."},
   {n:27, id:"milliondollar",     tmdb:1209217,  title:"The Million Dollar Pentagram",     year:2024, colors:["#1A1000","#B8860B"],
-   netflix:false, etv:false, pvr:true,  animetimes:true,  etvwin:false,
-   animetimesUrl:'https://www.primevideo.com/detail/Detective-Conan-The-Movie-The-Million-dollar-Pentagram/0TNZYG7W823R6Q2LSX1JXVAOJQ',
+   netflix:false, etv:false, pvr:true,  animetimes:false, etvwin:false,
    pvrDetail:"Screened at PVR Cinemas India", youtubeId:'AftPh1PFFrs',
    desc:"A golden seal worth millions draws Conan and Heiji to Hokkaido and a web of interconnected murders."},
   {n:28, id:"oneyedflashback",   tmdb:1396965,   title:"The One-Eyed Flashback",           year:2025, colors:["#1A1A2E","#546E7A"],
@@ -857,5 +853,25 @@ const MANGA_ISBNS = {
   81:"9781974721160",  82:"9781974721177",  83:"9781974729098",  84:"9781974729104",
   85:"9781974732678",  86:"9781974732685",  87:"9781974737437",  88:"9781974740574",
   89:"9781974742820",  90:"9781974743384",  91:"9781974746002",  92:"9781974748969",
-  93:"9781974751532",  94:"9781974752393",  95:"1974755401",  96:"1974758532",  97:"1974761843"
+  93:"9781974751532",  94:"9781974752393",  95:"1974755401",  96:"1974758532",  97:"1974761843",
+  98:"9781974762521",  99:"9781974765096", 100:"9781974765461"
 };
+
+const UPCOMING_MANGA_RELEASES = [
+  { vol: 100, date: '2026-11-19T00:00:00Z', label: 'Releasing Nov 19, 2026' }
+];
+
+function getLatestMangaVolume() {
+  const allVols = Object.keys(MANGA_ISBNS).map(Number);
+  const now = Date.now();
+  const unreleased = new Set(
+    UPCOMING_MANGA_RELEASES
+      .filter(r => new Date(r.date).getTime() > now)
+      .map(r => r.vol)
+  );
+  const releasedVols = allVols.filter(v => !unreleased.has(v));
+  return releasedVols.length > 0 ? Math.max(...releasedVols) : 99;
+}
+
+window.UPCOMING_MANGA_RELEASES = UPCOMING_MANGA_RELEASES;
+window.getLatestMangaVolume = getLatestMangaVolume;
