@@ -9917,5 +9917,15 @@ const EPISODES = [
     "netflix": null,
     "animetimes": null,
     "src": "TV Original"
+  },
+  {
+    "n": 1209,
+    "title": "Who&#39;s the Target?",
+    "season": "S31",
+    "aired": "2026-08-01",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
   }
 ];
