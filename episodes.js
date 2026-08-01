@@ -9927,5 +9927,25 @@ const EPISODES = [
     "netflix": null,
     "animetimes": null,
     "src": "TV Original"
+  },
+  {
+    "n": 1210,
+    "title": "The Birdman Contest Bombing Case (Part One)",
+    "season": "S31",
+    "aired": "2026-08-29",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1211,
+    "title": "The Birdman Contest Bombing Case (Part Two)",
+    "season": "S31",
+    "aired": "2026-09-05",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
   }
 ];
