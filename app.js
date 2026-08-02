@@ -586,7 +586,7 @@ async function updateNetflixLatestCard() {
   let latestEpStill = null;
   let latestEpDate = "NOW STREAMING";
   let nextEpAirDate = null;
-  let nextEpTitle = "The Birdman Contest Bombing Case (Part One)";s the Target?";
+  let nextEpTitle = "The Birdman Contest Bombing Case (Part One)";
   let nextEpDate = null;
   let nextEpStill = null;
   let hasUpcoming = false; // Declared at function scope so TMDB block can read/write it

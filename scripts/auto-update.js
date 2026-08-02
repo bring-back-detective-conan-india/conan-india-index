@@ -285,7 +285,7 @@ async function updateNetflixEpisodes() {
       .replace(/\s*\(page\s+does\s+not\s+exist\)/gi, '')
       .replace(/"/g, '\\"');
     appContent = appContent.replace(
-      /let latestEpTitle = ".*";/,
+      /let latestEpTitle = [^\n]+;/,
       `let latestEpTitle = "${cleanTitle}";`
     );
     
@@ -306,7 +306,7 @@ async function updateNetflixEpisodes() {
           .replace(/"/g, '\\"')
       : null;
     appContent = appContent.replace(
-      /let nextEpTitle = [^;\n]+;/,
+      /let nextEpTitle = [^\n]+;/,
       `let nextEpTitle = ${nextTitle ? `"${nextTitle}"` : 'null'};`
     );
     appContent = appContent.replace(
