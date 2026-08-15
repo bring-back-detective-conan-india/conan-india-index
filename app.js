@@ -580,9 +580,9 @@ async function updateNetflixLatestCard() {
 
   // Default fallback values computed dynamically if TMDB fails
   // These variables are also updated by scripts/auto-update.js during server sync
-  let latestEpNum = 1211; // Default fallback
+  let latestEpNum = 1212; // Default fallback
   let nextEpNum = 1210;
-  let latestEpTitle = "The Birdman Contest Bombing Case (Part Two)";
+  let latestEpTitle = "The Birdman Contest Bombing Case (1)";
   let latestEpStill = null;
   let latestEpDate = "NOW STREAMING";
   let nextEpAirDate = null;
