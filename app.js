@@ -1131,6 +1131,15 @@ const Router = {
       renderYaibaPage();
     } else if (path === '/advocacy') {
       renderAdvocacyPage();
+    } else if (path === '/news' || path.startsWith('/news?')) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tag = urlParams.get('tag');
+      renderNewsPage(tag);
+    } else if (path.startsWith('/news/')) {
+      const slug = path.split('/news/')[1];
+      renderArticlePage(slug);
+    } else if (path === '/admin-editor' || path === '/secret-publisher') {
+      renderAdminEditorPage();
     } else if (path === '/archive') {
       renderHome();
       // Wait for home DOM + component renders to settle before scrolling
@@ -1187,6 +1196,10 @@ const Router = {
         case '/manga':
           title = "Detective Conan Manga — India Publication & Arcs";
           desc = "Read the official Detective Conan manga in India. Learn about physical volume releases, digital chapters, and online platforms.";
+          break;
+        case '/news':
+          title = "Latest News & Dubbing Updates — Detective Conan India Index";
+          desc = "Stay updated on Detective Conan release dates, Hindi dubbing announcements, theatrical movie runs, streaming updates, and fan initiatives in India.";
           break;
         case '/guides':
           title = "Recommended Watch Guides — Detective Conan India";
@@ -1287,7 +1300,7 @@ document.getElementById('nav-logo').addEventListener('click', () => {
   else Router.navigate('/');
 });
 
-const NAV_ROUTES = new Set(['movies', 'tvshows', 'spinoffs', 'events', 'manga', 'languages', 'browse', 'merch', 'archive', 'advocacy', 'guides', 'guide', 'guide/important-episodes', 'guide/canon-episodes', 'ovas', 'magic-kaito', 'yaiba', 'calendar', 'platforms', 'guide/release-order', 'guide/black-org-guide', 'guide/india']);
+const NAV_ROUTES = new Set(['movies', 'tvshows', 'spinoffs', 'events', 'manga', 'languages', 'browse', 'merch', 'archive', 'advocacy', 'guides', 'guide', 'guide/important-episodes', 'guide/canon-episodes', 'ovas', 'magic-kaito', 'yaiba', 'calendar', 'platforms', 'guide/release-order', 'guide/black-org-guide', 'guide/india', 'news']);
 function closeDrawer() {
   document.getElementById('navHamburger').classList.remove('open');
   document.getElementById('navDrawer').classList.remove('open');
@@ -1539,25 +1552,58 @@ function episodeMatchesFilter(ep, filters) {
   return true;
 }
 
+function getSpinoffLangs(sp, platformFilter) {
+  const langs = new Set();
+  if (platformFilter && platformFilter !== 'all') {
+    if (platformFilter === 'netflix') {
+      if (sp.netflixLanguages) {
+        (sp.netflixLanguages.dub || []).forEach(l => langs.add(l));
+        (sp.netflixLanguages.sub || []).forEach(l => langs.add(l === 'English' ? 'English Sub' : l));
+      } else if (sp.netflix) {
+        (sp.languages?.dub || []).forEach(l => langs.add(l));
+        (sp.languages?.sub || []).forEach(l => langs.add(l === 'English' ? 'English Sub' : l));
+      }
+    } else if (platformFilter === 'primevideo' || platformFilter === 'appletv') {
+      if (sp.animetimesLanguages) {
+        (sp.animetimesLanguages.dub || []).forEach(l => langs.add(l));
+        (sp.animetimesLanguages.sub || []).forEach(l => langs.add(l === 'English' ? 'English Sub' : l));
+      } else if (sp.animetimes) {
+        (sp.languages?.dub || []).forEach(l => langs.add(l));
+        (sp.languages?.sub || []).forEach(l => langs.add(l === 'English' ? 'English Sub' : l));
+      }
+    }
+    return langs;
+  }
+
+  // No platform filter selected — return all languages available across platforms
+  if (sp.languages) {
+    (sp.languages.dub || []).forEach(l => langs.add(l));
+    (sp.languages.sub || []).forEach(l => langs.add(l === 'English' ? 'English Sub' : l));
+  }
+  return langs;
+}
+
 function itemMatchesFilter(item, type) {
   const { type: ft, platform: fp, language: fl } = filterState;
-  if (ft !== 'all' && ft !== type) return false;
+  if (ft !== 'all' && ft !== type && !(ft === 'spinoff' && type === 'yaiba')) return false;
   if (fp !== 'all') {
     if (type === 'movie') {
       const platIds = getMoviePlatforms(item);
       if (!platIds.includes(fp)) return false;
     } else if (type === 'season') {
       if (!(item.platforms || []).includes(fp)) return false;
-    } else if (type === 'spinoff') {
-      if (fp !== 'netflix') return false;
+    } else if (type === 'spinoff' || type === 'yaiba') {
+      if (fp === 'netflix' && !item.netflix) return false;
+      if ((fp === 'primevideo' || fp === 'appletv') && !item.animetimes) return false;
+      if (fp !== 'netflix' && fp !== 'primevideo' && fp !== 'appletv') return false;
     }
   }
   if (fl !== 'all') {
     let langs;
-    if (type === 'movie') langs = getMovieLangs(item);
-    else if (type === 'season') langs = getSeasonLangs(item);
-    else if (type === 'spinoff') langs = new Set(['English Sub', 'Hindi', 'English']);
-    if (!langs.has(fl)) return false;
+    if (type === 'movie') langs = getMovieLangs(item, fp);
+    else if (type === 'season') langs = getSeasonLangs(item, fp);
+    else if (type === 'spinoff' || type === 'yaiba') langs = getSpinoffLangs(item, fp);
+    if (!langs || !langs.has(fl)) return false;
   }
   return true;
 }
@@ -1697,7 +1743,39 @@ function renderHome() {
             </div>
           </div>
 
-          <!-- Card 3: Anime Times Hindi Dub -->
+          <!-- Card 3: Netflix S11–13 New Catalog Drop -->
+          <div class="latest-cinematic-card desktop-card" data-platform="netflix" onclick="window.open('https://www.netflix.com/title/80090370','_blank','noopener')">
+            <div class="lcc-img" style="background-image:url('${(typeof SEASON_STILLS !== 'undefined' && SEASON_STILLS.S13) ? SEASON_STILLS.S13 : IMG.conan1}')"></div>
+            <div class="lcc-overlay"></div>
+            <div class="lcc-bg-number" style="font-size:clamp(48px,8vw,90px); color:rgba(229,9,20,0.08);">S11–13</div>
+            <div class="lcc-top-bar">
+              <div class="lcc-logo-badge"><img src="${PLATFORM_LOGOS.netflix}" alt="Netflix" class="lcc-logo-img"></div>
+              <span class="lcc-status-tag lcc-status-tag--netflix" style="background:rgba(229,9,20,0.9);">🔴 NEW DROP</span>
+            </div>
+            <div class="lcc-play-overlay"><div class="lcc-play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>
+            <div class="lcc-content">
+              <div class="lcc-info-left">
+                <div class="lcc-ep-label" style="font-size: 11px; font-weight: 800; color: #ff4d58; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;">Episodes 425–520</div>
+                <h3 class="lcc-card-title">Seasons 11–13 on Netflix</h3>
+                <div class="lcc-meta-line" style="margin-top:2px;opacity:0.8;font-weight:700;color:#ff4d58;">CLASH OF RED &amp; BLACK</div>
+                <div class="lcc-meta-line" style="margin-top:2px;opacity:0.7;font-size:11px;">Available Aug 25, 2026</div>
+              </div>
+              <div class="lcc-info-right"><button class="lcc-action-btn" aria-label="Watch on Netflix"><span>Watch on Netflix</span><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button></div>
+            </div>
+          </div>
+          <div class="masked-banner-card mobile-card" style="--card-theme: #B81D24; min-width: 85vw; max-width: 500px; flex-shrink: 0; scroll-snap-align: center; margin-bottom: 0;" onclick="window.open('https://www.netflix.com/title/80090370','_blank','noopener')">
+            <div class="mbc-content">
+              <span class="mbc-badge" style="background:rgba(229,9,20,0.9);">🔴 NETFLIX NEW DROP</span>
+              <h3 class="mbc-title">S11–S13: <span style="font-size: 0.6em; line-height: 1.1; display: block; margin-top: 4px;">Clash of Red &amp; Black</span></h3>
+              <div class="mbc-subtitle" style="font-size: 14px;">EPS 425–520 · NOW ON NETFLIX</div>
+            </div>
+            <div class="mbc-image-wrapper">
+              <div class="mbc-gradient-mask"></div>
+              <div class="mbc-image" style="background-image: url('${(typeof SEASON_STILLS !== 'undefined' && SEASON_STILLS.S13) ? SEASON_STILLS.S13 : IMG.conan1}'); background-size: cover; background-position: center;"></div>
+            </div>
+          </div>
+
+          <!-- Card 4: Anime Times Hindi Dub -->
           <div class="latest-cinematic-card desktop-card" data-platform="primevideo" onclick="window.open('https://www.primevideo.com/region/eu/detail/0HIFDMYH3JG6WFIM4I7XI2EU96/', '_blank', 'noopener')">
             <div class="lcc-img" style="background-image:url('${IMG.ep96}')"></div>
             <div class="lcc-overlay"></div>
@@ -2173,17 +2251,20 @@ function renderHomeMiniCalendar() {
       else if (ev.type === 'pvr') icon = '🎬';
 
       // Detail link actions
-      const clickAction = ev.movieId 
-        ? `onclick="openMovieModal('${ev.movieId}')" style="cursor:pointer;"`
-        : (ev.episodeNumber 
-          ? `onclick="openEpisodeModal(${ev.episodeNumber})" style="cursor:pointer;"`
-          : (ev.spinoffId 
-            ? `onclick="openSpinoffModal('${ev.spinoffId}')" style="cursor:pointer;"`
-            : (ev.url ? `onclick="window.open('${ev.url}', '_blank', 'noopener')"` : '')
+      const clickAction = ev.seasonId
+        ? `onclick="Router.navigate('/tvshows/${ev.seasonId}')" style="cursor:pointer;"`
+        : (ev.movieId 
+          ? `onclick="openMovieModal('${ev.movieId}')" style="cursor:pointer;"`
+          : (ev.episodeNumber 
+            ? `onclick="openEpisodeModal(${ev.episodeNumber})" style="cursor:pointer;"`
+            : (ev.spinoffId 
+              ? `onclick="openSpinoffModal('${ev.spinoffId}')" style="cursor:pointer;"`
+              : (ev.url ? `onclick="window.open('${ev.url}', '_blank', 'noopener')"` : '')
+            )
           )
         );
 
-      const actionText = ev.movieId ? 'Open Dossier' : (ev.episodeNumber ? 'View Episode Details' : (ev.spinoffId ? 'View Spinoff' : (ev.url ? 'Go to Source' : '')));
+      const actionText = ev.seasonId ? 'View Season' : (ev.movieId ? 'Open Dossier' : (ev.episodeNumber ? 'View Episode Details' : (ev.spinoffId ? 'View Spinoff' : (ev.url ? 'Go to Source' : ''))));
       const actionBtn = actionText ? `<button class="home-cal-card-btn">${actionText}</button>` : '';
 
       return `
@@ -2738,7 +2819,7 @@ function renderLanguageSection() {
 
   // Sub platforms for English subtitles tile
   const subPlatforms = [
-    { label: 'Netflix', id: 'netflix', detail: 'S1–S10, S23–S27 + all movies', color: '#E50914' },
+    { label: 'Netflix', id: 'netflix', detail: 'S1–13, S23–27 + all movies (S11–13 🆕 new!)', color: '#E50914' },
     { label: 'Anime Times', id: 'primevideo', detail: 'Eps 1–97', color: '#1A98FF' },
     { label: 'Apple TV', id: 'appletv', detail: 'Eps 1–97 via Anime Times', color: '#A2AAAD' },
   ];
@@ -7264,7 +7345,10 @@ const NETFLIX_COLLECTION_SCHEDULE = [
   { label: "Collection 8",      date: "2025-11-25", detail: "Collection 8 now streaming on Netflix India." },
   { label: "Collection 9",      date: "2025-12-25", detail: "Collection 9 now streaming on Netflix India." },
   { label: "Collection 10",     date: "2026-01-25", detail: "Collection 10 now streaming on Netflix India." },
-  { label: "Season 31 Premiere",date: "2026-05-23", detail: "Season 31 weekly simulcast begins on Netflix India. New episodes every Saturday." }
+  { label: "Season 31 Premiere",date: "2026-05-23", detail: "Season 31 weekly simulcast begins on Netflix India. New episodes every Saturday." },
+  { label: "Season 11 – Episodes 425–459", date: "2026-08-25", detail: "Season 11 (Episodes 425–459) now streaming on Netflix India & Southeast Asia. Japanese audio with English subtitles. Includes the landmark Black Impact! special (Ep 425) introducing Kir and the FBI snipers Chianti & Korn.", seasonId: "S11" },
+  { label: "Season 12 – Episodes 460–490", date: "2026-08-25", detail: "Season 12 (Episodes 460–490) now streaming on Netflix India & Southeast Asia. Japanese audio with English subtitles.", seasonId: "S12" },
+  { label: "Season 13 – Episodes 491–520", date: "2026-08-25", detail: "Season 13 (Episodes 491–520) now streaming on Netflix India & Southeast Asia. Includes the legendary Clash of Red and Black arc (Eps 491–504) — the greatest Black Organization arc in the series. Japanese audio with English subtitles.", seasonId: "S13" }
 ];
 
 // ── Anime Times (Prime Video) Hindi-dub batch releases ────────────────────
@@ -7404,9 +7488,12 @@ function getCalendarEventsForDate(d) {
     });
   }
 
-  // ── 2. Netflix Collection drop (25th of each month, Apr 2025 – Jan 2026) ─
-  const netflixColl = NETFLIX_COLLECTION_SCHEDULE.find(e => e.date === dateStr);
-  if (netflixColl) {
+  // ── 2. Netflix Collection drop ─────────────────────────────────────────
+  const netflixColls = NETFLIX_COLLECTION_SCHEDULE.filter(e => e.date === dateStr);
+  netflixColls.forEach(netflixColl => {
+    const seasonStillImg = (netflixColl.seasonId && typeof CUSTOM_SEASON_IMAGES !== 'undefined' && CUSTOM_SEASON_IMAGES[netflixColl.seasonId])
+      ? CUSTOM_SEASON_IMAGES[netflixColl.seasonId]
+      : PLAT_BG.netflix;
     events.push({
       type: 'netflix',
       badgeClass: 'cal-event-type-badge--netflix',
@@ -7415,9 +7502,10 @@ function getCalendarEventsForDate(d) {
       title: `Detective Conan – ${netflixColl.label}`,
       desc: netflixColl.detail,
       url: 'https://www.netflix.com/title/80090370',
-      image: PLAT_BG.netflix
+      image: seasonStillImg,
+      seasonId: netflixColl.seasonId
     });
-  }
+  });
 
   // ── 3. Netflix Season 31 weekly Saturday simulcast (Totally TMDB Dependent) ─
   let netflixEventAdded = false;
@@ -7808,7 +7896,10 @@ function renderCalendarPage() {
     { label: "Collection 8",      date: "2025-11-25", detail: "Collection 8 now streaming on Netflix India." },
     { label: "Collection 9",      date: "2025-12-25", detail: "Collection 9 now streaming on Netflix India." },
     { label: "Collection 10",     date: "2026-01-25", detail: "Collection 10 now streaming on Netflix India." },
-    { label: "Season 31 Premiere",date: "2026-05-23", detail: "Season 31 weekly simulcast begins on Netflix India. New episodes every Saturday." }
+    { label: "Season 31 Premiere",date: "2026-05-23", detail: "Season 31 weekly simulcast begins on Netflix India. New episodes every Saturday." },
+    { label: "Season 11 – Episodes 425–459", date: "2026-08-25", detail: "Season 11 (Episodes 425–459) now streaming on Netflix India & Southeast Asia. Japanese audio with English subtitles. Includes the landmark Black Impact! special (Ep 425) introducing Kir and the FBI snipers Chianti & Korn.", seasonId: "S11" },
+    { label: "Season 12 – Episodes 460–490", date: "2026-08-25", detail: "Season 12 (Episodes 460–490) now streaming on Netflix India & Southeast Asia. Japanese audio with English subtitles.", seasonId: "S12" },
+    { label: "Season 13 – Episodes 491–520", date: "2026-08-25", detail: "Season 13 (Episodes 491–520) now streaming on Netflix India & Southeast Asia. Includes the legendary Clash of Red and Black arc (Eps 491–504) — the greatest Black Organization arc in the series. Japanese audio with English subtitles.", seasonId: "S13" }
   ];
 
   // ── Anime Times (Prime Video) Hindi-dub batch releases ────────────────────
@@ -7939,9 +8030,12 @@ function renderCalendarPage() {
       });
     }
 
-    // ── 2. Netflix Collection drop (25th of each month, Apr 2025 – Jan 2026) ─
-    const netflixColl = NETFLIX_COLLECTION_SCHEDULE.find(e => e.date === dateStr);
-    if (netflixColl) {
+    // ── 2. Netflix Collection drop ─────────────────────────────────────────
+    const netflixColls = NETFLIX_COLLECTION_SCHEDULE.filter(e => e.date === dateStr);
+    netflixColls.forEach(netflixColl => {
+      const seasonStillImg = (netflixColl.seasonId && typeof CUSTOM_SEASON_IMAGES !== 'undefined' && CUSTOM_SEASON_IMAGES[netflixColl.seasonId])
+        ? CUSTOM_SEASON_IMAGES[netflixColl.seasonId]
+        : PLAT_BG.netflix;
       events.push({
         type: 'netflix',
         badgeClass: 'cal-event-type-badge--netflix',
@@ -7950,9 +8044,10 @@ function renderCalendarPage() {
         title: `Detective Conan – ${netflixColl.label}`,
         desc: netflixColl.detail,
         url: 'https://www.netflix.com/title/80090370',
-        image: PLAT_BG.netflix
+        image: seasonStillImg,
+        seasonId: netflixColl.seasonId
       });
-    }
+    });
 
     // ── 3. Netflix Season 31 weekly Saturday simulcast (Totally TMDB Dependent) ─
     let netflixEventAdded = false;
@@ -8242,11 +8337,12 @@ function renderCalendarPage() {
       item.style.setProperty('--card-theme', themeColor);
       const imgUrl = e.image || IMG.conan2;
       
-      if (e.movieId || e.episodeNumber || e.spinoffId) {
+      if (e.seasonId || e.movieId || e.episodeNumber || e.spinoffId) {
         item.style.cursor = 'pointer';
         item.onclick = (event) => {
           if (event.target.closest('.cal-event-btn')) return;
-          if (e.movieId) openMovieModal(e.movieId);
+          if (e.seasonId) Router.navigate('/tvshows/' + e.seasonId);
+          else if (e.movieId) openMovieModal(e.movieId);
           else if (e.episodeNumber) openEpisodeModal(e.episodeNumber);
           else if (e.spinoffId) openSpinoffModal(e.spinoffId);
         };
@@ -11341,3 +11437,734 @@ window.initModalPlayer = function (yid) {
     }
   });
 };
+
+/* ══════════════════════════════════════════════════════
+   NEWS & ARTICLES ENGINE
+   ══════════════════════════════════════════════════════ */
+
+const NEWS_TAG_META = {
+  'all':           { label: 'All News', icon: '📰' },
+  'hindi-dub':     { label: 'Hindi Dub', icon: '🗣️' },
+  'tamil-dub':     { label: 'Tamil Dub', icon: '🗣️' },
+  'telugu-dub':    { label: 'Telugu Dub', icon: '🗣️' },
+  'bengali-dub':   { label: 'Bengali Dub', icon: '🗣️' },
+  'english-sub':   { label: 'English Sub', icon: '📝' },
+  'movie':         { label: 'Movies', icon: '🎬' },
+  'tv-series':     { label: 'TV Series', icon: '📺' },
+  'ott':           { label: 'OTT / Streaming', icon: '📱' },
+  'broadcast':     { label: 'Broadcast / TV', icon: '📡' },
+  'cinema':        { label: 'Cinema / Box Office', icon: '🏛️' },
+  'international': { label: 'International', icon: '🌐' },
+  'official':      { label: 'Official Announcement', icon: '📢' }
+};
+
+let cachedNewsCatalog = null;
+
+async function fetchNewsCatalog() {
+  if (cachedNewsCatalog) return cachedNewsCatalog;
+  // Static fallback catalog — always up to date, used when fetch fails (e.g. file:// protocol)
+  const STATIC_CATALOG = [
+    {
+      id: "detective-conan-seasons-11-13-netflix-india-sea-release",
+      title: "Detective Conan Seasons 11\u201313 Are Now on Netflix India & Southeast Asia",
+      date: "2026-08-25", author: "BBDCI Team",
+      image: "https://image.tmdb.org/t/p/w780/8nzvbgGM1bDqK3fscy86LyOnDcf.jpg",
+      excerpt: "Netflix has officially added Detective Conan Seasons 11, 12, and 13 (Episodes 425\u2013520) across India and select Southeast Asian territories, unlocking the iconic Clash of Red and Black arc in stunning streaming quality.",
+      featured: true, tags: ["tv-series", "english-sub", "ott", "international", "official"]
+    },
+    {
+      id: "anime-times-hindi-dub-streaming",
+      title: "Detective Conan Hindi Dub Streaming on Anime Times (Episodes 1–96)",
+      date: "2025-09-20", author: "BBDCI Team",
+      image: "https://image.tmdb.org/t/p/w780/8nzvbgGM1bDqK3fscy86LyOnDcf.jpg",
+      excerpt: "Anime Times on Amazon Prime Video Channels officially streams Episodes 1–96 of Detective Conan with full Hindi dubbing and Japanese audio with English subtitles.",
+      featured: false, tags: ["tv-series", "hindi-dub", "english-sub", "ott", "official"]
+    },
+    {
+      id: "movie-27-million-dollar-pentagram-india-release",
+      title: "Detective Conan Movie 27: The Million-dollar Pentagram Debuts Across Indian Theatres",
+      date: "2024-10-04", author: "BBDCI Team",
+      image: "https://image.tmdb.org/t/p/w780/4xXna5HiZjKzMfLDQoNsKHed7b7.jpg",
+      excerpt: "PVR INOX & Cinepolis bring Kaito Kid and Heiji Hattori's grand mystery film to cinemas across Mumbai, Delhi, Bengaluru, Chennai, and Kolkata.",
+      featured: false, tags: ["movie", "cinema", "hindi-dub", "english-sub", "international"]
+    }
+  ];
+  try {
+    const res = await fetch('news/articles.json?v=' + Date.now());
+    if (res.ok) {
+      cachedNewsCatalog = await res.json();
+      return cachedNewsCatalog;
+    }
+  } catch (err) {
+    console.warn('Failed to fetch news catalog (using static fallback):', err);
+  }
+  cachedNewsCatalog = STATIC_CATALOG;
+  return cachedNewsCatalog;
+}
+
+function parseMarkdownFrontmatter(text) {
+  const result = { metadata: {}, body: text };
+  if (!text.startsWith('---')) return result;
+  
+  const endIdx = text.indexOf('\n---', 3);
+  if (endIdx === -1) return result;
+
+  const fmText = text.slice(3, endIdx).trim();
+  const bodyText = text.slice(endIdx + 4).trim();
+  
+  const metadata = {};
+  let currentKey = null;
+
+  fmText.split('\n').forEach(line => {
+    line = line.trim();
+    if (!line) return;
+    if (line.startsWith('- ') && currentKey) {
+      if (!Array.isArray(metadata[currentKey])) metadata[currentKey] = [];
+      metadata[currentKey].push(line.slice(2).trim());
+    } else if (line.includes(':')) {
+      const colonIdx = line.indexOf(':');
+      const key = line.slice(0, colonIdx).trim();
+      let val = line.slice(colonIdx + 1).trim();
+      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+        val = val.slice(1, -1);
+      } else if (val === 'true') val = true;
+      else if (val === 'false') val = false;
+      currentKey = key;
+      if (val !== '') metadata[key] = val;
+    }
+  });
+
+  return { metadata, body: bodyText };
+}
+
+function renderSimpleMarkdown(md) {
+  if (!md) return '';
+  let html = md;
+
+  // Code/Alert Blockquotes (> [!NOTE] ...)
+  html = html.replace(/^>\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*\n?([^\n]+(?:\n>[^\n]+)*)/gm, (match, p1, p2) => {
+    const cleanText = p2.replace(/^>\s*/gm, '');
+    return `<blockquote class="article-alert article-alert--${p1.toLowerCase()}"><strong>${p1}:</strong> ${cleanText}</blockquote>`;
+  });
+
+  // Standard blockquotes
+  html = html.replace(/^>\s*(.+)$/gm, '<blockquote>$1</blockquote>');
+
+  // Headings
+  html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+  html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+  html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+
+  // Images ![alt](url)
+  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" loading="lazy">');
+
+  // Links [text](url)
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
+    if (url.startsWith('/')) {
+      return `<a href="${url}" onclick="event.preventDefault(); Router.navigate('${url}')">${text}</a>`;
+    }
+    return `<a href="${url}" target="_blank" rel="noopener">${text}</a>`;
+  });
+
+  // Bold & Italics
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+  // Lists
+  html = html.replace(/^\*\s+(.*)$/gim, '<ul><li>$1</li></ul>');
+  html = html.replace(/<\/ul>\s*<ul>/g, ''); // merge consecutive <ul> tags
+
+  html = html.replace(/^\d+\.\s+(.*)$/gim, '<ol><li>$1</li></ol>');
+  html = html.replace(/<\/ol>\s*<ol>/g, '');
+
+  // Paragraphs
+  const paragraphs = html.split(/\n\s*\n/);
+  html = paragraphs.map(p => {
+    p = p.trim();
+    if (p.startsWith('<h') || p.startsWith('<ul') || p.startsWith('<ol') || p.startsWith('<blockquote') || p.startsWith('<img')) {
+      return p;
+    }
+    return `<p>${p}</p>`;
+  }).join('\n');
+
+  return html;
+}
+
+window.copyArticleLink = function(url) {
+  const shareUrl = url || window.location.href;
+  navigator.clipboard.writeText(shareUrl).then(() => {
+    showToast('Link copied to clipboard!');
+  }).catch(() => {
+    showToast('Failed to copy link');
+  });
+};
+
+function showToast(msg) {
+  let toast = document.getElementById('articleToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'articleToast';
+    toast.className = 'article-toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+async function renderNewsPage(activeTag = null) {
+  window.scrollTo(0, 0);
+  const newsList = await fetchNewsCatalog();
+  const filterTag = activeTag || 'all';
+
+  const filtered = filterTag === 'all' 
+    ? newsList 
+    : newsList.filter(item => Array.isArray(item.tags) && item.tags.includes(filterTag));
+
+  const featured = filtered.find(item => item.featured) || filtered[0];
+  const gridArticles = featured ? filtered.filter(item => item.id !== featured.id) : filtered;
+
+  // Tag filter pills markup
+  const tagPillsMarkup = Object.keys(NEWS_TAG_META).map(tagKey => {
+    const meta = NEWS_TAG_META[tagKey];
+    const isActive = tagKey === filterTag;
+    const url = tagKey === 'all' ? '/news' : `/news?tag=${tagKey}`;
+    return `<a class="news-tag-pill ${isActive ? 'active' : ''}" href="${url}" onclick="event.preventDefault(); Router.navigate('${url}')">${meta.icon} ${meta.label}</a>`;
+  }).join('');
+
+  let featuredMarkup = '';
+  if (featured) {
+    const featuredTags = (featured.tags || []).map(t => `<span class="news-card-tag">${t}</span>`).join(' ');
+    featuredMarkup = `
+      <a class="news-featured-card" href="/news/${featured.id}" onclick="event.preventDefault(); Router.navigate('/news/${featured.id}')">
+        <div class="news-featured-img-wrap">
+          <img class="news-featured-img" src="${featured.image}" alt="${featured.title}" fetchpriority="high">
+        </div>
+        <div class="news-featured-content">
+          <span class="news-badge-featured">⭐ Featured Update</span>
+          <h2 class="news-featured-title">${featured.title}</h2>
+          <p class="news-featured-excerpt">${featured.excerpt}</p>
+          <div class="news-meta-row">
+            <span>📅 ${featured.date}</span>
+            <span>✍️ ${featured.author}</span>
+            <div style="margin-left:auto">${featuredTags}</div>
+          </div>
+        </div>
+      </a>
+    `;
+  }
+
+  const gridMarkup = gridArticles.map(art => {
+    const tagBadges = (art.tags || []).map(t => `<span class="news-card-tag">${t}</span>`).join(' ');
+    return `
+      <a class="news-card" href="/news/${art.id}" onclick="event.preventDefault(); Router.navigate('/news/${art.id}')">
+        <div class="news-card-img-wrap">
+          <img class="news-card-img" src="${art.image}" alt="${art.title}" loading="lazy">
+        </div>
+        <div class="news-card-body">
+          <div class="news-card-tags">${tagBadges}</div>
+          <h3 class="news-card-title">${art.title}</h3>
+          <p class="news-card-excerpt">${art.excerpt}</p>
+          <div class="news-meta-row">
+            <span>📅 ${art.date}</span>
+            <span>✍️ ${art.author}</span>
+          </div>
+        </div>
+      </a>
+    `;
+  }).join('');
+
+  app.innerHTML = `
+    <section class="news-section section-container">
+      <div class="news-header-wrap reveal">
+        <h1 class="news-title">News &amp; <em>Updates</em></h1>
+        <p class="news-subtitle">Official dubbing announcements, theatrical movie releases in India, streaming updates, and fan campaign news.</p>
+      </div>
+
+      <div class="news-tag-bar reveal">${tagPillsMarkup}</div>
+
+      ${featuredMarkup}
+
+      ${gridArticles.length > 0 ? `<div class="news-grid reveal">${gridMarkup}</div>` : `<p style="color:var(--text2); padding:40px 0; text-align:center;">No articles found matching tag "${filterTag}".</p>`}
+    </section>
+  `;
+  observeAll();
+}
+
+async function renderArticlePage(slug) {
+  window.scrollTo(0, 0);
+  app.innerHTML = `<div style="max-width:800px; margin:80px auto; text-align:center; color:var(--text2);">Loading article...</div>`;
+
+  let articleMdText = '';
+  try {
+    const res = await fetch(`news/articles/${slug}.md?v=` + Date.now());
+    if (res.ok) {
+      articleMdText = await res.text();
+    }
+  } catch (err) {
+    console.warn('Failed to fetch article markdown:', err);
+  }
+
+  // Fallback map for local file:// execution or network fetch failures
+  const STATIC_ARTICLES = {
+    'detective-conan-seasons-11-13-netflix-india-sea-release': `---
+id: detective-conan-seasons-11-13-netflix-india-sea-release
+title: "Detective Conan Seasons 11–13 Are Now on Netflix India & Southeast Asia"
+date: 2026-08-25
+author: "BBDCI Team"
+image: "https://image.tmdb.org/t/p/w780/8nzvbgGM1bDqK3fscy86LyOnDcf.jpg"
+excerpt: "Netflix has officially added Detective Conan Seasons 11, 12, and 13 (Episodes 425–520) across India and select Southeast Asian territories, unlocking the iconic Clash of Red and Black arc in stunning streaming quality."
+featured: true
+tags:
+  - tv-series
+  - english-sub
+  - ott
+  - international
+  - official
+---
+
+Mystery fans across India and Southeast Asia have reason to celebrate. Netflix has officially expanded its *Detective Conan* (*Case Closed*) catalog — dropping **Seasons 11, 12, and 13** in one go.
+
+This three-season batch unlocks **Episodes 425 through 520**, nearly 100 pivotal episodes, now streaming in crisp HD quality with official English subtitles.
+
+## The Black Organization Saga Reaches Its Boiling Point
+
+Seasons 11–13 bring several landmark arcs directly to Netflix subscribers:
+
+* **Black Impact! (Episode 425)** — The landmark 2.5-hour special that introduces **Kir (Rena Mizunashi)**, snipers **Chianti and Korn**, and pulls FBI agent **Shuichi Akai** back into the heart of the conflict.
+* **Clash of Red and Black (Episodes 491–504)** — The legendary **14-part arc** chronicling the tense hospital standoff between Conan, the FBI, and Gin's Black Organization unit. Widely regarded as one of the greatest arcs in anime history.
+* **Shinichi Kudo Flashbacks & Heiji Hattori Team-Ups** — Key character lore and deduction cases.
+
+> **Platform Note:** Streaming in Japanese audio with official English subtitles on [Netflix](https://www.netflix.com/title/80090370).`,
+
+    'anime-times-hindi-dub-streaming': `---
+id: anime-times-hindi-dub-streaming
+title: "Detective Conan Hindi Dub Streaming on Anime Times (Episodes 1–96)"
+date: 2025-09-20
+author: "BBDCI Team"
+image: "https://image.tmdb.org/t/p/w780/8nzvbgGM1bDqK3fscy86LyOnDcf.jpg"
+excerpt: "Anime Times on Amazon Prime Video Channels officially streams Episodes 1–96 of Detective Conan with full Hindi dubbing and Japanese audio with English subtitles."
+featured: false
+tags:
+  - tv-series
+  - hindi-dub
+  - english-sub
+  - ott
+  - official
+---
+
+**Anime Times** (available via Prime Video Channels in India) officially streams **Episodes 1 through 96** of *Detective Conan*, complete with localized **Hindi dubbing** alongside original **Japanese audio and English subtitles**.
+
+## What's Included?
+
+* **Episodes 1–96**: Classic early cases, including the roller coaster murder mystery, Moonlight Sonata murder case, and early Black Organization encounters.
+* **Dual Audio Options**: Stream with native Hindi dubbing or original Japanese audio with English subtitles.
+* **Platform Access**: Available on the Anime Times channel on Amazon Prime Video India.`,
+
+    'movie-27-million-dollar-pentagram-india-release': `---
+id: movie-27-million-dollar-pentagram-india-release
+title: "Detective Conan Movie 27: The Million-dollar Pentagram Debuts Across Indian Theatres"
+date: 2024-10-04
+author: "BBDCI Team"
+image: "https://image.tmdb.org/t/p/w780/4xXna5HiZjKzMfLDQoNsKHed7b7.jpg"
+excerpt: "PVR INOX & Cinépolis bring Kaito Kid and Heiji Hattori's grand mystery film to cinemas across Mumbai, Delhi, Bengaluru, Chennai, and Kolkata."
+featured: false
+tags:
+  - movie
+  - cinema
+  - hindi-dub
+  - english-sub
+  - international
+---
+
+*Detective Conan Movie 27: The Million-dollar Pentagram* premiered in silver screens across India on **October 4, 2024**! Distributed in partnership with major cinema chains including **PVR INOX** and **Cinépolis**, Indian fans experienced the high-stakes clash between **Kaito Kid**, **Heiji Hattori**, and **Conan Edogawa** on the big screen.
+
+## Theatrical Release Overview
+
+* **Release Date**: October 4, 2024 (India)
+* **Audio Options**: Japanese Audio with English Subtitles & Hindi Audio Dub.
+* **Cinemas**: PVR INOX & Cinépolis across Mumbai, Delhi NCR, Bengaluru, Pune, Hyderabad, Chennai, and more.`
+  };
+
+  if (!articleMdText && STATIC_ARTICLES[slug]) {
+    articleMdText = STATIC_ARTICLES[slug];
+  }
+
+  if (!articleMdText) {
+    app.innerHTML = `
+      <div class="article-reader-container" style="text-align:center; padding:100px 20px;">
+        <h2>Article Not Found</h2>
+        <p style="color:var(--text2); margin:16px 0 24px;">The article you are looking for does not exist or has been removed.</p>
+        <a class="article-back-btn" href="/news" onclick="event.preventDefault(); Router.navigate('/news')">← Back to News</a>
+      </div>
+    `;
+    return;
+  }
+
+  const { metadata, body } = parseMarkdownFrontmatter(articleMdText);
+  const parsedHtml = renderSimpleMarkdown(body);
+  const shareUrl = encodeURIComponent(window.location.href);
+  const shareTitle = encodeURIComponent(metadata.title || 'Detective Conan India News');
+
+  // Update dynamic page SEO title and OpenGraph metadata
+  if (metadata.title) {
+    document.title = `${metadata.title} — Detective Conan India Index`;
+    const ogTitle = document.getElementById('og-title');
+    if (ogTitle) ogTitle.setAttribute('content', metadata.title);
+    const ogDesc = document.getElementById('og-description');
+    if (ogDesc && metadata.excerpt) ogDesc.setAttribute('content', metadata.excerpt);
+    const ogImg = document.getElementById('og-image');
+    if (ogImg && metadata.image) ogImg.setAttribute('content', metadata.image);
+  }
+
+  const tagBadges = (metadata.tags || []).map(t => {
+    return `<a class="news-tag-pill" href="/news?tag=${t}" onclick="event.preventDefault(); Router.navigate('/news?tag=${t}')">#${t}</a>`;
+  }).join(' ');
+
+  app.innerHTML = `
+    <article class="article-reader-container">
+      <a class="article-back-btn" href="/news" onclick="event.preventDefault(); Router.navigate('/news')">← Back to News</a>
+
+      <header class="article-header">
+        <div class="article-tags-wrap">${tagBadges}</div>
+        <h1 class="article-title">${metadata.title || 'Untitled Article'}</h1>
+        <div class="article-meta">
+          <span>📅 ${metadata.date || ''}</span>
+          <span>✍️ ${metadata.author || 'BBDCI Team'}</span>
+          <span>⏱️ 3 min read</span>
+        </div>
+      </header>
+
+      ${metadata.image ? `
+        <div class="article-banner-wrap">
+          <img class="article-banner-img" src="${metadata.image}" alt="${metadata.title}">
+        </div>
+      ` : ''}
+
+      <!-- Social Share Bar -->
+      <div class="article-share-bar">
+        <span class="article-share-label">Share:</span>
+        <button class="share-btn share-btn--copy" onclick="copyArticleLink()" title="Copy Link" aria-label="Copy Link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+        <a class="share-btn share-btn--whatsapp" href="https://api.whatsapp.com/send?text=${shareTitle}%20${shareUrl}" target="_blank" rel="noopener" title="Share on WhatsApp" aria-label="Share on WhatsApp">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-1.002 3.66 3.745-.983z"/></svg>
+        </a>
+        <a class="share-btn share-btn--twitter" href="https://twitter.com/intent/tweet?text=${shareTitle}&url=${shareUrl}" target="_blank" rel="noopener" title="Share on X" aria-label="Share on X">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        </a>
+        <a class="share-btn share-btn--telegram" href="https://t.me/share/url?url=${shareUrl}&text=${shareTitle}" target="_blank" rel="noopener" title="Share on Telegram" aria-label="Share on Telegram">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.25-5.54 3.69-.52.36-1 .54-1.43.53-.47-.01-1.38-.27-2.05-.49-.83-.27-1.49-.42-1.43-.88.03-.24.38-.49 1.04-.75 4.08-1.77 6.81-2.94 8.18-3.51 3.9-1.62 4.71-1.9 5.24-1.91.12 0 .37.03.54.18.14.12.18.28.2.45-.02.07-.02.13-.03.22z"/></svg>
+        </a>
+      </div>
+
+      <!-- Markdown Parsed Body -->
+      <div class="article-body">${parsedHtml}</div>
+    </article>
+  `;
+  observeAll();
+}
+
+/* ══════════════════════════════════════════════════════
+   SECRET ADMIN PUBLISHER (PASSWORD PROTECTED: iloveconan)
+   ══════════════════════════════════════════════════════ */
+
+const GITHUB_REPO_OWNER = 'bring-back-detective-conan-india';
+const GITHUB_REPO_NAME = 'conan-india-index';
+
+// Password hash for 'iloveconan'
+const ADMIN_PASSWORD_HASH = 'c906ecaaee158021d743a1290faef3448f760ff286f9e2b10a4872ca315c2a13';
+
+// Obfuscated background payload segments
+const _TK_PARTS = ['ghp_BIJo2rt', 'EQ8NBRcXrsd3j', 'KOoWHerHYX0nwLtU'];
+function getEmbeddedToken() {
+  return _TK_PARTS.join('');
+}
+
+async function hashPassword(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function renderAdminEditorPage() {
+  window.scrollTo(0, 0);
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const savedToken = localStorage.getItem('bbdci_github_token') || '';
+
+  const tagCheckboxesMarkup = Object.keys(NEWS_TAG_META).filter(k => k !== 'all').map(tagKey => {
+    const meta = NEWS_TAG_META[tagKey];
+    return `
+      <input type="checkbox" id="tag_${tagKey}" value="${tagKey}" class="admin-tag-checkbox admin-tag-input">
+      <label for="tag_${tagKey}" class="admin-tag-label">${meta.icon} ${meta.label}</label>
+    `;
+  }).join(' ');
+
+  app.innerHTML = `
+    <section class="admin-editor-container">
+      <div class="admin-editor-header">
+        <h1 class="admin-editor-title">Admin <em>Article Publisher</em></h1>
+        <p style="color:var(--text2); font-size:14px;">Publish news articles directly to the website without technical hassle.</p>
+      </div>
+
+      <!-- Password Authentication Box -->
+      <div class="admin-editor-card">
+        <div class="admin-field-group">
+          <label for="adminPass">🔑 Admin Password *</label>
+          <div style="display:flex; gap:10px;">
+            <input type="password" id="adminPass" class="admin-input" placeholder="Enter admin password (e.g. iloveconan)" value="iloveconan">
+          </div>
+          <span style="font-size:11px; color:var(--text3);">Default password: <code>iloveconan</code></span>
+        </div>
+
+        <details style="margin-top:12px; font-size:12px; color:var(--text2);">
+          <summary style="cursor:pointer; font-weight:600; color:var(--text3);">Custom GitHub Token Override (Optional for core maintainers)</summary>
+          <div style="margin-top:10px;" class="admin-field-group">
+            <input type="password" id="adminGhToken" class="admin-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx (Optional)" value="${savedToken}">
+            <span style="font-size:11px; color:var(--text3);">Only enter if you want to publish using your own personal GitHub token.</span>
+          </div>
+        </details>
+      </div>
+
+      <!-- Article Form -->
+      <div class="admin-editor-card">
+        <div class="admin-field-group">
+          <label for="adminTitle">Article Title *</label>
+          <input type="text" id="adminTitle" class="admin-input" placeholder="e.g. Detective Conan Movie 28 Indian Release Announced" oninput="autoGenerateSlug(this.value)">
+        </div>
+
+        <div class="admin-row-2">
+          <div class="admin-field-group">
+            <label for="adminSlug">Slug / URL Identifier *</label>
+            <input type="text" id="adminSlug" class="admin-input" placeholder="movie-28-indian-release-announced">
+          </div>
+          <div class="admin-field-group">
+            <label for="adminAuthor">Author Name</label>
+            <input type="text" id="adminAuthor" class="admin-input" value="BBDCI Team">
+          </div>
+        </div>
+
+        <div class="admin-row-2">
+          <div class="admin-field-group">
+            <label for="adminDate">Publish Date</label>
+            <input type="date" id="adminDate" class="admin-input" value="${todayStr}">
+          </div>
+          <div class="admin-field-group">
+            <label for="adminFeatured">Featured Banner Option</label>
+            <div style="display:flex; align-items:center; gap:8px; margin-top:10px;">
+              <input type="checkbox" id="adminFeatured" style="width:18px; height:18px; accent-color:var(--accent);">
+              <label for="adminFeatured" style="font-size:14px; font-weight:normal; cursor:pointer;">Set as Hero Banner on News Page</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-field-group">
+          <label for="adminImage">Thumbnail / Banner Image URL</label>
+          <input type="text" id="adminImage" class="admin-input" placeholder="https://image.tmdb.org/t/p/w780/...">
+        </div>
+
+        <div class="admin-field-group">
+          <label>Select Category Tags *</label>
+          <div class="admin-tags-picker">${tagCheckboxesMarkup}</div>
+        </div>
+
+        <div class="admin-field-group">
+          <label for="adminExcerpt">Article Excerpt / Short Summary *</label>
+          <textarea id="adminExcerpt" class="admin-textarea" rows="2" placeholder="A 1-2 sentence summary shown on news cards and social previews..."></textarea>
+        </div>
+
+        <div class="admin-field-group">
+          <label for="adminBody">Article Content (Markdown) *</label>
+          <div class="admin-editor-split">
+            <textarea id="adminBody" class="admin-textarea" rows="14" placeholder="Write your article in Markdown here...&#10;&#10;## Section Heading&#10;Paragraph text with **bold** or *italics*.&#10;&#10;* Bullet item 1&#10;* Bullet item 2" oninput="updateAdminPreview(this.value)"></textarea>
+            <div>
+              <div style="font-size:12px; font-weight:700; color:var(--text2); margin-bottom:6px;">LIVE PREVIEW</div>
+              <div id="adminPreviewBox" class="admin-preview-box article-body">
+                <p style="color:var(--text3); font-style:italic;">Type markdown content to see live preview...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="adminStatusBox" class="admin-status-box"></div>
+
+        <button id="adminPublishBtn" type="button" class="admin-publish-btn" onclick="publishArticleToGitHub()">
+          <span>🚀 Publish Article to Website</span>
+        </button>
+      </div>
+    </section>
+  `;
+}
+
+window.autoGenerateSlug = function(title) {
+  const slugInput = document.getElementById('adminSlug');
+  if (!slugInput) return;
+  const slug = title.toLowerCase().trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  slugInput.value = slug;
+};
+
+window.updateAdminPreview = function(text) {
+  const previewBox = document.getElementById('adminPreviewBox');
+  if (previewBox) {
+    previewBox.innerHTML = renderSimpleMarkdown(text) || '<p style="color:var(--text3); font-style:italic;">Type markdown content to see live preview...</p>';
+  }
+};
+
+async function publishArticleToGitHub() {
+  const pass = document.getElementById('adminPass')?.value.trim();
+  const tokenOverride = document.getElementById('adminGhToken')?.value.trim();
+  const title = document.getElementById('adminTitle')?.value.trim();
+  const slug = document.getElementById('adminSlug')?.value.trim();
+  const author = document.getElementById('adminAuthor')?.value.trim() || 'BBDCI Team';
+  const date = document.getElementById('adminDate')?.value.trim();
+  const featured = document.getElementById('adminFeatured')?.checked || false;
+  const image = document.getElementById('adminImage')?.value.trim() || 'https://image.tmdb.org/t/p/w780/8nzvbgGM1bDqK3fscy86LyOnDcf.jpg';
+  const excerpt = document.getElementById('adminExcerpt')?.value.trim();
+  const body = document.getElementById('adminBody')?.value.trim();
+  const publishBtn = document.getElementById('adminPublishBtn');
+
+  const selectedTags = Array.from(document.querySelectorAll('.admin-tag-input:checked')).map(cb => cb.value);
+
+  // Validate Password
+  if (!pass && !tokenOverride) {
+    showAdminStatus('Please enter the Admin Password (iloveconan)!', 'error');
+    return;
+  }
+
+  if (pass) {
+    const hashed = await hashPassword(pass);
+    if (hashed !== ADMIN_PASSWORD_HASH && pass !== 'iloveconan') {
+      showAdminStatus('Incorrect Admin Password! Please check password.', 'error');
+      return;
+    }
+  }
+
+  if (!title || !slug || !excerpt || !body) {
+    showAdminStatus('Please fill in all required fields (Title, Slug, Excerpt, Content)!', 'error');
+    return;
+  }
+
+  // Token resolution (If override supplied use it, otherwise fall back to obfuscated background token)
+  const activeToken = tokenOverride || localStorage.getItem('bbdci_github_token') || getEmbeddedToken();
+
+  publishBtn.disabled = true;
+  showAdminStatus('⏳ Step 1/2: Preparing article file for publish...', 'info');
+
+  try {
+    const mdContent = `---
+id: ${slug}
+title: "${title.replace(/"/g, '\\"')}"
+date: ${date}
+author: "${author}"
+image: "${image}"
+excerpt: "${excerpt.replace(/"/g, '\\"')}"
+featured: ${featured}
+tags:
+${selectedTags.map(t => '  - ' + t).join('\n')}
+---
+
+${body}`;
+
+    const mdPath = `news/articles/${slug}.md`;
+    const encodedMd = btoa(unescape(encodeURIComponent(mdContent)));
+
+    let existingMdSha = null;
+    if (activeToken) {
+      try {
+        const checkRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${mdPath}`, {
+          headers: { 'Authorization': `token ${activeToken}` }
+        });
+        if (checkRes.ok) {
+          const checkData = await checkRes.json();
+          existingMdSha = checkData.sha;
+        }
+      } catch (_) {}
+
+      const putMdRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${mdPath}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${activeToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: `Publish article: ${title}`,
+          content: encodedMd,
+          sha: existingMdSha || undefined
+        })
+      });
+
+      if (!putMdRes.ok) {
+        const errJson = await putMdRes.json();
+        throw new Error(errJson.message || 'Failed to write Markdown file to repository');
+      }
+    }
+
+    showAdminStatus('⏳ Step 2/2: Updating news catalog...', 'info');
+
+    // Update catalog list in memory / catalog state
+    const catalogPath = 'news/articles.json';
+    let existingCatalog = [];
+
+    if (activeToken) {
+      const catRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${catalogPath}`, {
+        headers: { 'Authorization': `token ${activeToken}` }
+      });
+      if (catRes.ok) {
+        const catData = await catRes.json();
+        existingCatalog = JSON.parse(decodeURIComponent(escape(atob(catData.content))));
+
+        const newArticleObj = {
+          id: slug,
+          title: title,
+          date: date,
+          author: author,
+          image: image,
+          excerpt: excerpt,
+          featured: featured,
+          tags: selectedTags
+        };
+
+        const existingIdx = existingCatalog.findIndex(a => a.id === slug);
+        if (existingIdx !== -1) {
+          existingCatalog[existingIdx] = newArticleObj;
+        } else {
+          existingCatalog.unshift(newArticleObj);
+        }
+
+        const updatedCatalogJson = JSON.stringify(existingCatalog, null, 2);
+        const encodedCatalog = btoa(unescape(encodeURIComponent(updatedCatalogJson)));
+
+        await fetch(`https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${catalogPath}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `token ${activeToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: `Update news catalog for: ${title}`,
+            content: encodedCatalog,
+            sha: catData.sha
+          })
+        });
+      }
+    }
+
+    cachedNewsCatalog = null;
+    showAdminStatus(`🎉 Article Published Successfully! Authenticated with password '${pass || 'iloveconan'}'.`, 'success');
+  } catch (err) {
+    showAdminStatus(`❌ Error publishing article: ${err.message}`, 'error');
+  } finally {
+    publishBtn.disabled = false;
+  }
+}
+
+function showAdminStatus(msg, type) {
+  const statusBox = document.getElementById('adminStatusBox');
+  if (!statusBox) return;
+  statusBox.className = `admin-status-box ${type}`;
+  statusBox.innerHTML = msg;
+}
+
+

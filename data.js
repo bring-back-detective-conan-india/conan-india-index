@@ -7,10 +7,10 @@ const PLATFORMS = [
     id:"netflix", name:"Netflix", type:"streaming",
     color:"#E50914", bg:"#141414",
     url:"https://www.netflix.com/title/80090370",
-    badge:"Subscription Required", tagline:"S1–10 · S23–27 · S31 (Simulcast) · All 27 Movies · Spinoffs",
-    description:"Netflix India carries Detective Conan across multiple collections — Seasons 1–10, 23–27, and the weekly Season 31 Simulcast in Japanese with English subtitles. All 27 movies are available with English subs. Both spinoffs are also on Netflix.",
+    badge:"Subscription Required", tagline:"S1–13 🆕 · S23–27 · S31 (Simulcast) · All 27 Movies · Spinoffs",
+    description:"Netflix India carries Detective Conan across multiple collections — Seasons 1–13 (including the newly added S11–13 with the iconic Clash of Red and Black arc), Seasons 23–27, and the weekly Season 31 Simulcast in Japanese with English subtitles. All 27 movies are available with English subs. Both spinoffs are also on Netflix.",
     note:"Requires a Netflix subscription. The main series and movies are Japanese audio with English subtitles only — no Hindi dub. The spinoffs (Zero's Tea Time and The Culprit Hanzawa) have English and Hindi dubs.",
-    seriesSeasons:["S1","S2","S3","S4","S5","S6","S7","S8","S9","S10","S23","S24","S25","S26","S27","S31"],
+    seriesSeasons:["S1","S2","S3","S4","S5","S6","S7","S8","S9","S10","S11","S12","S13","S23","S24","S25","S26","S27","S31"],
     movies:"all", spinoffs:["zerosteatime","culprithanzawa"],
     languages:{sub:["English"],dub:[]}
   },
@@ -44,6 +44,7 @@ const PLATFORMS = [
       {name:"NXT Digital",       sd:913, hd:null}
     ],
     seriesRange:[1,538],
+    seriesSeasons:["S1","S2","S3","S4","S5","S6","S7","S8","S9","S10","S11","S12","S13","S14"],
     movies:[1,2,3,4,5,6,7,16,17,18,19,20,21,22,23,24,25],
     languages:{dub:["Hindi","Tamil","Telugu","Malayalam","Kannada","Bengali","Marathi","Gujarati","Odia","Punjabi","Assamese","English*"]}
   },
@@ -366,14 +367,14 @@ const SEASONS = [
    platforms:["netflix","etvbalb"]},
   {id:"S10",  label:"Season 10 (2005)",  year:2005, epRange:[384,424],    available:true,
    platforms:["netflix","etvbalb"]},
-  {id:"S11",  label:"Season 11 (2006)",  year:2006, epRange:[425,459],    available:false,
-   platforms:[], unavailableNote:"Not available on any Indian streaming platform."},
-  {id:"S12",  label:"Season 12 (2007)",  year:2007, epRange:[460,490],    available:false,
-   platforms:[], unavailableNote:"Not available on any Indian streaming platform."},
-  {id:"S13",  label:"Season 13 (2008)",  year:2008, epRange:[491,520],    available:false,
-   platforms:[], unavailableNote:"Not available on any Indian streaming platform."},
-  {id:"S14",  label:"Season 14 (2009)",  year:2009, epRange:[521,561],    available:false,
-   platforms:[], unavailableNote:"Not available on any Indian streaming platform."},
+  {id:"S11",  label:"Season 11 (2006)",  year:2006, epRange:[425,459],    available:true,
+   platforms:["netflix","etvbalb"]},
+  {id:"S12",  label:"Season 12 (2007)",  year:2007, epRange:[460,490],    available:true,
+   platforms:["netflix","etvbalb"]},
+  {id:"S13",  label:"Season 13 (2008)",  year:2008, epRange:[491,520],    available:true,
+   platforms:["netflix","etvbalb"]},
+  {id:"S14",  label:"Season 14 (2009)",  year:2009, epRange:[521,561],    available:true,
+   platforms:["etvbalb"], unavailableNote:"Episodes 521–538 available on ETV Bal Bharat in regional dubs."},
   {id:"S15",  label:"Season 15 (2010)",  year:2010, epRange:[562,601],    available:false,
    platforms:[], unavailableNote:"Not available on any Indian streaming platform."},
   {id:"S16",  label:"Season 16 (2011)",  year:2011, epRange:[602,641],    available:false,
@@ -411,18 +412,19 @@ const SEASONS = [
 ];
 
 const SPINOFFS = [
-
   {
     id:"zerosteatime", tmdb:195053, title:"Zero's Tea Time", year:2022, episodes:6,
     colors:["#0A2A4A","#1565C0"], netflix:true, netflixUrl:"https://www.netflix.com/title/81313289",
     desc:"A charming slice-of-life spinoff following Toru Amuro (Rei Furuya / Zero) as he runs a cozy café in Haido City.",
-    languages:{dub:["English","Hindi"],sub:["English"]}
+    languages:{dub:["English","Hindi"],sub:["English"]},
+    netflixLanguages:{dub:["English","Hindi"],sub:["English"]}
   },
   {
     id:"culprithanzawa", tmdb:195923, title:"The Culprit Hanzawa", year:2022, episodes:12,
     colors:["#2A0A0A","#B71C1C"], netflix:true, netflixUrl:"https://www.netflix.com/title/81313291",
     desc:"A darkly comedic spinoff following the unnamed 'culprit' silhouette as he navigates daily life in Beika Town.",
-    languages:{dub:["English","Hindi"],sub:["English"]}
+    languages:{dub:["English","Hindi"],sub:["English"]},
+    netflixLanguages:{dub:["English","Hindi"],sub:["English"]}
   }
 ];
 
@@ -741,13 +743,25 @@ const YAIBA_EPISODES = [
 
 const HERO_SLIDES = [
   {
+    title: "Seasons 11–13 Now on Netflix",
+    subtitle: "Clash of Red and Black Arc",
+    desc: "🚨 BREAKING: Seasons 11, 12 & 13 (Episodes 425–520) just dropped on Netflix India & Southeast Asia — including the legendary Clash of Red and Black arc!",
+    img: "https://pbs.twimg.com/media/G_v2pLMbQAAHRxm?format=jpg&name=large",
+    bgColor: "#000000",
+    accent: "#E50914",
+    tag: "NEW ON NETFLIX",
+    emoji: "🔴",
+    ctaLabel: "Watch Now on Netflix →",
+    ctaAction: "window.open('https://www.netflix.com/title/80090370','_blank','noopener')"
+  },
+  {
     title: "Season 31 Simulcast",
     subtitle: "Now on Netflix India",
-    desc: "Huge News! Detective Conan is now streaming simultaneously in India! Watch Season 31 with weekly new episodes straight from Japan.",
+    desc: "Detective Conan is now streaming simultaneously in India! Watch Season 31 with weekly new episodes straight from Japan.",
     img: "https://image.tmdb.org/t/p/w1280/hlOn0BETlASlpLThKu2gXn9ae1H.jpg",
     bgColor: "#000000",
     accent: "#E50914",
-    tag: "NEW • SIMULCAST",
+    tag: "WEEKLY SIMULCAST",
     emoji: "🎉",
     ctaLabel: "Watch on Netflix →",
     ctaAction: "Router.navigate('/platform/netflix')"
