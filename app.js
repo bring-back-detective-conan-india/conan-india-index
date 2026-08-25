@@ -1045,16 +1045,10 @@ const app = document.getElementById('app');
 const Router = {
   currentRoute: null,
   navigate(path) {
-    const isFile = window.location.protocol === 'file:';
     const cleanPath = path.startsWith('/') ? path : '/' + path;
-    if (isFile) {
+    if (window.location.hash !== '#' + cleanPath) {
       window.location.hash = cleanPath;
-      this.resolve();
     } else {
-      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const basePrefix = isLocal ? '' : '/conan-india-index';
-      const finalUrl = basePrefix + cleanPath;
-      window.history.pushState(null, null, finalUrl);
       this.resolve();
     }
   },
@@ -1294,6 +1288,7 @@ const Router = {
 // Disable browser native scroll restoration — we always scroll to top on navigate
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 window.addEventListener('popstate', () => Router.resolve());
+window.addEventListener('hashchange', () => Router.resolve());
 
 // ─── NAV LINKS ───────────────────────────────────────
 document.getElementById('nav-logo').addEventListener('click', () => {
@@ -1301,7 +1296,7 @@ document.getElementById('nav-logo').addEventListener('click', () => {
   else Router.navigate('/');
 });
 
-const NAV_ROUTES = new Set(['movies', 'tvshows', 'spinoffs', 'events', 'manga', 'languages', 'browse', 'merch', 'archive', 'advocacy', 'guides', 'guide', 'guide/important-episodes', 'guide/canon-episodes', 'ovas', 'magic-kaito', 'yaiba', 'calendar', 'platforms', 'guide/release-order', 'guide/black-org-guide', 'guide/india', 'news']);
+const NAV_ROUTES = new Set(['movies', 'tvshows', 'spinoffs', 'events', 'manga', 'languages', 'browse', 'merch', 'archive', 'advocacy', 'guides', 'guide', 'guide/important-episodes', 'guide/canon-episodes', 'ovas', 'magic-kaito', 'yaiba', 'calendar', 'platforms', 'guide/release-order', 'guide/black-org-guide', 'guide/india', 'news', 'admin-editor', 'secret-publisher']);
 function closeDrawer() {
   document.getElementById('navHamburger').classList.remove('open');
   document.getElementById('navDrawer').classList.remove('open');
