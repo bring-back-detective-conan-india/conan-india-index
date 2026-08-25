@@ -11887,10 +11887,37 @@ async function hashPassword(str) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+function parseFrontmatter(rawText) {
+  const match = rawText.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
+  if (!match) return { metadata: {}, body: rawText };
+  const yamlText = match[1];
+  const body = match[2];
+  const metadata = {};
+  yamlText.split('\n').forEach(line => {
+    const colonIdx = line.indexOf(':');
+    if (colonIdx !== -1) {
+      const key = line.slice(0, colonIdx).trim();
+      let val = line.slice(colonIdx + 1).trim();
+      if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
+      if (val === 'true') val = true;
+      if (val === 'false') val = false;
+      if (key === 'tags' || line.trim().startsWith('-')) return;
+      metadata[key] = val;
+    }
+  });
+
+  const tagsMatch = yamlText.match(/tags:\s*([\s\S]*?)(?=\n\w+:|$)/);
+  if (tagsMatch) {
+    metadata.tags = tagsMatch[1].split('\n')
+      .map(l => l.replace(/^\s*-\s*/, '').trim())
+      .filter(Boolean);
+  }
+  return { metadata, body };
+}
+
 function renderAdminEditorPage() {
   window.scrollTo(0, 0);
   const todayStr = new Date().toISOString().slice(0, 10);
-  const savedToken = localStorage.getItem('bbdci_github_token') || '';
 
   const tagCheckboxesMarkup = Object.keys(NEWS_TAG_META).filter(k => k !== 'all').map(tagKey => {
     const meta = NEWS_TAG_META[tagKey];
@@ -11900,6 +11927,26 @@ function renderAdminEditorPage() {
     `;
   }).join(' ');
 
+  const defaultRawMd = `---
+id: sample-article-slug
+title: "Sample Article Title"
+date: ${todayStr}
+author: "BBDCI Team"
+image: "https://image.tmdb.org/t/p/w780/8nzvbgGM1bDqK3fscy86LyOnDcf.jpg"
+excerpt: "A short summary of the article goes here..."
+featured: false
+tags:
+  - anime
+  - streaming
+---
+
+## Section Heading
+
+Write your article content here in standard Markdown...
+
+* Feature bullet 1
+* Feature bullet 2`;
+
   app.innerHTML = `
     <section class="admin-editor-container">
       <div class="admin-editor-header">
@@ -11907,34 +11954,38 @@ function renderAdminEditorPage() {
         <p style="color:var(--text2); font-size:14px;">Publish news articles directly to the website without technical hassle.</p>
       </div>
 
-      <!-- Password & Token Authentication Box -->
+      <!-- Password Authentication Box -->
       <div class="admin-editor-card">
-        <div class="admin-field-group">
+        <div class="admin-field-group" style="margin-bottom:0;">
           <label for="adminPass">🔑 Admin Password *</label>
           <div style="display:flex; gap:10px;">
-            <input type="password" id="adminPass" class="admin-input" placeholder="Enter admin password (e.g. iloveconan)" value="iloveconan">
+            <input type="password" id="adminPass" class="admin-input" placeholder="Enter admin password (iloveconan)" value="iloveconan">
           </div>
-          <span style="font-size:11px; color:var(--text3);">Default password: <code>iloveconan</code></span>
-        </div>
-
-        <div style="margin-top:16px; border-top:1px solid rgba(255,255,255,0.08); padding-top:16px;" class="admin-field-group">
-          <label for="adminGhToken">🔑 GitHub Access Token (For 1-Click Publishing)</label>
-          <input type="password" id="adminGhToken" class="admin-input" placeholder="Paste your GitHub token (ghp_... or github_pat_...)" value="${savedToken}">
-          <span style="font-size:11px; color:var(--text3);">Enter a GitHub Personal Access Token with <code>repo/contents</code> permissions. Saved automatically in browser for future use.</span>
+          <span style="font-size:11px; color:var(--text3); margin-top:4px;">Default password: <code>iloveconan</code></span>
         </div>
       </div>
 
-      <!-- Article Form -->
-      <div class="admin-editor-card">
+      <!-- Mode Selector Tabs -->
+      <div class="admin-mode-tabs">
+        <button type="button" id="tabFormView" class="admin-tab-btn active" onclick="switchAdminMode('form')">
+          📝 Guided Form Editor
+        </button>
+        <button type="button" id="tabRawView" class="admin-tab-btn" onclick="switchAdminMode('raw')">
+          📄 Straight-Up Raw MD Editor
+        </button>
+      </div>
+
+      <!-- Guided Form View -->
+      <div id="adminFormEditorBox" class="admin-editor-card">
         <div class="admin-field-group">
           <label for="adminTitle">Article Title *</label>
-          <input type="text" id="adminTitle" class="admin-input" placeholder="e.g. Detective Conan Movie 28 Indian Release Announced" oninput="autoGenerateSlug(this.value)">
+          <input type="text" id="adminTitle" class="admin-input" placeholder="e.g. Detective Conan Movie 28 Announced" oninput="autoGenerateSlug(this.value)">
         </div>
 
         <div class="admin-row-2">
           <div class="admin-field-group">
             <label for="adminSlug">Slug / URL Identifier *</label>
-            <input type="text" id="adminSlug" class="admin-input" placeholder="movie-28-indian-release-announced">
+            <input type="text" id="adminSlug" class="admin-input" placeholder="movie-28-announced">
           </div>
           <div class="admin-field-group">
             <label for="adminAuthor">Author Name</label>
@@ -11968,13 +12019,13 @@ function renderAdminEditorPage() {
 
         <div class="admin-field-group">
           <label for="adminExcerpt">Article Excerpt / Short Summary *</label>
-          <textarea id="adminExcerpt" class="admin-textarea" rows="2" placeholder="A 1-2 sentence summary shown on news cards and social previews..."></textarea>
+          <textarea id="adminExcerpt" class="admin-textarea" rows="2" placeholder="A 1-2 sentence summary shown on news cards..."></textarea>
         </div>
 
         <div class="admin-field-group">
           <label for="adminBody">Article Content (Markdown) *</label>
           <div class="admin-editor-split">
-            <textarea id="adminBody" class="admin-textarea" rows="14" placeholder="Write your article in Markdown here...&#10;&#10;## Section Heading&#10;Paragraph text with **bold** or *italics*.&#10;&#10;* Bullet item 1&#10;* Bullet item 2" oninput="updateAdminPreview(this.value)"></textarea>
+            <textarea id="adminBody" class="admin-textarea" rows="14" placeholder="Write your article in Markdown here..." oninput="updateAdminPreview(this.value)"></textarea>
             <div>
               <div style="font-size:12px; font-weight:700; color:var(--text2); margin-bottom:6px;">LIVE PREVIEW</div>
               <div id="adminPreviewBox" class="admin-preview-box article-body">
@@ -11995,9 +12046,115 @@ function renderAdminEditorPage() {
           </button>
         </div>
       </div>
+
+      <!-- Straight-up Raw MD Editor View -->
+      <div id="adminRawEditorBox" class="admin-editor-card" style="display:none;">
+        <div class="admin-field-group">
+          <label for="adminRawMdInput">Paste / Type Complete Markdown File (with Frontmatter) *</label>
+          <div class="admin-editor-split">
+            <textarea id="adminRawMdInput" class="admin-textarea" rows="22" placeholder="Paste full .md file here..." oninput="syncRawMdToForm(this.value)">${defaultRawMd}</textarea>
+            <div>
+              <div style="font-size:12px; font-weight:700; color:var(--text2); margin-bottom:6px;">LIVE PREVIEW</div>
+              <div id="adminRawPreviewBox" class="admin-preview-box article-body">
+                <p style="color:var(--text3); font-style:italic;">Paste markdown file to see live preview...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="adminRawStatusBox" class="admin-status-box"></div>
+
+        <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:16px;">
+          <button id="adminRawPublishBtn" type="button" class="admin-publish-btn" style="flex:2; min-width:240px;" onclick="publishArticleToGitHub()">
+            <span>🚀 Publish Article to Website</span>
+          </button>
+          <button type="button" class="admin-publish-btn" style="flex:1; min-width:180px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); box-shadow:none;" onclick="downloadArticleBundle()">
+            <span>📥 Download .md File</span>
+          </button>
+        </div>
+      </div>
     </section>
   `;
+
+  // Pre-sync raw default MD preview
+  syncRawMdToForm(defaultRawMd);
 }
+
+window.switchAdminMode = function(mode) {
+  const formBox = document.getElementById('adminFormEditorBox');
+  const rawBox = document.getElementById('adminRawEditorBox');
+  const tabForm = document.getElementById('tabFormView');
+  const tabRaw = document.getElementById('tabRawView');
+
+  if (mode === 'raw') {
+    if (formBox) formBox.style.display = 'none';
+    if (rawBox) rawBox.style.display = 'block';
+    if (tabForm) tabForm.classList.remove('active');
+    if (tabRaw) tabRaw.classList.add('active');
+
+    // Build raw MD from current form values if available
+    const title = document.getElementById('adminTitle')?.value.trim() || 'Sample Title';
+    const slug = document.getElementById('adminSlug')?.value.trim() || 'sample-slug';
+    const author = document.getElementById('adminAuthor')?.value.trim() || 'BBDCI Team';
+    const date = document.getElementById('adminDate')?.value.trim() || new Date().toISOString().slice(0, 10);
+    const featured = document.getElementById('adminFeatured')?.checked || false;
+    const image = document.getElementById('adminImage')?.value.trim() || 'https://image.tmdb.org/t/p/w780/8nzvbgGM1bDqK3fscy86LyOnDcf.jpg';
+    const excerpt = document.getElementById('adminExcerpt')?.value.trim() || 'Article summary...';
+    const body = document.getElementById('adminBody')?.value.trim() || '';
+    const selectedTags = Array.from(document.querySelectorAll('.admin-tag-input:checked')).map(cb => cb.value);
+
+    const generatedRaw = `---
+id: ${slug}
+title: "${title.replace(/"/g, '\\"')}"
+date: ${date}
+author: "${author}"
+image: "${image}"
+excerpt: "${excerpt.replace(/"/g, '\\"')}"
+featured: ${featured}
+tags:
+${selectedTags.map(t => '  - ' + t).join('\n')}
+---
+
+${body}`;
+
+    const rawInput = document.getElementById('adminRawMdInput');
+    if (rawInput) {
+      rawInput.value = generatedRaw;
+      syncRawMdToForm(generatedRaw);
+    }
+  } else {
+    if (formBox) formBox.style.display = 'block';
+    if (rawBox) rawBox.style.display = 'none';
+    if (tabForm) tabForm.classList.add('active');
+    if (tabRaw) tabRaw.classList.remove('active');
+  }
+};
+
+window.syncRawMdToForm = function(rawText) {
+  const { metadata, body } = parseFrontmatter(rawText);
+  if (metadata.title) document.getElementById('adminTitle').value = metadata.title;
+  if (metadata.id) document.getElementById('adminSlug').value = metadata.id;
+  if (metadata.author) document.getElementById('adminAuthor').value = metadata.author;
+  if (metadata.date) document.getElementById('adminDate').value = metadata.date;
+  if (typeof metadata.featured === 'boolean') document.getElementById('adminFeatured').checked = metadata.featured;
+  if (metadata.image) document.getElementById('adminImage').value = metadata.image;
+  if (metadata.excerpt) document.getElementById('adminExcerpt').value = metadata.excerpt;
+
+  if (metadata.tags && Array.isArray(metadata.tags)) {
+    document.querySelectorAll('.admin-tag-input').forEach(cb => {
+      cb.checked = metadata.tags.includes(cb.value);
+    });
+  }
+
+  const bodyEl = document.getElementById('adminBody');
+  if (bodyEl) bodyEl.value = body;
+
+  const rawPreview = document.getElementById('adminRawPreviewBox');
+  if (rawPreview) {
+    rawPreview.innerHTML = renderSimpleMarkdown(body) || '<p style="color:var(--text3); font-style:italic;">Paste markdown file to see live preview...</p>';
+  }
+  updateAdminPreview(body);
+};
 
 window.autoGenerateSlug = function(title) {
   const slugInput = document.getElementById('adminSlug');
@@ -12221,10 +12378,13 @@ ${body}`;
 };
 
 function showAdminStatus(msg, type) {
-  const statusBox = document.getElementById('adminStatusBox');
-  if (!statusBox) return;
-  statusBox.className = `admin-status-box ${type}`;
-  statusBox.innerHTML = msg;
+  ['adminStatusBox', 'adminRawStatusBox'].forEach(id => {
+    const statusBox = document.getElementById(id);
+    if (statusBox) {
+      statusBox.className = `admin-status-box ${type}`;
+      statusBox.innerHTML = msg;
+    }
+  });
 }
 
 
