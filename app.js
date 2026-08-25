@@ -1073,8 +1073,8 @@ const Router = {
         path = path.slice(basePrefix.length);
       }
     }
-    if (!path || path === '') path = '/';
-    if (!path.startsWith('/')) path = '/' + path;
+    path = '/' + (path || '').replace(/^[\/#]+/, '');
+    if (path === '/') path = '/';
 
     this.currentRoute = path;
 
