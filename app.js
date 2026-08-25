@@ -11906,7 +11906,7 @@ function renderAdminEditorPage() {
         <p style="color:var(--text2); font-size:14px;">Publish news articles directly to the website without technical hassle.</p>
       </div>
 
-      <!-- Password Authentication Box -->
+      <!-- Password & Token Authentication Box -->
       <div class="admin-editor-card">
         <div class="admin-field-group">
           <label for="adminPass">🔑 Admin Password *</label>
@@ -11916,13 +11916,11 @@ function renderAdminEditorPage() {
           <span style="font-size:11px; color:var(--text3);">Default password: <code>iloveconan</code></span>
         </div>
 
-        <details style="margin-top:12px; font-size:12px; color:var(--text2);">
-          <summary style="cursor:pointer; font-weight:600; color:var(--text3);">Custom GitHub Token Override (Optional for core maintainers)</summary>
-          <div style="margin-top:10px;" class="admin-field-group">
-            <input type="password" id="adminGhToken" class="admin-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx (Optional)" value="${savedToken}">
-            <span style="font-size:11px; color:var(--text3);">Only enter if you want to publish using your own personal GitHub token.</span>
-          </div>
-        </details>
+        <div style="margin-top:16px; border-top:1px solid rgba(255,255,255,0.08); padding-top:16px;" class="admin-field-group">
+          <label for="adminGhToken">🔑 GitHub Access Token (For 1-Click Publishing)</label>
+          <input type="password" id="adminGhToken" class="admin-input" placeholder="Paste your GitHub token (ghp_... or github_pat_...)" value="${savedToken}">
+          <span style="font-size:11px; color:var(--text3);">Enter a GitHub Personal Access Token with <code>repo/contents</code> permissions. Saved automatically in browser for future use.</span>
+        </div>
       </div>
 
       <!-- Article Form -->
@@ -11987,9 +11985,14 @@ function renderAdminEditorPage() {
 
         <div id="adminStatusBox" class="admin-status-box"></div>
 
-        <button id="adminPublishBtn" type="button" class="admin-publish-btn" onclick="publishArticleToGitHub()">
-          <span>🚀 Publish Article to Website</span>
-        </button>
+        <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:16px;">
+          <button id="adminPublishBtn" type="button" class="admin-publish-btn" style="flex:2; min-width:240px;" onclick="publishArticleToGitHub()">
+            <span>🚀 Publish Article to Website</span>
+          </button>
+          <button type="button" class="admin-publish-btn" style="flex:1; min-width:180px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); box-shadow:none;" onclick="downloadArticleBundle()">
+            <span>📥 Download .md File</span>
+          </button>
+        </div>
       </div>
     </section>
   `;
@@ -12046,7 +12049,12 @@ async function publishArticleToGitHub() {
     return;
   }
 
-  // Token resolution (If override supplied use it, otherwise fall back to obfuscated background token)
+  // Save custom token to localStorage if provided
+  if (tokenOverride) {
+    localStorage.setItem('bbdci_github_token', tokenOverride);
+  }
+
+  // Token resolution (If override supplied use it, otherwise fall back to saved/embedded token)
   const activeToken = tokenOverride || localStorage.getItem('bbdci_github_token') || getEmbeddedToken();
 
   publishBtn.disabled = true;
@@ -12099,6 +12107,8 @@ ${body}`;
         const errJson = await putMdRes.json();
         throw new Error(errJson.message || 'Failed to write Markdown file to repository');
       }
+    } else {
+      throw new Error('No GitHub Access Token provided. Please enter a valid GitHub Access Token.');
     }
 
     showAdminStatus('⏳ Step 2/2: Updating news catalog...', 'info');
@@ -12152,13 +12162,62 @@ ${body}`;
     }
 
     cachedNewsCatalog = null;
-    showAdminStatus(`🎉 Article Published Successfully! Authenticated with password '${pass || 'iloveconan'}'.`, 'success');
+    showAdminStatus(`🎉 Article Published Successfully! Article is now live in the repository. <a href="/news/${slug}" onclick="event.preventDefault(); Router.navigate('/news/${slug}')" style="color:#fff; text-decoration:underline; margin-left:8px;">View Article →</a>`, 'success');
   } catch (err) {
-    showAdminStatus(`❌ Error publishing article: ${err.message}`, 'error');
+    showAdminStatus(`
+      <div style="line-height:1.5;">
+        <strong>❌ Error publishing to GitHub API:</strong> ${err.message}<br><br>
+        <strong>How to resolve:</strong>
+        <ol style="margin:6px 0 10px 20px; padding:0;">
+          <li>Paste a valid GitHub Personal Access Token (or Fine-Grained Token with <em>Contents: Read & Write</em> permission) into the <strong>GitHub Access Token</strong> field above.</li>
+          <li>Or click <strong>"Download .md File"</strong> below to download your formatted article file directly to your device.</li>
+        </ol>
+        <button type="button" onclick="downloadArticleBundle()" style="background:#10b981; border:none; color:#fff; padding:8px 16px; border-radius:6px; font-weight:700; cursor:pointer; margin-top:4px;">📥 Download ${slug || 'article'}.md File</button>
+      </div>
+    `, 'error');
   } finally {
     publishBtn.disabled = false;
   }
 }
+
+window.downloadArticleBundle = function() {
+  const title = document.getElementById('adminTitle')?.value.trim();
+  const slug = document.getElementById('adminSlug')?.value.trim();
+  const author = document.getElementById('adminAuthor')?.value.trim() || 'BBDCI Team';
+  const date = document.getElementById('adminDate')?.value.trim();
+  const featured = document.getElementById('adminFeatured')?.checked || false;
+  const image = document.getElementById('adminImage')?.value.trim() || 'https://image.tmdb.org/t/p/w780/8nzvbgGM1bDqK3fscy86LyOnDcf.jpg';
+  const excerpt = document.getElementById('adminExcerpt')?.value.trim();
+  const body = document.getElementById('adminBody')?.value.trim();
+  const selectedTags = Array.from(document.querySelectorAll('.admin-tag-input:checked')).map(cb => cb.value);
+
+  if (!title || !slug || !excerpt || !body) {
+    showAdminStatus('Please fill in Title, Slug, Excerpt, and Article Content first before downloading!', 'error');
+    return;
+  }
+
+  const mdContent = `---
+id: ${slug}
+title: "${title.replace(/"/g, '\\"')}"
+date: ${date}
+author: "${author}"
+image: "${image}"
+excerpt: "${excerpt.replace(/"/g, '\\"')}"
+featured: ${featured}
+tags:
+${selectedTags.map(t => '  - ' + t).join('\n')}
+---
+
+${body}`;
+
+  const blob = new Blob([mdContent], { type: 'text/markdown' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${slug}.md`;
+  a.click();
+
+  showAdminStatus(`✅ Downloaded <code>${slug}.md</code> file! You can upload it to the <code>news/articles/</code> directory on GitHub.`, 'success');
+};
 
 function showAdminStatus(msg, type) {
   const statusBox = document.getElementById('adminStatusBox');
