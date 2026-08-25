@@ -1067,10 +1067,10 @@ const Router = {
       } catch (_) {}
     }
 
-    const isFile = window.location.protocol === 'file:';
-    let path;
-    if (isFile) {
-      path = decodeURIComponent(window.location.hash.slice(1)) || '/';
+    let path = '';
+    const hash = window.location.hash ? window.location.hash.slice(1) : '';
+    if (hash) {
+      path = decodeURIComponent(hash);
     } else {
       const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
       const basePrefix = isLocal ? '' : '/conan-india-index';
@@ -1079,6 +1079,7 @@ const Router = {
         path = path.slice(basePrefix.length);
       }
     }
+    if (!path || path === '') path = '/';
     if (!path.startsWith('/')) path = '/' + path;
 
     this.currentRoute = path;
