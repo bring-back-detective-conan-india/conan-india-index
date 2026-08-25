@@ -10093,7 +10093,7 @@ try {
   }
 } catch (_) {}
 
-Router.resolve();
+// Initial route resolution executed at end of script
 setTimeout(() => { fetchTMDBPosters(); fetchTMDBSpinoffPosters(); fetchTMDBPVRSpecialPosters(); fetchMangaCovers(); fetchTMDBEpisodeMeta(); }, 300);
 
 // ─── MOBILE BOTTOM BAR ───────────────────────────────
@@ -12380,6 +12380,14 @@ function showAdminStatus(msg, type) {
       statusBox.innerHTML = msg;
     }
   });
+}
+
+// ─── INITIAL ROUTE RESOLUTION ───────────────────────
+// Run initial route resolution after all page renderers and constants are fully initialized
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => Router.resolve());
+} else {
+  Router.resolve();
 }
 
 
