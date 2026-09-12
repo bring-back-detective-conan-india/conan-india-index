@@ -9957,5 +9957,45 @@ const EPISODES = [
     "netflix": null,
     "animetimes": null,
     "src": "TV Original"
+  },
+  {
+    "n": 1213,
+    "title": "Witness, Ran Mouri",
+    "season": "S31",
+    "aired": "2026-09-19",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1214,
+    "title": "The Final Day of Crimson Red (First Day)",
+    "season": "S31",
+    "aired": "2026-09-26",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1215,
+    "title": "The Final Day of Crimson Red (Penultimate Day)",
+    "season": "S31",
+    "aired": "2026-10-03",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1216,
+    "title": "The Final Day of Crimson Red (Last Day)",
+    "season": "S31",
+    "aired": "2026-10-10",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
   }
 ];
