@@ -580,13 +580,13 @@ async function updateNetflixLatestCard() {
 
   // Default fallback values computed dynamically if TMDB fails
   // These variables are also updated by scripts/auto-update.js during server sync
-  let latestEpNum = 1216; // Default fallback
-  let nextEpNum = 1213;
-  let latestEpTitle = "The Final Day of Crimson Red (Last Day)";
-  let latestEpStill = null;
+  let latestEpNum = 1217; // Default fallback
+  let nextEpNum = 1217;
+  let latestEpTitle = "Episode 1217";
+  let latestEpStill = "/2hox8ufhlwOH2bUrV0Aa7Am8Jx7.jpg";
   let latestEpDate = "NOW STREAMING";
   let nextEpAirDate = null;
-  let nextEpTitle = "Witness, Ran Mouri";
+  let nextEpTitle = "Episode 1217";
   let nextEpDate = null;
   let nextEpStill = null;
   let hasUpcoming = false; // Declared at function scope so TMDB block can read/write it
