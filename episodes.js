@@ -10007,5 +10007,15 @@ const EPISODES = [
     "netflix": null,
     "animetimes": null,
     "src": "TV Original"
+  },
+  {
+    "n": 1218,
+    "title": "A Paw-sitively Wonderful Investigation",
+    "season": "S31",
+    "aired": "2026-10-19",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
   }
 ];
