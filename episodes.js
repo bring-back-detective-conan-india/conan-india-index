@@ -10017,5 +10017,15 @@ const EPISODES = [
     "netflix": null,
     "animetimes": null,
     "src": "TV Original"
+  },
+  {
+    "n": 1219,
+    "title": "Episode 1219",
+    "season": "S31",
+    "aired": "2026-11-07",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
   }
 ];
