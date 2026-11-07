@@ -10027,5 +10027,25 @@ const EPISODES = [
     "netflix": null,
     "animetimes": null,
     "src": "TV Original"
+  },
+  {
+    "n": 1220,
+    "title": "Girls Day Mystery 5 (Part One)",
+    "season": "S31",
+    "aired": "2026-11-14",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
+  },
+  {
+    "n": 1221,
+    "title": "Girls Day Mystery 5 (Part Two)",
+    "season": "S31",
+    "aired": "2026-11-21",
+    "etv": null,
+    "netflix": null,
+    "animetimes": null,
+    "src": "TV Original"
   }
 ];
